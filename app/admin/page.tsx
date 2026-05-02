@@ -7,6 +7,7 @@ import {
   LogOut, Pencil, Trash2, X, Clock, Filter, Plus
 } from "lucide-react"
 import type { Sesion, SesionFormData, Usuario } from "@/types"
+import NuevaSesion from '@/components/NuevaSesion'
 
 type View = "panel" | "sesiones" | "ponentes" | "configuracion"
 
@@ -32,10 +33,11 @@ export default function AdminPage() {
   const [sesiones, setSesiones] = useState<Sesion[]>([])
   const [sesionesLoading, setSesionesLoading] = useState(false)
 
-  // Create/Edit form
+  // Create/Edit state
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState<SesionFormData>(EMPTY_FORM)
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showEditForm, setShowEditForm] = useState(false)
+  const [editForm, setEditForm] = useState<SesionFormData>(EMPTY_FORM)
   const [formSaving, setFormSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [showSaveConfirm, setShowSaveConfirm] = useState(false)
@@ -48,6 +50,7 @@ export default function AdminPage() {
 
   // Search
   const [searchQuery, setSearchQuery] = useState("")
+
 
   useEffect(() => {
     async function init() {
@@ -144,14 +147,13 @@ export default function AdminPage() {
 
   function openCreateForm() {
     setEditingId(null)
-    setForm(EMPTY_FORM)
     setFormError(null)
-    setShowForm(true)
+    setShowCreateForm(true)
   }
 
   function openEditForm(sesion: Sesion) {
     setEditingId(sesion.id)
-    setForm({
+    setEditForm({
       titulo: sesion.titulo,
       ponente: sesion.ponente,
       dia: sesion.dia,
@@ -163,26 +165,51 @@ export default function AdminPage() {
       descripcion: sesion.descripcion ?? "",
     })
     setFormError(null)
-    setShowForm(true)
+    setShowEditForm(true)
   }
 
-  async function handleSave() {
+  async function handleSaveNewSession(data: SesionFormData) {
     setFormSaving(true)
     setFormError(null)
     try {
-      const url = editingId ? `/api/admin/sesiones/${editingId}` : "/api/admin/sesiones"
-      const method = editingId ? "PUT" : "POST"
+      const url = "/api/admin/sesiones"
+      const method = "POST"
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Error al guardar." }))
+        throw new Error(err.error ?? "Error al guardar.")
+      }
+      setShowCreateForm(false)
+      await fetchSesiones()
+    } catch (err) {
+      throw err
+    } finally {
+      setFormSaving(false)
+    }
+  }
+
+  async function handleUpdateSession() {
+    if (!editingId) return
+    setFormSaving(true)
+    setFormError(null)
+    try {
+      const url = `/api/admin/sesiones/${editingId}`
+      const method = "PUT"
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Error al guardar." }))
         setFormError(err.error ?? "Error al guardar.")
         return
       }
-      setShowForm(false)
+      setShowEditForm(false)
       setShowSaveConfirm(false)
       await fetchSesiones()
     } catch {
@@ -373,7 +400,7 @@ export default function AdminPage() {
                           {ocupacionPorLugar.map((o) => (
                             <div key={o.label} className="mb-4 last:mb-0">
                               <div className="flex items-center justify-between text-[11px] text-gray-500 mb-1">
-                                <span>{o.label}</span>
+                                <span>{o.label.toUpperCase()}</span>
                                 <span>{o.value}%</span>
                               </div>
                               <div className="h-2 rounded-full bg-[#EDF0F3] overflow-hidden">
@@ -657,19 +684,28 @@ export default function AdminPage() {
         </section>
       </div>
 
-      {/* FORMULARIO CREAR / EDITAR SESIÓN */}
-      {showForm && (
-        <div className="fixed inset-0 z-40 bg-black/20" onClick={(e) => { if (e.target === e.currentTarget) setShowForm(false) }}>
+      {/* FORMULARIO CREAR NUEVA SESIÓN - Componente NuevaSesion */}
+      {showCreateForm && (
+        <NuevaSesion
+          onClose={() => setShowCreateForm(false)}
+          onSave={handleSaveNewSession}
+          sesiones={sesiones}
+        />
+      )}
+
+      {/* FORMULARIO EDITAR SESIÓN - Modal anterior con datos precargados */}
+      {showEditForm && (
+        <div className="fixed inset-0 z-40 bg-black/20" onClick={(e) => { if (e.target === e.currentTarget) setShowEditForm(false) }}>
           <div className="absolute inset-y-0 right-0 w-[420px] bg-white shadow-2xl p-6 overflow-y-auto">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className="text-[10px] text-gray-400 font-semibold">PANEL ADMINISTRATIVO</p>
                 <h2 className="text-base font-bold text-[#1A1B22]">
-                  {editingId ? "Editar Sesión Académica" : "Nueva Sesión Académica"}
+                  Editar Sesión Académica
                 </h2>
-                <p className="text-xs text-gray-400">Asegúrese de verificar la disponibilidad de espacios.</p>
+                <p className="text-xs text-gray-400">Modifique los datos de la sesión seleccionada.</p>
               </div>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setShowEditForm(false)} className="text-gray-400 hover:text-gray-600">
                 <X size={16} />
               </button>
             </div>
@@ -685,8 +721,8 @@ export default function AdminPage() {
                 <p className="text-[10px] text-gray-400 font-semibold">NOMBRE DE LA SESIÓN *</p>
                 <input
                   className="w-full bg-[#F6F2FF] border border-gray-200 rounded-md px-3 py-2"
-                  value={form.titulo}
-                  onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))}
+                  value={editForm.titulo}
+                  onChange={(e) => setEditForm((f) => ({ ...f, titulo: e.target.value }))}
                   placeholder="Ej. Conferencia sobre IA"
                 />
               </div>
@@ -694,8 +730,8 @@ export default function AdminPage() {
                 <p className="text-[10px] text-gray-400 font-semibold">CONFERENCISTA *</p>
                 <input
                   className="w-full border border-gray-200 rounded-md px-3 py-2"
-                  value={form.ponente}
-                  onChange={(e) => setForm((f) => ({ ...f, ponente: e.target.value }))}
+                  value={editForm.ponente}
+                  onChange={(e) => setEditForm((f) => ({ ...f, ponente: e.target.value }))}
                   placeholder="Ej. Dr. Juan Pérez"
                 />
               </div>
@@ -704,8 +740,8 @@ export default function AdminPage() {
                   <p className="text-[10px] text-gray-400 font-semibold">TIPO DE SESIÓN</p>
                   <input
                     className="w-full border border-gray-200 rounded-md px-3 py-2"
-                    value={form.tipo}
-                    onChange={(e) => setForm((f) => ({ ...f, tipo: e.target.value }))}
+                    value={editForm.tipo}
+                    onChange={(e) => setEditForm((f) => ({ ...f, tipo: e.target.value }))}
                     placeholder="Conferencia / Taller"
                   />
                 </div>
@@ -715,8 +751,8 @@ export default function AdminPage() {
                     type="number"
                     min={1}
                     className="w-full border border-gray-200 rounded-md px-3 py-2"
-                    value={form.cupos_total}
-                    onChange={(e) => setForm((f) => ({ ...f, cupos_total: Number(e.target.value) }))}
+                    value={editForm.cupos_total}
+                    onChange={(e) => setEditForm((f) => ({ ...f, cupos_total: Number(e.target.value) }))}
                   />
                 </div>
               </div>
@@ -724,8 +760,8 @@ export default function AdminPage() {
                 <p className="text-[10px] text-gray-400 font-semibold">DÍA</p>
                 <input
                   className="w-full border border-gray-200 rounded-md px-3 py-2"
-                  value={form.dia}
-                  onChange={(e) => setForm((f) => ({ ...f, dia: e.target.value }))}
+                  value={editForm.dia}
+                  onChange={(e) => setEditForm((f) => ({ ...f, dia: e.target.value }))}
                   placeholder="Ej. lunes / 2025-12-01"
                 />
               </div>
@@ -735,8 +771,8 @@ export default function AdminPage() {
                   <input
                     type="time"
                     className="w-full border border-gray-200 rounded-md px-3 py-2"
-                    value={form.hora_inicio}
-                    onChange={(e) => setForm((f) => ({ ...f, hora_inicio: e.target.value }))}
+                    value={editForm.hora_inicio}
+                    onChange={(e) => setEditForm((f) => ({ ...f, hora_inicio: e.target.value }))}
                   />
                 </div>
                 <div>
@@ -744,8 +780,8 @@ export default function AdminPage() {
                   <input
                     type="time"
                     className="w-full border border-gray-200 rounded-md px-3 py-2"
-                    value={form.hora_fin}
-                    onChange={(e) => setForm((f) => ({ ...f, hora_fin: e.target.value }))}
+                    value={editForm.hora_fin}
+                    onChange={(e) => setEditForm((f) => ({ ...f, hora_fin: e.target.value }))}
                   />
                 </div>
               </div>
@@ -753,8 +789,8 @@ export default function AdminPage() {
                 <p className="text-[10px] text-gray-400 font-semibold">ESCENARIO / LUGAR</p>
                 <input
                   className="w-full border border-gray-200 rounded-md px-3 py-2"
-                  value={form.lugar}
-                  onChange={(e) => setForm((f) => ({ ...f, lugar: e.target.value }))}
+                  value={editForm.lugar}
+                  onChange={(e) => setEditForm((f) => ({ ...f, lugar: e.target.value }))}
                   placeholder="Ej. Aula Magna"
                 />
               </div>
@@ -763,45 +799,43 @@ export default function AdminPage() {
                 <textarea
                   rows={3}
                   className="w-full border border-gray-200 rounded-md px-3 py-2"
-                  value={form.descripcion}
-                  onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))}
+                  value={editForm.descripcion}
+                  onChange={(e) => setEditForm((f) => ({ ...f, descripcion: e.target.value }))}
                   placeholder="Descripción breve de la sesión..."
                 />
               </div>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setShowSaveConfirm(true)}
-                  disabled={formSaving || !form.titulo || !form.ponente}
+                  disabled={formSaving || !editForm.titulo || !editForm.ponente}
                   className="bg-[#53F000] text-black text-xs font-semibold px-4 py-2 rounded-md disabled:opacity-50"
                 >
-                  {editingId ? "Guardar Cambios" : "Crear Sesión"}
+                  Guardar Cambios
                 </button>
-                <button onClick={() => setShowForm(false)} className="text-xs font-semibold text-gray-400">Cancelar</button>
+                <button onClick={() => setShowEditForm(false)} className="text-xs font-semibold text-gray-400">Cancelar</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* CONFIRMAR GUARDAR */}
+      {/* CONFIRMAR GUARDAR CAMBIOS */}
       {showSaveConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
           <div className="bg-white rounded-xl shadow-xl w-[360px] px-5 py-4 text-xs">
             <h3 className="text-sm font-bold text-[#1A1B22]">
-              {editingId ? "¿Guardar cambios?" : "¿Crear sesión?"}
+              ¿Guardar cambios?
             </h3>
             <p className="text-[11px] text-gray-500 mt-1">
-              {editingId
-                ? "¿Estás seguro de que deseas aplicar las modificaciones a esta sesión?"
-                : "¿Estás seguro de que deseas crear esta nueva sesión?"}
+              ¿Estás seguro de que deseas aplicar las modificaciones a esta sesión?
             </p>
             <div className="flex items-center gap-2 mt-4">
               <button
-                onClick={handleSave}
+                onClick={handleUpdateSession}
                 disabled={formSaving}
                 className="bg-[#53F000] text-black text-xs font-semibold px-4 py-2 rounded-md disabled:opacity-50"
               >
-                {formSaving ? "Guardando..." : editingId ? "Guardar Cambios" : "Crear Sesión"}
+                {formSaving ? "Guardando..." : "Guardar Cambios"}
               </button>
               <button
                 onClick={() => setShowSaveConfirm(false)}
@@ -827,7 +861,7 @@ export default function AdminPage() {
             <p className="text-[11px] text-gray-500">Esta acción no se puede deshacer.</p>
             <div className="flex items-center gap-2 mt-4">
               <button
-                onClick={() => handleDelete(deleteId)}
+                onClick={() => deleteId && handleDelete(deleteId)}
                 className="bg-[#C40000] text-white text-xs font-semibold px-4 py-2 rounded-md"
               >
                 Eliminar

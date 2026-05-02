@@ -15,22 +15,24 @@ async function requireAdmin() {
   return user
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  
   const admin = await requireAdmin()
   if (!admin) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 })
   }
 
   const body = await request.json().catch(() => null)
-  const titulo = String(body?.titulo ?? "").trim()
-  const ponente = String(body?.ponente ?? "").trim()
-  const dia = String(body?.dia ?? "").trim()
-  const horaInicio = String(body?.hora_inicio ?? "").trim()
-  const horaFin = String(body?.hora_fin ?? "").trim()
-  const tipo = String(body?.tipo ?? "").trim()
-  const lugar = String(body?.lugar ?? "").trim()
-  const cuposTotal = Number(body?.cupos_total ?? 0)
-  const descripcion = String(body?.descripcion ?? "").trim()
+  const titulo = String(body?.titulo ?? "").trim() || null
+  const ponente = String(body?.ponente ?? "").trim() || null
+  const dia = String(body?.dia ?? "").trim() || null
+  const horaInicio = String(body?.hora_inicio ?? "").trim() || null
+  const horaFin = String(body?.hora_fin ?? "").trim() || null
+  const tipo = String(body?.tipo ?? "").trim() || "Conferencia"
+  const lugar = String(body?.lugar ?? "").trim() || null
+  const cuposTotal = Number(body?.cupos_total ?? 50)
+  const descripcion = String(body?.descripcion ?? "").trim() || null
 
   if (!titulo || !ponente) {
     return NextResponse.json({ error: "Faltan datos requeridos." }, { status: 400 })
@@ -47,20 +49,22 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       tipo,
       lugar,
       cuposTotal,
-      descripcion || null,
-      params.id,
+      descripcion,
+      id,
     ]
   )
 
   return NextResponse.json({ ok: true })
 }
 
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  
   const admin = await requireAdmin()
   if (!admin) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 })
   }
 
-  await pool.execute<ResultSetHeader>("delete from sesiones where id = ?", [params.id])
+  await pool.execute<ResultSetHeader>("delete from sesiones where id = ?", [id])
   return NextResponse.json({ ok: true })
 }
