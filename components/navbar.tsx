@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Menu, X, LogOut, User } from "lucide-react"
+import { ThemeToggle } from "./theme-toggle"
 
 const navLinks = [
   { label: "Inicio", href: "/" },
@@ -71,6 +72,7 @@ export default function Navbar() {
 
           {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-3">
+            <ThemeToggle />
             {user ? (
               <>
                 {role === "admin" && (
@@ -82,8 +84,10 @@ export default function Navbar() {
                   </Link>
                 )}
                 <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                  <User size={14} />
-                  <span className="max-w-[120px] truncate">{user.email}</span>
+                  <Link href="/perfil" className="flex items-center gap-1.5 hover:text-[#065F46] transition-colors">
+                    <User size={14} />
+                    <span className="max-w-[120px] truncate">{user.email}</span>
+                  </Link>
                 </div>
                 <button
                   onClick={handleSignOut}

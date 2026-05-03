@@ -1,280 +1,24 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
-import { Users, BookOpen } from "lucide-react"
+import { BookOpen } from "lucide-react"
 
-type Evento = {
-  hora: string
+type Sesion = {
+  id: string
   titulo: string
   ponente: string
-  cupos: number
-  maxCupos: number
-  tipo: "Conferencia" | "Cultural" | "Taller" | "Inauguración" | "Cierre"
+  dia: string
+  hora_inicio: string
+  hora_fin: string
+  tipo: string
   lugar: string
+  cupos_total: number
+  cupos_ocupados: number
+  descripcion: string | null
+  created_at: string
 }
-
-type Dia = {
-  id: string
-  label: string
-  fecha: string
-  eventos: Evento[]
-}
-
-const dias: Dia[] = [
-  {
-    id: "lun",
-    label: "Lun 1",
-    fecha: "Lunes 1 de Diciembre",
-    eventos: [
-      {
-        hora: "10:00 - 10:10",
-        titulo: "Inauguración",
-        ponente: "Lic. en Fil. Luis Ramón Vega Ramírez — Coordinador UES San José del Rincón",
-        cupos: 45,
-        maxCupos: 100,
-        tipo: "Inauguración",
-        lugar: "Aula Magna",
-      },
-      {
-        hora: "10:10 - 12:00",
-        titulo: 'Documental "Batsi: el Ajolote y su reflejo"',
-        ponente: "Dra. Aracely Rojas López — Universidad Intercultural del Estado de México",
-        cupos: 45,
-        maxCupos: 100,
-        tipo: "Cultural",
-        lugar: "Aula Magna",
-      },
-      {
-        hora: "12:00 - 13:00",
-        titulo: "Declamación Vals sin fin",
-        ponente: "Liliana Sánchez Javier — Estudiantes de la UES San José del Rincón",
-        cupos: 10,
-        maxCupos: 30,
-        tipo: "Cultural",
-        lugar: "Aula Magna",
-      },
-      {
-        hora: "13:00 - 14:00",
-        titulo: "Abejas silvestres, maíz y biotecnologías: interacciones desventajosas",
-        ponente: "Dra. Adriana Tapia Hernández",
-        cupos: 60,
-        maxCupos: 100,
-        tipo: "Conferencia",
-        lugar: "Aula Magna",
-      },
-    ],
-  },
-  {
-    id: "mar",
-    label: "Mar 2",
-    fecha: "Martes 2 de Diciembre",
-    eventos: [
-      {
-        hora: "09:00 - 09:10",
-        titulo: "Inicio de actividades",
-        ponente: "Ing. Jesus Omar Espinoza Díaz",
-        cupos: 100,
-        maxCupos: 100,
-        tipo: "Inauguración",
-        lugar: "Aula Magna",
-      },
-      {
-        hora: "10:00 - 11:00",
-        titulo: "Cómo construir tu camino como desarrollador de software hasta trabajar en empresas top de Latinoamérica",
-        ponente: "Ing. en Computación Victor Manuel Zuñiga Aguilar",
-        cupos: 85,
-        maxCupos: 100,
-        tipo: "Conferencia",
-        lugar: "Aula Magna",
-      },
-      {
-        hora: "11:00 - 11:50",
-        titulo: "Mosca soldado negra, una aliada para una agricultura sustentable y circular",
-        ponente: "Doctorante Brianda Yaret Solorzano Tello",
-        cupos: 40,
-        maxCupos: 50,
-        tipo: "Conferencia",
-        lugar: "Aula Magna",
-      },
-      {
-        hora: "11:50 - 12:10",
-        titulo: "Narrativa de la historia del municipio de San José del Rincón",
-        ponente: "Profesor Jaime Martínez Vázquez",
-        cupos: 80,
-        maxCupos: 100,
-        tipo: "Cultural",
-        lugar: "Aula Magna",
-      },
-      {
-        hora: "12:10 - 13:00",
-        titulo: "Elementos de la facturación electrónica",
-        ponente: "Lic. en Contaduría Julio Cesar Posadas Estrada",
-        cupos: 70,
-        maxCupos: 100,
-        tipo: "Conferencia",
-        lugar: "Aula Magna",
-      },
-      {
-        hora: "13:00 - 14:00",
-        titulo: "De cero a AI Engineer: Cómo Construir Sistemas de IA del Mundo Real",
-        ponente: "Ing. de Software Edgar Zuñiga Aguilar",
-        cupos: 65,
-        maxCupos: 100,
-        tipo: "Conferencia",
-        lugar: "Aula Magna",
-      },
-      {
-        hora: "14:30 - 14:50",
-        titulo: "Presentación musical",
-        ponente: "Mtro. José Julián",
-        cupos: 91,
-        maxCupos: 100,
-        tipo: "Cultural",
-        lugar: "Aula Magna",
-      },
-    ],
-  },
-  {
-    id: "mie",
-    label: "Mié 3",
-    fecha: "Miércoles 3 de Diciembre",
-    eventos: [
-      {
-        hora: "10:00 - 10:10",
-        titulo: "Inicio de actividades",
-        ponente: "L.C. Ana Lucina Hernández García",
-        cupos: 100,
-        maxCupos: 100,
-        tipo: "Inauguración",
-        lugar: "Aula Magna",
-      },
-      {
-        hora: "11:00 - 11:10",
-        titulo: "Interpretación musical",
-        ponente: "Joanna Lizbeth Osornio Lara — Estudiante de la UES San José del Rincón",
-        cupos: 30,
-        maxCupos: 60,
-        tipo: "Cultural",
-        lugar: "Aula Magna",
-      },
-      {
-        hora: "11:10 - 12:00",
-        titulo: "La actuación del Contador como Auditor a nivel Internacional",
-        ponente: "C.P.C. Geder Gamaliel Vela Montes",
-        cupos: 55,
-        maxCupos: 100,
-        tipo: "Conferencia",
-        lugar: "Aula Magna",
-      },
-      {
-        hora: "12:00 - 13:00",
-        titulo: "Taller de Manualidades",
-        ponente: "Mtra. Jazmín Mónica Martínez Marín",
-        cupos: 18,
-        maxCupos: 30,
-        tipo: "Taller",
-        lugar: "Aula Magna",
-      },
-    ],
-  },
-  {
-    id: "jue",
-    label: "Jue 4",
-    fecha: "Jueves 4 de Diciembre",
-    eventos: [
-      {
-        hora: "09:00 - 09:10",
-        titulo: "Inicio de actividades",
-        ponente: "C.P. Sergio Sánchez Sánchez",
-        cupos: 100,
-        maxCupos: 100,
-        tipo: "Inauguración",
-        lugar: "Aula Magna",
-      },
-      {
-        hora: "09:10 - 10:00",
-        titulo: "Protección de los Derechos Digitales del Consumidor en el Comercio Electrónico",
-        ponente: "Mtra. Liliana Belem Galindo Téllez",
-        cupos: 58,
-        maxCupos: 80,
-        tipo: "Conferencia",
-        lugar: "Aula Magna",
-      },
-      {
-        hora: "11:00 - 11:10",
-        titulo: "Coreografía de la Banda de Rock Nachtblut",
-        ponente: "Estudiantes del grupo 13LC171 de la UES San José del Rincón",
-        cupos: 100,
-        maxCupos: 100,
-        tipo: "Cultural",
-        lugar: "Aula Magna",
-      },
-      {
-        hora: "11:10 - 12:00",
-        titulo: "Inteligencia computacional: aplicación de lógica difusa en manufactura y energía renovable",
-        ponente: "Dr. Everardo Efren Granda Gutiérrez",
-        cupos: 42,
-        maxCupos: 100,
-        tipo: "Conferencia",
-        lugar: "Aula Magna",
-      },
-      {
-        hora: "12:10 - 13:00",
-        titulo: "Produsan y plantifor rompiendo paradigmas, Sistemas M-5 hacia una Agricultura regenerativa",
-        ponente: "Ing. Hilda Merlos Mora e Ing. Gerardo Zacarías Nuñez",
-        cupos: 75,
-        maxCupos: 100,
-        tipo: "Conferencia",
-        lugar: "Aula Magna",
-      },
-    ],
-  },
-  {
-    id: "vie",
-    label: "Vie 5",
-    fecha: "Viernes 5 de Diciembre",
-    eventos: [
-      {
-        hora: "09:00 - 09:10",
-        titulo: "Inicio de actividades",
-        ponente: "Ing. Manuel Roberto Chávez Cruz",
-        cupos: 100,
-        maxCupos: 100,
-        tipo: "Inauguración",
-        lugar: "Explanada institucional",
-      },
-      {
-        hora: "09:10 - 11:00",
-        titulo: "Torneo de Robots",
-        ponente: "Facultad de Ingeniería — UES San José del Rincón",
-        cupos: 50,
-        maxCupos: 100,
-        tipo: "Taller",
-        lugar: "Explanada institucional",
-      },
-      {
-        hora: "11:00 - 14:00",
-        titulo: "Elección de Chica y Chico UESSJR 2025",
-        ponente: "Estudiantes, planta docente y administrativa de la UES San José del Rincón",
-        cupos: 200,
-        maxCupos: 300,
-        tipo: "Cultural",
-        lugar: "Explanada municipal de San José del Rincón",
-      },
-      {
-        hora: "14:00 - 14:10",
-        titulo: "Cierre del evento",
-        ponente: "Lic. en Fil. Luis Ramón Vega Ramírez — Coordinador UES San José del Rincón",
-        cupos: 200,
-        maxCupos: 300,
-        tipo: "Cierre",
-        lugar: "Explanada municipal de San José del Rincón",
-      },
-    ],
-  },
-]
 
 const tipoBadge: Record<string, { bg: string; text: string }> = {
   Conferencia: { bg: "#064E3B", text: "#ffffff" },
@@ -285,8 +29,26 @@ const tipoBadge: Record<string, { bg: string; text: string }> = {
 }
 
 export default function CronogramaPage() {
+  const [sesiones, setSesiones] = useState<Record<string, Sesion[]>>({})
   const [diaActivo, setDiaActivo] = useState<string>("todos")
   const [agendados, setAgendados] = useState<Set<string>>(new Set())
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadSesiones() {
+      try {
+        const res = await fetch("/api/sesiones/grouped")
+        if (!res.ok) throw new Error("Error al cargar sesiones")
+        const data = await res.json()
+        setSesiones(data.data || {})
+      } catch (error) {
+        console.error("Error:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadSesiones()
+  }, [])
 
   function toggleAgenda(key: string) {
     setAgendados((prev) => {
@@ -297,18 +59,32 @@ export default function CronogramaPage() {
     })
   }
 
+  const dias = Object.keys(sesiones).sort()
   const eventosFiltrados =
     diaActivo === "todos"
-      ? dias.flatMap((d) => d.eventos.map((ev) => ({ ...ev, diaId: d.id, diaFecha: d.fecha })))
-      : dias
-          .filter((d) => d.id === diaActivo)
-          .flatMap((d) => d.eventos.map((ev) => ({ ...ev, diaId: d.id, diaFecha: d.fecha })))
+      ? Object.values(sesiones).flat()
+      : sesiones[diaActivo] || []
 
-  // Split into two columns
   const col1 = eventosFiltrados.filter((_, i) => i % 2 === 0)
   const col2 = eventosFiltrados.filter((_, i) => i % 2 === 1)
 
-  const totalPonentes = dias.reduce((acc, d) => acc + d.eventos.length, 0)
+  const totalSesiones = Object.values(sesiones).flat().length
+  const totalPonentes = new Set(
+    Object.values(sesiones)
+      .flat()
+      .map((s) => s.ponente)
+  ).size
+
+  if (loading) {
+    return (
+      <main className="min-h-screen" style={{ backgroundColor: "#FBF8FF" }}>
+        <Navbar />
+        <div className="pt-20 flex items-center justify-center h-[400px]">
+          <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "#0F6B44", borderTopColor: "transparent" }} />
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="min-h-screen" style={{ backgroundColor: "#FBF8FF" }}>
@@ -343,23 +119,23 @@ export default function CronogramaPage() {
           </div>
 
           {/* Right: Mi Agenda */}
-          <div className="bg-white border-l border-gray-100 px-6 py-8 flex flex-col gap-6">
-            <h2 className="text-sm font-bold text-[#1A1B22]">Mi Agenda Personal</h2>
+          <div className="bg-white dark:bg-slate-900 border-l border-gray-100 dark:border-gray-800 px-6 py-8 flex flex-col gap-6">
+            <h2 className="text-sm font-bold text-[#1A1B22] dark:text-white">Mi Agenda Personal</h2>
 
             {agendados.size === 0 ? (
               <div className="flex flex-col items-center justify-center text-center gap-2 py-6">
-                <div className="w-10 h-10 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center">
-                  <BookOpen size={16} className="text-gray-300" />
+                <div className="w-10 h-10 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-700 flex items-center justify-center">
+                  <BookOpen size={16} className="text-gray-300 dark:text-gray-700" />
                 </div>
-                <p className="text-xs text-gray-400 leading-relaxed max-w-[160px]">
+                <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed max-w-[160px]">
                   Inicia sesión para agregar tus sesiones preferidas.
                 </p>
               </div>
             ) : (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto">
                 {Array.from(agendados).map((key) => (
-                  <div key={key} className="text-xs text-[#065F46] bg-green-50 rounded-lg px-3 py-2 font-medium">
-                    {key.split("__")[0]}
+                  <div key={key} className="text-xs text-[#065F46] dark:text-green-400 bg-green-50 dark:bg-green-950/30 rounded-lg px-3 py-2 font-medium">
+                    {key}
                   </div>
                 ))}
               </div>
@@ -367,23 +143,29 @@ export default function CronogramaPage() {
 
             <div className="mt-auto">
               <div className="mb-1 flex items-center justify-between">
-                <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Progreso de Jornada</span>
-                <span className="text-[10px] text-gray-400">20%</span>
+                <span className="text-[10px] text-gray-400 dark:text-gray-600 uppercase tracking-wider font-semibold">Sesiones Registradas</span>
+                <span className="text-[10px] text-gray-400 dark:text-gray-600">{agendados.size}/{totalSesiones}</span>
               </div>
-              <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: "20%", backgroundColor: "#64FC05" }} />
+              <div className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: `${totalSesiones > 0 ? (agendados.size / totalSesiones) * 100 : 0}%`,
+                    backgroundColor: "#64FC05",
+                  }}
+                />
               </div>
             </div>
 
             {/* Stats */}
             <div className="grid grid-cols-2 gap-3 mt-2">
-              <div className="border border-gray-100 rounded-xl p-3 text-center">
-                <p className="text-2xl font-black text-[#735B24]">{String(totalPonentes).padStart(2, "0")}</p>
-                <p className="text-[10px] text-gray-400 uppercase tracking-wider mt-0.5 font-semibold">Ponentes Hoy</p>
+              <div className="border border-gray-100 dark:border-gray-800 rounded-xl p-3 text-center">
+                <p className="text-2xl font-black text-[#735B24] dark:text-yellow-500">{totalSesiones}</p>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-0.5 font-semibold">Sesiones</p>
               </div>
               <div className="rounded-xl p-3 text-center" style={{ backgroundColor: "#64FC05" }}>
-                <p className="text-2xl font-black text-black">20</p>
-                <p className="text-[10px] text-black/60 uppercase tracking-wider mt-0.5 font-semibold">Cupos Libres</p>
+                <p className="text-2xl font-black text-black">{totalPonentes}</p>
+                <p className="text-[10px] text-black/60 uppercase tracking-wider mt-0.5 font-semibold">Ponentes</p>
               </div>
             </div>
           </div>
@@ -392,125 +174,171 @@ export default function CronogramaPage() {
         {/* Sessions section */}
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-10">
           {/* Title + filter */}
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl font-bold text-[#1A1B22]">Agenda de Sesiones</h2>
-            <button className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg px-3 py-1.5">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                <path d="M3 6h18M7 12h10M11 18h2" strokeLinecap="round"/>
-              </svg>
-              Filtrar
-            </button>
-          </div>
-
-          {/* Day tabs */}
-          <div className="flex items-center gap-2 flex-wrap mb-8">
-            {[{ id: "todos", label: "Todos" }, ...dias.map((d) => ({ id: d.id, label: d.label }))].map((tab) => (
+          <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+            <h2 className="text-xl font-bold text-[#1A1B22] dark:text-white">Agenda de Sesiones</h2>
+            <div className="flex gap-2 overflow-x-auto pb-2">
               <button
-                key={tab.id}
-                onClick={() => setDiaActivo(tab.id)}
-                className="px-4 py-1.5 rounded-full text-sm font-semibold transition"
-                style={
-                  diaActivo === tab.id
-                    ? { backgroundColor: "#064E3B", color: "#ffffff" }
-                    : { backgroundColor: "#f3f4f6", color: "#6b7280" }
-                }
+                onClick={() => setDiaActivo("todos")}
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${
+                  diaActivo === "todos"
+                    ? "text-white"
+                    : "text-gray-600 dark:text-gray-400 bg-white dark:bg-slate-800"
+                }`}
+                style={{
+                  backgroundColor: diaActivo === "todos" ? "#064E3B" : undefined,
+                }}
               >
-                {tab.label}
+                Todos
               </button>
-            ))}
+              {dias.map((dia) => (
+                <button
+                  key={dia}
+                  onClick={() => setDiaActivo(dia)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${
+                    diaActivo === dia
+                      ? "text-white"
+                      : "text-gray-600 dark:text-gray-400 bg-white dark:bg-slate-800"
+                  }`}
+                  style={{
+                    backgroundColor: diaActivo === dia ? "#064E3B" : undefined,
+                  }}
+                >
+                  {dia}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Two-column events grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Column 1 */}
-            <div className="flex flex-col gap-5">
-              {col1.map((ev, i) => {
-                const key = `${ev.titulo}__${ev.diaId}`
-                const isAgendado = agendados.has(key)
-                const badge = tipoBadge[ev.tipo] ?? { bg: "#e5e7eb", text: "#374151" }
-                return (
-                  <EventCard
-                    key={`c1-${i}`}
-                    ev={ev}
-                    badge={badge}
-                    isAgendado={isAgendado}
-                    onToggle={() => toggleAgenda(key)}
-                  />
-                )
-              })}
+          {/* Eventos en dos columnas */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Columna 1 */}
+            <div className="flex flex-col gap-4">
+              {col1.map((evento) => (
+                <div
+                  key={evento.id}
+                  className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-4 hover:shadow-md transition"
+                >
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{evento.dia}</p>
+                      <h3 className="text-sm font-bold text-[#1A1B22] dark:text-white leading-snug">
+                        {evento.titulo}
+                      </h3>
+                    </div>
+                    <div
+                      className="px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap"
+                      style={{
+                        backgroundColor: tipoBadge[evento.tipo]?.bg || "#1A1B22",
+                        color: tipoBadge[evento.tipo]?.text || "#fff",
+                      }}
+                    >
+                      {evento.tipo}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 mb-3">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      <span className="font-semibold"></span> {evento.hora_inicio} - {evento.hora_fin}
+                    </p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      <span className="font-semibold"></span> {evento.ponente}
+                    </p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      <span className="font-semibold"></span> {evento.lugar}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {evento.cupos_ocupados} / {evento.cupos_total} cupos
+                    </div>
+                    <button
+                      onClick={() => toggleAgenda(evento.titulo)}
+                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${
+                        agendados.has(evento.titulo)
+                          ? "text-white"
+                          : "text-[#065F46] border border-[#065F46] hover:bg-green-50 dark:hover:bg-green-950/30"
+                      }`}
+                      style={{
+                        backgroundColor: agendados.has(evento.titulo) ? "#065F46" : undefined,
+                      }}
+                    >
+                      {agendados.has(evento.titulo) ? "Agendado" : "+ Agendar"}
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-            {/* Column 2 */}
-            <div className="flex flex-col gap-5">
-              {col2.map((ev, i) => {
-                const key = `${ev.titulo}__${ev.diaId}`
-                const isAgendado = agendados.has(key)
-                const badge = tipoBadge[ev.tipo] ?? { bg: "#e5e7eb", text: "#374151" }
-                return (
-                  <EventCard
-                    key={`c2-${i}`}
-                    ev={ev}
-                    badge={badge}
-                    isAgendado={isAgendado}
-                    onToggle={() => toggleAgenda(key)}
-                  />
-                )
-              })}
+
+            {/* Columna 2 */}
+            <div className="flex flex-col gap-4">
+              {col2.map((evento) => (
+                <div
+                  key={evento.id}
+                  className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-4 hover:shadow-md transition"
+                >
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{evento.dia}</p>
+                      <h3 className="text-sm font-bold text-[#1A1B22] dark:text-white leading-snug">
+                        {evento.titulo}
+                      </h3>
+                    </div>
+                    <div
+                      className="px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap"
+                      style={{
+                        backgroundColor: tipoBadge[evento.tipo]?.bg || "#1A1B22",
+                        color: tipoBadge[evento.tipo]?.text || "#fff",
+                      }}
+                    >
+                      {evento.tipo}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 mb-3">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      <span className="font-semibold"></span> {evento.hora_inicio} - {evento.hora_fin}
+                    </p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      <span className="font-semibold"></span> {evento.ponente}
+                    </p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      <span className="font-semibold"></span> {evento.lugar}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {evento.cupos_ocupados} / {evento.cupos_total} cupos
+                    </div>
+                    <button
+                      onClick={() => toggleAgenda(evento.titulo)}
+                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${
+                        agendados.has(evento.titulo)
+                          ? "text-white"
+                          : "text-[#065F46] border border-[#065F46] hover:bg-green-50 dark:hover:bg-green-950/30"
+                      }`}
+                      style={{
+                        backgroundColor: agendados.has(evento.titulo) ? "#065F46" : undefined,
+                      }}
+                    >
+                      {agendados.has(evento.titulo) ? "Agendado" : "+ Agendar"}
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
+
+          {eventosFiltrados.length === 0 && (
+            <div className="text-center py-10">
+              <p className="text-gray-500 dark:text-gray-400">No hay sesiones para este día</p>
+            </div>
+          )}
         </div>
       </div>
+
       <Footer />
     </main>
-  )
-}
-
-function EventCard({
-  ev,
-  badge,
-  isAgendado,
-  onToggle,
-}: {
-  ev: Evento & { diaFecha: string }
-  badge: { bg: string; text: string }
-  isAgendado: boolean
-  onToggle: () => void
-}) {
-  return (
-    <div className="bg-white border border-gray-100 rounded-xl p-5 flex flex-col gap-3 hover:shadow-sm transition-shadow">
-      {/* Day + time */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-bold uppercase tracking-wide" style={{ color: badge.bg }}>
-          {ev.diaFecha.split(" ").slice(0, 1)} &bull; {ev.hora}
-        </span>
-      </div>
-
-      {/* Title */}
-      <p className="text-sm font-bold text-[#1A1B22] leading-snug">{ev.titulo}</p>
-
-      {/* Ponente */}
-      <p className="text-xs text-gray-400">Ponente: {ev.ponente}</p>
-
-      {/* Bottom row */}
-      <div className="flex items-center justify-between mt-1">
-        <div className="flex items-center gap-1.5 text-xs text-gray-400">
-          <Users size={12} />
-          <span>{ev.cupos}/{ev.maxCupos} Cupos</span>
-        </div>
-        <button
-          onClick={onToggle}
-          className="px-4 py-1.5 rounded-lg text-xs font-bold border transition"
-          style={
-            isAgendado
-              ? { backgroundColor: "#064E3B", color: "#ffffff", borderColor: "#064E3B" }
-              : { backgroundColor: "#ffffff", color: "#064E3B", borderColor: "#064E3B" }
-          }
-        >
-          {isAgendado ? "AGENDADO" : "AGENDAR"}
-        </button>
-      </div>
-
-      {/* Bottom accent bar */}
-      <div className="h-0.5 rounded-full mt-1" style={{ backgroundColor: "#64FC05" }} />
-    </div>
   )
 }

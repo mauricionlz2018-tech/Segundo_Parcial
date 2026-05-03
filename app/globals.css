@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Exact colors from the design */
+  /* Exact colors from the design - LIGHT MODE */
   --hero-green: #64FC05;
   --hero-green-dark: #065F46;
   --btn-brown: #3F4942;
@@ -37,6 +37,42 @@
   --input: #F3F4F6;
   --ring: #065F46;
   --radius: 0.5rem;
+}
+
+.dark {
+  /* DARK MODE */
+  --background: #0F172A;
+  --foreground: #F1F5F9;
+  --card: #1E293B;
+  --card-foreground: #F1F5F9;
+  --popover: #1E293B;
+  --popover-foreground: #F1F5F9;
+  --primary: #10B981;
+  --primary-foreground: #0F172A;
+  --secondary: #334155;
+  --secondary-foreground: #E2E8F0;
+  --muted: #475569;
+  --muted-foreground: #94A3B8;
+  --accent: #64FC05;
+  --accent-foreground: #000000;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --border: #334155;
+  --input: #1E293B;
+  --ring: #10B981;
+  
+  /* Brand colors for dark mode */
+  --hero-green: #10B981;
+  --hero-green-dark: #059669;
+  --btn-brown: #78716C;
+  --badge-bg: #7C3A1D;
+  --badge-text: #FED7AA;
+  --card-green-bg: #10B981;
+  --section-green-title: #10B981;
+  --card-title-green: #10B981;
+  --footer-bg: #1F2937;
+  --text-black: #F1F5F9;
+  --body-bg: #0F172A;
 }
 
 @theme inline {
@@ -83,10 +119,10 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
   html {
     scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground transition-colors duration-300;
   }
 }

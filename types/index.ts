@@ -25,6 +25,14 @@ export interface Usuario {
   created_at: string
 }
 
+export interface Espacio {
+  id: string
+  nombre: string
+  descripcion: string | null
+  capacidad_maxima: number
+  created_at: string
+}
+
 export interface SesionFormData {
   titulo: string
   ponente: string

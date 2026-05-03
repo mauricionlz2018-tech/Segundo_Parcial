@@ -5,8 +5,6 @@ import { query } from "@/lib/db"
 import pool from "@/lib/db"
 import type { ResultSetHeader } from "mysql2/promise"
 
-export const runtime = "nodejs"
-
 async function requireAdmin() {
   const cookieStore = await cookies()
   const token = cookieStore.get(SESSION_COOKIE)?.value
@@ -22,11 +20,19 @@ export async function GET() {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 })
   }
 
-  const rows = await query(
-    "select id, email, username, full_name, carrera, role, created_at from users order by created_at desc"
-  )
+  try {
+    const espacios = await query(
+      "SELECT id, nombre, descripcion, capacidad_maxima, created_at FROM espacios ORDER BY created_at DESC"
+    )
 
-  return NextResponse.json({ data: rows })
+    return NextResponse.json({ data: espacios || [] })
+  } catch (error) {
+    console.error("Error:", error)
+    return NextResponse.json(
+      { error: "Error al obtener espacios" },
+      { status: 500 }
+    )
+  }
 }
 
 export async function DELETE(request: Request) {
@@ -35,29 +41,28 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 })
   }
 
-  const body = await request.json().catch(() => null)
-  const userId = body?.id
+  try {
+    const body = await request.json().catch(() => null)
+    const id = body?.id
 
-  if (!userId) {
-    return NextResponse.json({ error: "ID de usuario requerido." }, { status: 400 })
-  }
+    if (!id) {
+      return NextResponse.json(
+        { error: "ID de espacio requerido." },
+        { status: 400 }
+      )
+    }
 
-  // No permitir eliminar al admin actual
-  if (userId === admin.id) {
+    await pool.execute<ResultSetHeader>("DELETE FROM espacios WHERE id = ?", [id])
+
+    return NextResponse.json({
+      ok: true,
+      message: "Espacio eliminado exitosamente.",
+    })
+  } catch (error) {
+    console.error("Error:", error)
     return NextResponse.json(
-      { error: "No puedes eliminar tu propia cuenta." },
-      { status: 400 }
+      { error: "Error al eliminar espacio" },
+      { status: 500 }
     )
   }
-
-  // Eliminar sesiones del usuario
-  await pool.execute<ResultSetHeader>("DELETE FROM sessions WHERE user_id = ?", [userId])
-
-  // Eliminar usuario
-  await pool.execute<ResultSetHeader>("DELETE FROM users WHERE id = ?", [userId])
-
-  return NextResponse.json({
-    ok: true,
-    message: "Usuario eliminado exitosamente.",
-  })
 }
