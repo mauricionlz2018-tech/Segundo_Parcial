@@ -373,7 +373,7 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#FBF8FF" }}>
+      <div className="min-h-screen flex items-center justify-center dark:bg-[#0F172A]" style={{ backgroundColor: "#FBF8FF" }}>
         <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "#0F6B44", borderTopColor: "transparent" }} />
       </div>
     )
@@ -511,17 +511,17 @@ export default function AdminPage() {
               ) : (
                 <>
                   <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                      <p className="text-2xl font-bold text-[#1A1B22]">{sesiones.length}</p>
-                      <p className="text-xs text-gray-400 font-semibold">Total sesiones</p>
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
+                      <p className="text-2xl font-bold text-[#1A1B22] dark:text-white">{sesiones.length}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 font-semibold">Total sesiones</p>
                     </div>
-                    <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                      <p className="text-2xl font-bold text-[#1A1B22]">{uniquePonentes.length}</p>
-                      <p className="text-xs text-gray-400 font-semibold">Conferencistas</p>
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
+                      <p className="text-2xl font-bold text-[#1A1B22] dark:text-white">{uniquePonentes.length}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 font-semibold">Conferencistas</p>
                     </div>
-                    <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                      <p className="text-2xl font-bold text-[#1A1B22]">{totalRegistrados}</p>
-                      <p className="text-xs text-gray-400 font-semibold">Cupos ocupados</p>
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
+                      <p className="text-2xl font-bold text-[#1A1B22] dark:text-white">{totalRegistrados}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 font-semibold">Cupos ocupados</p>
                     </div>
                   </div>
 
@@ -544,7 +544,7 @@ export default function AdminPage() {
                                 <Clock size={12} className="text-gray-300" />
                               </div>
                               <div className="flex-1">
-                                <p className="text-sm font-semibold text-[#1A1B22]">{s.titulo}</p>
+                                <p className="text-sm font-semibold text-[#1A1B22] dark:text-white">{s.titulo}</p>
                                 <p className="text-[11px] text-gray-400">Ponente: {s.ponente}</p>
                               </div>
                               <div className="text-right">
@@ -561,7 +561,7 @@ export default function AdminPage() {
                     <div className="flex flex-col gap-4">
                       {ocupacionPorLugar.length > 0 && (
                         <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                          <div className="text-sm font-semibold text-[#1A1B22] mb-4">Ocupación por Escenario</div>
+                          <div className="text-sm font-semibold text-[#1A1B22] dark:text-white mb-4">Ocupación por Escenario</div>
                           {ocupacionPorLugar.map((o) => (
                             <div key={o.label} className="mb-4 last:mb-0">
                               <div className="flex items-center justify-between text-[11px] text-gray-500 mb-1">
@@ -576,7 +576,7 @@ export default function AdminPage() {
                         </div>
                       )}
                       <div className="bg-white rounded-2xl border border-gray-100 p-4">
-                        <p className="text-xs font-semibold text-[#1A1B22]">Acceso rápido</p>
+                        <p className="text-xs font-semibold text-[#1A1B22] dark:text-white">Acceso rápido</p>
                         <button
                           onClick={openCreateForm}
                           className="mt-3 w-full bg-[#53F000] text-black text-xs font-semibold py-2 rounded-md flex items-center justify-center gap-1"
@@ -595,7 +595,7 @@ export default function AdminPage() {
           {active === "sesiones" && (
             <div className="px-8 pb-10">
               <div className="flex items-center justify-between mb-5">
-                <h1 className="text-xl font-bold text-[#1A1B22]">Administración de Sesiones</h1>
+                <h1 className="text-xl font-bold text-[#1A1B22] dark:text-white">Administración de Sesiones</h1>
                 <button
                   onClick={openCreateForm}
                   className="bg-[#53F000] text-black text-xs font-semibold px-3 py-2 rounded-md flex items-center gap-1"
@@ -651,7 +651,7 @@ export default function AdminPage() {
                       ) : (
                         filteredSesiones.map((row) => (
                           <tr key={row.id} className="border-b border-gray-50 hover:bg-gray-50">
-                            <td className="px-5 py-3 font-semibold text-[#1A1B22]">{row.titulo}</td>
+                            <td className="px-5 py-3 font-semibold text-[#1A1B22] dark:text-white">{row.titulo}</td>
                             <td className="px-5 py-3">{row.dia}</td>
                             <td className="px-5 py-3">{row.hora_inicio}</td>
                             <td className="px-5 py-3">
@@ -693,7 +693,7 @@ export default function AdminPage() {
 
               {ocupacionPorLugar.length > 0 && (
                 <div className="mt-6 bg-white rounded-2xl border border-gray-100 p-5">
-                  <p className="text-sm font-semibold text-[#1A1B22] mb-3">Ocupación de Escenarios</p>
+                  <p className="text-sm font-semibold text-[#1A1B22] dark:text-white mb-3">Ocupación de Escenarios</p>
                   {ocupacionPorLugar.map((o) => (
                     <div key={o.label} className="mb-4 last:mb-0">
                       <div className="flex items-center justify-between text-[11px] text-gray-500 mb-1">
@@ -716,7 +716,7 @@ export default function AdminPage() {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <p className="text-[10px] text-gray-400 font-semibold">DIRECTORIO ACADÉMICO</p>
-                  <h1 className="text-xl font-bold text-[#1A1B22]">Gestión de Conferencistas</h1>
+                  <h1 className="text-xl font-bold text-[#1A1B22] dark:text-white">Gestión de Conferencistas</h1>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-2 bg-white border border-gray-100 rounded-full px-3 py-2 text-xs text-gray-400">
@@ -753,7 +753,7 @@ export default function AdminPage() {
                       <div className="w-14 h-14 rounded-full border-2 border-[#0F6B44] mx-auto mb-3 flex items-center justify-center text-xs font-semibold text-[#0F6B44]">
                         {c.nombre.split(" ").slice(0, 2).map((p) => p[0]).join("").toUpperCase()}
                       </div>
-                      <p className="text-xs font-semibold text-[#1A1B22]">{c.nombre}</p>
+                      <p className="text-xs font-semibold text-[#1A1B22] dark:text-white">{c.nombre}</p>
                       <p className="text-[10px] text-[#0F6B44] mt-1">{c.sesionesCount} sesión{c.sesionesCount !== 1 ? "es" : ""}</p>
                     </div>
                   ))}
@@ -806,12 +806,12 @@ export default function AdminPage() {
                             className="grid grid-cols-[1fr_80px_80px] gap-4 px-5 py-3 border-b border-gray-100 items-center hover:bg-gray-50"
                           >
                             <div>
-                              <p className="text-xs font-semibold text-[#1A1B22]">{esp.nombre}</p>
+                              <p className="text-xs font-semibold text-[#1A1B22] dark:text-white">{esp.nombre}</p>
                               {esp.descripcion && (
                                 <p className="text-[10px] text-gray-400">{esp.descripcion}</p>
                               )}
                             </div>
-                            <p className="text-xs font-semibold text-[#1A1B22]">{esp.capacidad_maxima}</p>
+                            <p className="text-xs font-semibold text-[#1A1B22] dark:text-white">{esp.capacidad_maxima}</p>
                             <div className="flex gap-2">
                               <button
                                 onClick={() => {
@@ -845,7 +845,7 @@ export default function AdminPage() {
                   {/* Formulario */}
                   {showEspacioForm && (
                     <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                      <h3 className="text-sm font-semibold text-[#1A1B22] mb-4">
+                      <h3 className="text-sm font-semibold text-[#1A1B22] dark:text-white mb-4">
                         {editingEspacioId ? "Editar Espacio" : "Nuevo Espacio"}
                       </h3>
                       <div className="space-y-3">
@@ -928,7 +928,7 @@ export default function AdminPage() {
                       <div className="bg-red-100 rounded-full p-3">
                         <AlertCircle size={20} className="text-red-600" />
                       </div>
-                      <h3 className="text-sm font-bold text-[#1A1B22]">Eliminar Espacio</h3>
+                      <h3 className="text-sm font-bold text-[#1A1B22] dark:text-white">Eliminar Espacio</h3>
                     </div>
                     <p className="text-xs text-gray-600 mb-6">
                       ¿Estás seguro de que deseas eliminar este espacio? Esta acción no se puede deshacer.
@@ -990,7 +990,7 @@ export default function AdminPage() {
                 </div>
 
                 <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                  <p className="text-xs font-semibold text-[#1A1B22] mb-4">Seguridad</p>
+                  <p className="text-xs font-semibold text-[#1A1B22] dark:text-white mb-4">Seguridad</p>
                   <div className="flex flex-col gap-3">
                     <div>
                       <p className="text-[10px] text-gray-400 font-semibold">CONTRASEÑA ACTUAL</p>
@@ -1010,7 +1010,7 @@ export default function AdminPage() {
               </div>
 
               <div className="mt-6 bg-white rounded-2xl border border-gray-100 p-5">
-                <p className="text-xs font-semibold text-[#1A1B22] mb-4">Notificaciones del Sistema</p>
+                <p className="text-xs font-semibold text-[#1A1B22] dark:text-white mb-4">Notificaciones del Sistema</p>
                 <div className="grid grid-cols-2 gap-4">
                   <label className="flex items-start gap-3 border border-gray-100 rounded-xl p-3 text-xs">
                     <input type="checkbox" defaultChecked className="mt-1" />
@@ -1044,7 +1044,7 @@ export default function AdminPage() {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <p className="text-[10px] text-gray-400 font-semibold">GESTIÓN</p>
-                  <h1 className="text-xl font-bold text-[#1A1B22]">Usuarios del Sistema</h1>
+                  <h1 className="text-xl font-bold text-[#1A1B22] dark:text-white">Usuarios del Sistema</h1>
                 </div>
               </div>
 
@@ -1098,7 +1098,7 @@ export default function AdminPage() {
                       ) : (
                         usuarios.map((user) => (
                           <tr key={user.id} className="border-b border-gray-50 hover:bg-gray-50">
-                            <td className="px-5 py-3 font-semibold text-[#1A1B22]">{user.username}</td>
+                            <td className="px-5 py-3 font-semibold text-[#1A1B22] dark:text-white">{user.username}</td>
                             <td className="px-5 py-3">{user.email}</td>
                             <td className="px-5 py-3">{user.full_name || "—"}</td>
                             <td className="px-5 py-3">{user.carrera || "—"}</td>
@@ -1159,7 +1159,7 @@ export default function AdminPage() {
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className="text-[10px] text-gray-400 font-semibold">PANEL ADMINISTRATIVO</p>
-                <h2 className="text-base font-bold text-[#1A1B22]">
+                <h2 className="text-base font-bold text-[#1A1B22] dark:text-white">
                   Editar Sesión Académica
                 </h2>
                 <p className="text-xs text-gray-400">Modifique los datos de la sesión seleccionada.</p>
@@ -1315,7 +1315,7 @@ export default function AdminPage() {
           <div className="bg-white rounded-xl shadow-xl w-[340px] px-5 py-4 text-xs">
             <div className="flex items-center gap-2 text-red-600 mb-2">
               <Trash2 size={14} />
-              <h3 className="text-sm font-bold text-[#1A1B22]">¿Eliminar sesión?</h3>
+              <h3 className="text-sm font-bold text-[#1A1B22] dark:text-white">¿Eliminar sesión?</h3>
             </div>
             <p className="text-[11px] text-gray-500">Esta acción no se puede deshacer.</p>
             <div className="flex items-center gap-2 mt-4">
@@ -1342,7 +1342,7 @@ export default function AdminPage() {
           <div className="bg-white rounded-xl shadow-xl w-[340px] px-5 py-4 text-xs">
             <div className="flex items-center gap-2 text-red-600 mb-2">
               <Trash2 size={14} />
-              <h3 className="text-sm font-bold text-[#1A1B22]">¿Eliminar usuario?</h3>
+              <h3 className="text-sm font-bold text-[#1A1B22] dark:text-white">¿Eliminar usuario?</h3>
             </div>
             <p className="text-[11px] text-gray-500">Esta acción no se puede deshacer. Se eliminará toda la información del usuario.</p>
             <div className="flex items-center gap-2 mt-4">
@@ -1369,7 +1369,7 @@ export default function AdminPage() {
           <div className="bg-white rounded-xl shadow-xl w-[320px] px-6 py-5 text-xs">
             <div className="flex items-center gap-2 text-red-600 mb-2">
               <LogOut size={14} />
-              <p className="text-sm font-bold text-[#1A1B22]">¿Cerrar Sesión?</p>
+              <p className="text-sm font-bold text-[#1A1B22] dark:text-white">¿Cerrar Sesión?</p>
             </div>
             <p className="text-[11px] text-gray-500">¿Estás seguro de que deseas salir del panel de administrador?</p>
             <div className="flex flex-col gap-2 mt-4">

@@ -235,7 +235,7 @@ export default function LoginPage() {
               onClick={() => window.location.href = '/'}
               className="w-full py-2 rounded-lg text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
             >
-              ← Volver a pagina principal
+              Volver a pagina principal
             </button>
           </div>
 

@@ -51,6 +51,25 @@ export default function CronogramaPage() {
   const [agendados, setAgendados] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
 
+  async function downloadPDF() {
+    try {
+      const response = await fetch("/api/sesiones/pdf")
+      if (!response.ok) throw new Error("Error al descargar PDF")
+      
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = "cronograma-jornada-2025.pdf"
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error("Error:", error)
+    }
+  }
+
   useEffect(() => {
     async function loadSesiones() {
       try {
@@ -127,10 +146,11 @@ export default function CronogramaPage() {
             </div>
             <div className="mt-6">
               <button
+                onClick={downloadPDF}
                 className="px-5 py-2.5 rounded-lg text-sm font-bold text-white border border-white/40 hover:bg-white/10 transition"
                 style={{ backgroundColor: "#006341" }}
               >
-                Descargar Programa PDF
+                ↓ Descargar Programa PDF
               </button>
             </div>
           </div>
