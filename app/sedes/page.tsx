@@ -44,7 +44,7 @@ const sedes = [
 
 export default function SedesPage() {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-white dark:bg-slate-950">
       <Navbar />
       <div className="pt-14">
         {/* Header */}
@@ -66,7 +66,7 @@ export default function SedesPage() {
           {sedes.map((sede, i) => (
             <div
               key={i}
-              className="flex flex-col md:flex-row border border-gray-100 rounded-2xl overflow-hidden"
+              className="flex flex-col md:flex-row border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900"
               style={{ boxShadow: "0 1px 8px 0 rgba(0,0,0,0.05)" }}
             >
               {/* Image */}
@@ -89,26 +89,26 @@ export default function SedesPage() {
                   >
                     {sede.badge}
                   </span>
-                  <h2 className="text-lg font-bold text-[#1A1B22]">{sede.nombre}</h2>
-                  <p className="text-sm text-gray-500 leading-relaxed">{sede.descripcion}</p>
+                  <h2 className="text-lg font-bold text-[#1A1B22] dark:text-white">{sede.nombre}</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{sede.descripcion}</p>
 
                   {/* Address */}
                   <div className="flex items-start gap-2">
-                    <MapPin size={13} className="text-gray-400 mt-0.5 shrink-0" />
-                    <p className="text-xs text-gray-400">{sede.direccion}</p>
+                    <MapPin size={13} className="text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{sede.direccion}</p>
                   </div>
                 </div>
 
                 {/* Events */}
                 <div className="flex flex-col gap-1.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
                     Actividades
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {sede.eventos.map((ev) => (
                       <span
                         key={ev}
-                        className="flex items-center gap-1.5 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-full px-3 py-1"
+                        className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-full px-3 py-1"
                       >
                         <CheckCircle size={10} style={{ color: "#064E3B" }} />
                         {ev}

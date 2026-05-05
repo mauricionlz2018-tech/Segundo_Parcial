@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useTheme } from "next-themes"
 import {
-  LayoutGrid, CalendarDays, Users, MapPin, Settings, LogOut, Pencil, Trash2, X, Clock, Filter, Plus, AlertCircle, Search, Sun, Bell
+  LayoutGrid, CalendarDays, Users, MapPin, Settings, LogOut, Pencil, Trash2, X, Clock, Filter, Plus, AlertCircle, Search, Sun, Moon, Bell, User
 } from "lucide-react"
 import type { Sesion, SesionFormData, Usuario } from "@/types"
 import NuevaSesion from '@/components/NuevaSesion'
@@ -25,9 +26,13 @@ const EMPTY_FORM: SesionFormData = {
 
 export default function AdminPage() {
   const router = useRouter()
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [active, setActive] = useState<View>("panel")
   const [currentUser, setCurrentUser] = useState<Usuario | null>(null)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [showProfile, setShowProfile] = useState(false)
 
   // Sessions state
   const [sesiones, setSesiones] = useState<Sesion[]>([])
@@ -68,6 +73,10 @@ export default function AdminPage() {
   // Search
   const [searchQuery, setSearchQuery] = useState("")
 
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     async function init() {
@@ -456,13 +465,32 @@ export default function AdminPage() {
               />
             </div>
             <div className="flex items-center gap-3 text-gray-400 dark:text-gray-500">
-              <Sun size={16} />
-              <Bell size={16} />
-              <img
-                src="/images/Umb_logo.png"
-                alt="UMB"
-                className="h-5 w-auto"
-              />
+              <button
+                onClick={() => mounted && setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
+                title="Cambiar tema"
+              >
+                {mounted && theme === 'dark' ? (
+                  <Sun size={16} className="text-yellow-500" />
+                ) : (
+                  <Moon size={16} className="text-gray-700 dark:text-gray-300" />
+                )}
+              </button>
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors cursor-pointer relative"
+                title="Notificaciones"
+              >
+                <Bell size={16} />
+                <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
+              </button>
+              <button
+                onClick={() => setShowProfile(!showProfile)}
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
+                title="Perfil"
+              >
+                <User size={16} />
+              </button>
             </div>
           </div>
 
@@ -1357,6 +1385,111 @@ export default function AdminPage() {
               >
                 CANCELAR
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL NOTIFICACIONES */}
+      {showNotifications && (
+        <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)}>
+          <div className="absolute top-16 right-8 w-80 bg-white dark:bg-[#1E293B] rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-[#0F6B44] to-[#10B981] px-5 py-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-white">Notificaciones</h3>
+                <button onClick={() => setShowNotifications(false)} className="text-white hover:bg-white/20 p-1 rounded">
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+            <div className="divide-y divide-gray-100 dark:divide-gray-700 max-h-96 overflow-y-auto">
+              <div className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer">
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-[#0F6B44] rounded-full mt-1.5 flex-shrink-0"></div>
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold text-[#1A1B22] dark:text-white">Nueva sesion creada</p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">Se ha agregado una nueva sesion academica al evento.</p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2">Hace 5 minutos</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer">
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-[#0F6B44] rounded-full mt-1.5 flex-shrink-0"></div>
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold text-[#1A1B22] dark:text-white">Nuevo usuario registrado</p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">Un nuevo participante se ha registrado en el evento.</p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2">Hace 15 minutos</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer">
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full mt-1.5 flex-shrink-0"></div>
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold text-[#1A1B22] dark:text-white">Capacidad casi llena</p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">La sesion Programacion Web React ha alcanzado el 80% de su capacidad.</p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2">Hace 1 hora</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-gray-100 dark:border-gray-700 px-4 py-3">
+              <button className="w-full text-xs font-semibold text-[#0F6B44] dark:text-[#10B981] py-2 text-center hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors">
+                Ver todas las notificaciones
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PERFIL */}
+      {showProfile && (
+        <div className="fixed inset-0 z-40" onClick={() => setShowProfile(false)}>
+          <div className="absolute top-16 right-8 w-72 bg-white dark:bg-[#1E293B] rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-[#0F6B44] to-[#10B981] px-5 py-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-white">Mi Perfil</h3>
+                <button onClick={() => setShowProfile(false)} className="text-white hover:bg-white/20 p-1 rounded">
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+            <div className="p-5">
+              <div className="flex items-center gap-4 mb-5 pb-5 border-b border-gray-100 dark:border-gray-700">
+                <div className="w-12 h-12 bg-[#0F6B44] dark:bg-[#10B981] rounded-full flex items-center justify-center">
+                  <User size={24} className="text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-[#1A1B22] dark:text-white">{currentUser?.full_name || currentUser?.username || 'Administrador'}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{currentUser?.email || 'admin@email.com'}</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase">Rol</p>
+                  <p className="text-xs text-[#1A1B22] dark:text-white mt-1 font-semibold">Administrador</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase">Correo</p>
+                  <p className="text-xs text-[#1A1B22] dark:text-white mt-1 break-all">{currentUser?.email || 'admin@email.com'}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase">Estado</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    <p className="text-xs text-green-600 dark:text-green-400 font-semibold">En linea</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 mt-5 pt-5 border-t border-gray-100 dark:border-gray-700">
+                <button onClick={() => { setActive("configuracion"); setShowProfile(false); }} className="w-full text-xs font-semibold text-[#0F6B44] dark:text-[#10B981] py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left">
+                  Ajustes
+                </button>
+                <button onClick={() => { setShowLogoutConfirm(true); setShowProfile(false); }} className="w-full text-xs font-semibold text-red-600 dark:text-red-400 py-2 px-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left">
+                  Cerrar Sesion
+                </button>
+              </div>
             </div>
           </div>
         </div>

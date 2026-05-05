@@ -1,13 +1,28 @@
+﻿"use client"
+
 import Link from "next/link"
 import Image from "next/image"
+import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
 
 export default function Hero() {
+  const { theme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const isDark = mounted && theme === "dark"
+
   return (
     <section
       id="inicio"
       className="pt-14 min-h-[520px] flex items-center relative overflow-hidden"
       style={{
-        background: "linear-gradient(135deg, #64FC05 0%, #006341 100%)",
+        background: isDark
+          ? "linear-gradient(135deg, #1A2634 0%, #0F4C3C 100%)"
+          : "linear-gradient(135deg, #64FC05 0%, #006341 100%)",
       }}
     >
       {/* Background texture: building louvre grid image */}
@@ -18,7 +33,7 @@ export default function Hero() {
             "url('images/UMB_SAN_JOSE.png')",
           backgroundSize: "cover",
           backgroundPosition: "center",
-          opacity: 0.15,
+          opacity: isDark ? 0.08 : 0.15,
           mixBlendMode: "overlay",
         }}
         aria-hidden="true"
@@ -30,7 +45,10 @@ export default function Hero() {
             {/* Badge */}
             <div
               className="self-start text-xs font-semibold px-3 py-1 rounded-full mb-6"
-              style={{ backgroundColor: "#FDDC98", color: "#735B24" }}
+              style={{
+                backgroundColor: isDark ? "#1F3A4C" : "#FDDC98",
+                color: isDark ? "#7DD3FC" : "#735B24"
+              }}
             >
               San José del Rincón, 2025
             </div>
@@ -46,8 +64,10 @@ export default function Hero() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
               <Link
                 href="#registro"
-                className="inline-flex items-center justify-center px-6 py-3 rounded-md text-white text-sm font-semibold"
-                style={{ backgroundColor: "#3F4942" }}
+                className="inline-flex items-center justify-center px-6 py-3 rounded-md text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+                style={{
+                  backgroundColor: isDark ? "#10B981" : "#3F4942"
+                }}
               >
                 Registrarse Ahora
               </Link>

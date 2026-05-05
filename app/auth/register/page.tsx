@@ -71,28 +71,27 @@ export default function RegisterPage() {
   if (success) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center px-4"
+        className="min-h-screen flex items-center justify-center px-4 dark:bg-[#0F172A]"
         style={{
           backgroundImage:
             "repeating-linear-gradient(135deg, #e5e7eb 0px, #e5e7eb 1px, transparent 1px, transparent 12px)",
           backgroundColor: "#f3f4f6",
         }}
       >
-        <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg px-8 py-10 text-center">
-          <CheckCircle2 size={52} className="mx-auto mb-4 text-[#065F46]" />
-          <h2 className="text-xl font-bold text-[#1A1B22] mb-2">¡Cuenta creada!</h2>
-          <p className="text-xs text-gray-400 mb-6">
+        <div className="w-full max-w-sm bg-white dark:bg-[#1E293B] rounded-2xl shadow-lg dark:shadow-xl px-8 py-10 text-center border border-gray-200 dark:border-gray-700">
+          <CheckCircle2 size={52} className="mx-auto mb-4 text-[#065F46] dark:text-[#10B981]" />
+          <h2 className="text-xl font-bold text-[#1A1B22] dark:text-white mb-2">¡Cuenta creada!</h2>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-6">
             Tu cuenta ya esta lista para iniciar sesion.
           </p>
-          <div className="rounded-xl px-5 py-4 mb-6 bg-gray-50 border border-gray-200">
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Tu usuario asignado</p>
-            <p className="text-lg font-bold text-[#065F46] font-mono">{assignedUsername}</p>
-            <p className="text-[10px] text-gray-400 mt-1">Guárdalo para iniciar sesión</p>
+          <div className="rounded-xl px-5 py-4 mb-6 bg-gray-50 dark:bg-[#0F172A] border border-gray-200 dark:border-gray-700">
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Tu usuario asignado</p>
+            <p className="text-lg font-bold text-[#065F46] dark:text-[#10B981] font-mono">{assignedUsername}</p>
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">Guárdalo para iniciar sesión</p>
           </div>
           <button
             onClick={() => router.push("/auth/login")}
-            className="w-full py-3 rounded-lg text-sm font-bold text-black"
-            style={{ backgroundColor: "#64FC05" }}
+            className="w-full py-3 rounded-lg text-sm font-bold text-black dark:text-white bg-[#64FC05] dark:bg-[#10B981] hover:opacity-90"
           >
             Ir a Iniciar Sesión
           </button>
@@ -104,7 +103,7 @@ export default function RegisterPage() {
   /* ── Form ── */
   return (
       <div
-      className="min-h-screen flex items-center justify-center px-4 py-10"
+      className="min-h-screen flex items-center justify-center px-4 py-10 dark:bg-[#0F172A]"
       style={{
         backgroundImage:
           "repeating-linear-gradient(135deg, #e5e7eb 0px, #e5e7eb 1px, transparent 1px, transparent 12px)",
@@ -112,7 +111,7 @@ export default function RegisterPage() {
       }}
     >
       <div className="w-full max-w-sm">
-        <div className="bg-white square-2xl shadow-lg px-7 py-8">
+        <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-lg dark:shadow-xl px-7 py-8 border border-gray-200 dark:border-gray-700">
           {/* Logo */}
           <div className="flex justify-center mb-4">
             <div className="relative h-24 w-24">
@@ -128,11 +127,11 @@ export default function RegisterPage() {
 
           {/* Header */}
           <div className="mb-6">
-            <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-1">
+            <p className="text-xs font-semibold tracking-widest text-gray-400 dark:text-gray-500 uppercase mb-1">
               UES San José del Rincón
             </p>
-            <h1 className="text-2xl font-bold text-[#1A1B22]">Crear cuenta</h1>
-            <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+            <h1 className="text-2xl font-bold text-[#1A1B22] dark:text-white">Crear cuenta</h1>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 leading-relaxed">
               Crea una cuenta para acceder a la información de los eventos próximos de la UES San José del Rincón.
             </p>
           </div>
@@ -140,7 +139,7 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {/* Nombre completo */}
             <div className="flex flex-col gap-1">
-              <label htmlFor="fullName" className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+              <label htmlFor="fullName" className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 Nombre Completo
               </label>
               <input
@@ -150,13 +149,13 @@ export default function RegisterPage() {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Ingresa tu nombre"
-                className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-[#1A1B22] outline-none focus:border-[#64FC05] focus:ring-1 focus:ring-[#64FC05] transition bg-gray-50/40"
+                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3.5 py-2.5 text-sm text-[#1A1B22] dark:text-white outline-none focus:border-[#64FC05] dark:focus:border-[#10B981] focus:ring-1 focus:ring-[#64FC05] dark:focus:ring-[#10B981] transition bg-gray-50/40 dark:bg-[#0F172A]"
               />
             </div>
 
             {/* Correo */}
             <div className="flex flex-col gap-1">
-              <label htmlFor="email" className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+              <label htmlFor="email" className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 Correo Institucional o Matrícula
               </label>
               <input
@@ -166,13 +165,13 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="usuario@ues.edu.mx"
-                className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-[#1A1B22] outline-none focus:border-[#64FC05] focus:ring-1 focus:ring-[#64FC05] transition bg-gray-50/40"
+                className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3.5 py-2.5 text-sm text-[#1A1B22] dark:text-white outline-none focus:border-[#64FC05] dark:focus:border-[#10B981] focus:ring-1 focus:ring-[#64FC05] dark:focus:ring-[#10B981] transition bg-gray-50/40 dark:bg-[#0F172A]"
               />
             </div>
 
             {/* Carrera */}
             <div className="flex flex-col gap-1">
-              <label htmlFor="carrera" className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+              <label htmlFor="carrera" className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 Carrera
               </label>
               <div className="relative">
@@ -181,14 +180,14 @@ export default function RegisterPage() {
                   required
                   value={carrera}
                   onChange={(e) => setCarrera(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-[#1A1B22] outline-none focus:border-[#64FC05] focus:ring-1 focus:ring-[#64FC05] transition bg-gray-50/40 appearance-none pr-8"
+                  className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3.5 py-2.5 text-sm text-[#1A1B22] dark:text-white outline-none focus:border-[#64FC05] dark:focus:border-[#10B981] focus:ring-1 focus:ring-[#64FC05] dark:focus:ring-[#10B981] transition bg-gray-50/40 dark:bg-[#0F172A] appearance-none pr-8"
                 >
                   <option value="" disabled>Selecciona tu carrera</option>
                   {CARRERAS.map((c) => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-600">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
                     <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
@@ -199,7 +198,7 @@ export default function RegisterPage() {
             {/* Contraseñas en fila */}
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1">
-                <label htmlFor="password" className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                <label htmlFor="password" className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                   Contraseña
                 </label>
                 <div className="relative">
@@ -210,15 +209,15 @@ export default function RegisterPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 pr-8 text-sm text-[#1A1B22] outline-none focus:border-[#64FC05] focus:ring-1 focus:ring-[#64FC05] transition bg-gray-50/40"
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 pr-8 text-sm text-[#1A1B22] dark:text-white outline-none focus:border-[#64FC05] dark:focus:border-[#10B981] focus:ring-1 focus:ring-[#64FC05] dark:focus:ring-[#10B981] transition bg-gray-50/40 dark:bg-[#0F172A]"
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400" aria-label="toggle">
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-600" aria-label="toggle">
                     {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                 </div>
               </div>
               <div className="flex flex-col gap-1">
-                <label htmlFor="confirm" className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                <label htmlFor="confirm" className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                   Confirmar
                 </label>
                 <div className="relative">
@@ -229,9 +228,9 @@ export default function RegisterPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 pr-8 text-sm text-[#1A1B22] outline-none focus:border-[#64FC05] focus:ring-1 focus:ring-[#64FC05] transition bg-gray-50/40"
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 pr-8 text-sm text-[#1A1B22] dark:text-white outline-none focus:border-[#64FC05] dark:focus:border-[#10B981] focus:ring-1 focus:ring-[#64FC05] dark:focus:ring-[#10B981] transition bg-gray-50/40 dark:bg-[#0F172A]"
                   />
-                  <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400" aria-label="toggle">
+                  <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-600" aria-label="toggle">
                     {showConfirm ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                 </div>
@@ -240,7 +239,7 @@ export default function RegisterPage() {
 
             {/* Error */}
             {error && (
-              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg px-3 py-2">
                 {error}
               </p>
             )}
@@ -249,16 +248,15 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-lg text-sm font-bold text-black transition-opacity disabled:opacity-60 mt-1"
-              style={{ backgroundColor: "#64FC05" }}
+              className="w-full py-3 rounded-lg text-sm font-bold text-black dark:text-white transition-opacity disabled:opacity-60 mt-1 bg-[#64FC05] dark:bg-[#10B981] hover:opacity-90"
             >
               {loading ? "Registrando..." : "Registrarse"}
             </button>
           </form>
 
-          <p className="text-center text-xs text-gray-400 mt-5">
+          <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-5">
             ¿Ya eres parte del sistema?{" "}
-            <Link href="/auth/login" className="text-[#065F46] font-semibold hover:underline">
+            <Link href="/auth/login" className="text-[#065F46] dark:text-[#10B981] font-semibold hover:underline">
               Iniciar sesión aquí
             </Link>
           </p>

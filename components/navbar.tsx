@@ -45,11 +45,11 @@ export default function Navbar() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 shadow-sm">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-[#1A1F2E] border-b border-gray-100 dark:border-gray-800 shadow-sm dark:shadow-lg">
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
         <div className="flex items-center justify-between h-14">
           {/* Brand */}
-          <Link href="/" className="text-sm font-bold text-black tracking-wide uppercase">
+          <Link href="/" className="text-sm font-bold text-black dark:text-white tracking-wide uppercase">
             UES San José del Rincón
           </Link>
 
@@ -61,8 +61,8 @@ export default function Navbar() {
                 href={link.href}
                 className={`text-sm transition-colors ${
                   pathname === link.href
-                    ? "text-[#065F46] font-semibold"
-                    : "text-black hover:text-[#065F46]"
+                    ? "text-[#065F46] dark:text-[#10B981] font-semibold"
+                    : "text-black dark:text-gray-300 hover:text-[#065F46] dark:hover:text-[#10B981]"
                 }`}
               >
                 {link.label}
@@ -78,20 +78,20 @@ export default function Navbar() {
                 {role === "admin" && (
                   <Link
                     href="/admin"
-                    className="text-sm text-[#065F46] font-semibold hover:underline"
+                    className="text-sm text-[#065F46] dark:text-[#10B981] font-semibold hover:underline"
                   >
                     Panel Admin
                   </Link>
                 )}
-                <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                  <Link href="/perfil" className="flex items-center gap-1.5 hover:text-[#065F46] transition-colors">
+                <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+                  <Link href="/perfil" className="flex items-center gap-1.5 hover:text-[#065F46] dark:hover:text-[#10B981] transition-colors">
                     <User size={14} />
                     <span className="max-w-[120px] truncate">{user.email}</span>
                   </Link>
                 </div>
                 <button
                   onClick={handleSignOut}
-                  className="flex items-center gap-1.5 text-sm text-black hover:text-red-600 transition-colors"
+                  className="flex items-center gap-1.5 text-sm text-black dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                 >
                   <LogOut size={14} />
                   Salir
@@ -101,13 +101,13 @@ export default function Navbar() {
               <>
                 <Link
                   href="/auth/register"
-                  className="text-sm text-black hover:text-[#065F46] transition-colors"
+                  className="text-sm text-black dark:text-gray-300 hover:text-[#065F46] dark:hover:text-[#10B981] transition-colors"
                 >
                   Registro
                 </Link>
                 <Link
                   href="/auth/login"
-                  className="text-sm font-semibold px-4 py-1.5 rounded-md text-black transition-opacity hover:opacity-80"
+                  className="text-sm font-semibold px-4 py-1.5 rounded-md text-black dark:text-gray-900 transition-opacity hover:opacity-80"
                   style={{ backgroundColor: "#64FC05" }}
                 >
                   Iniciar sesión
@@ -119,7 +119,7 @@ export default function Navbar() {
           {/* Mobile menu button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 text-black"
+            className="md:hidden p-2 text-black dark:text-white"
             aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
           >
             {isOpen ? <X size={20} /> : <Menu size={20} />}
@@ -129,7 +129,7 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {isOpen && (
-        <div className="md:hidden bg-white border-t border-gray-100">
+        <div className="md:hidden bg-white dark:bg-[#1A1F2E] border-t border-gray-100 dark:border-gray-800">
           <nav className="flex flex-col px-6 py-4 gap-3">
             {navLinks.map((link) => (
               <Link
@@ -137,7 +137,7 @@ export default function Navbar() {
                 href={link.href}
                 onClick={() => setIsOpen(false)}
                 className={`text-sm py-1 ${
-                  pathname === link.href ? "text-[#065F46] font-semibold" : "text-black"
+                  pathname === link.href ? "text-[#065F46] dark:text-[#10B981] font-semibold" : "text-black dark:text-gray-300"
                 }`}
               >
                 {link.label}

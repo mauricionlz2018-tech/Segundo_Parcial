@@ -28,6 +28,23 @@ const tipoBadge: Record<string, { bg: string; text: string }> = {
   Cierre: { bg: "#785F28", text: "#ffffff" },
 }
 
+const diasSemana: Record<string, string> = {
+  "1": "Lunes",
+  "2": "Martes",
+  "3": "Miércoles",
+  "4": "Jueves",
+  "5": "Viernes",
+  "Lunes": "Lunes",
+  "Martes": "Martes",
+  "Miércoles": "Miércoles",
+  "Jueves": "Jueves",
+  "Viernes": "Viernes",
+}
+
+function getNombreDia(dia: string): string {
+  return diasSemana[dia] || dia
+}
+
 export default function CronogramaPage() {
   const [sesiones, setSesiones] = useState<Record<string, Sesion[]>>({})
   const [diaActivo, setDiaActivo] = useState<string>("todos")
@@ -203,7 +220,7 @@ export default function CronogramaPage() {
                     backgroundColor: diaActivo === dia ? "#064E3B" : undefined,
                   }}
                 >
-                  {dia}
+                  {getNombreDia(dia)}
                 </button>
               ))}
             </div>
@@ -220,7 +237,7 @@ export default function CronogramaPage() {
                 >
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{evento.dia}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{getNombreDia(evento.dia)}</p>
                       <h3 className="text-sm font-bold text-[#1A1B22] dark:text-white leading-snug">
                         {evento.titulo}
                       </h3>
@@ -279,7 +296,7 @@ export default function CronogramaPage() {
                 >
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{evento.dia}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{getNombreDia(evento.dia)}</p>
                       <h3 className="text-sm font-bold text-[#1A1B22] dark:text-white leading-snug">
                         {evento.titulo}
                       </h3>

@@ -1,4 +1,4 @@
-import Image from "next/image"
+﻿import Image from "next/image"
 
 const programs = [
   {
@@ -29,10 +29,10 @@ const programs = [
 
 export default function Programs() {
   return (
-    <section className="py-12 px-6 lg:px-10" style={{ backgroundColor: "#FBF8FF" }}>
+    <section className="py-12 px-6 lg:px-10 bg-[#FBF8FF] dark:bg-[#0F172A]">
       <div className="max-w-7xl mx-auto">
         {/* Section title */}
-        <h2 className="text-2xl font-bold text-center mb-8" style={{ color: "#064E3B" }}>
+        <h2 className="text-2xl font-bold text-center mb-8 text-[#064E3B] dark:text-[#10B981]">
           Nuestros enfoques
         </h2>
 
@@ -41,7 +41,7 @@ export default function Programs() {
           {programs.map((program) => (
             <article
               key={program.title}
-              className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm flex flex-col"
+              className="bg-white dark:bg-[#1E293B] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-lg flex flex-col"
             >
               {/* Image */}
               <div className="relative h-44 overflow-hidden">
@@ -54,11 +54,11 @@ export default function Programs() {
               </div>
 
               {/* Content */}
-              <div className="p-5 flex flex-col flex-1 border-b-4" style={{ borderBottomColor: "#64FC05" }}>
-                <h3 className="text-sm font-bold mb-2 leading-snug" style={{ color: "#065F46" }}>
+              <div className="p-5 flex flex-col flex-1 border-b-4 border-[#64FC05] dark:border-[#10B981]">
+                <h3 className="text-sm font-bold mb-2 leading-snug text-[#065F46] dark:text-[#10B981]">
                   {program.title}
                 </h3>
-                <p className="text-xs text-gray-500 leading-relaxed">
+                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
                   {program.description}
                 </p>
               </div>
