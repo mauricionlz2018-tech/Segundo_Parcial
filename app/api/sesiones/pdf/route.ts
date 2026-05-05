@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { PDFDocument, rgb } from 'pdf-lib'
-import { query } from '@/lib/db'
+import mysql from 'mysql2/promise'
 
 function getDayName(dayNumber: string | number): string {
   const days: Record<string, string> = {
@@ -14,25 +14,39 @@ function getDayName(dayNumber: string | number): string {
 }
 
 export async function GET() {
+  let connection: mysql.Connection | null = null
   try {
-    // Traer sesiones de la base de datos
-    const sessions: any[] = await query(
-      'SELECT * FROM sesiones ORDER BY dia ASC, hora_inicio ASC'
-    )
+    // Conectar directamente a la BD
+    connection = await mysql.createConnection({
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      port: Number(process.env.DB_PORT ?? 3306),
+    })
 
-    if (!sessions || sessions.length === 0) {
+    // Ejecutar query
+    const [sessions] = await connection.execute('SELECT * FROM sesiones ORDER BY dia ASC, hora_inicio ASC')
+    const sessionsList = Array.isArray(sessions) ? sessions : []
+
+    console.log('Sesiones obtenidas:', sessionsList.length)
+    
+    if (!sessionsList || sessionsList.length === 0) {
+      console.error('No hay sesiones en la BD')
       return new NextResponse('No hay sesiones disponibles', { status: 404 })
     }
 
     // Agrupar por día
     const grouped: Record<string, any[]> = {}
-    sessions.forEach((session) => {
+    sessionsList.forEach((session: any) => {
       const dayNum = String(session.dia)
       if (!grouped[dayNum]) {
         grouped[dayNum] = []
       }
       grouped[dayNum].push(session)
     })
+
+    console.log('Sesiones agrupadas:', Object.keys(grouped))
 
     // Crear PDF
     const pdfDoc = await PDFDocument.create()
@@ -243,5 +257,9 @@ export async function GET() {
       { error: 'Error al generar el PDF', details: String(error) },
       { status: 500 }
     )
+  } finally {
+    if (connection) {
+      await connection.end()
+    }
   }
 }
