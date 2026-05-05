@@ -42,7 +42,21 @@ const diasSemana: Record<string, string> = {
 }
 
 function getNombreDia(dia: string): string {
-  return diasSemana[dia] || dia
+  // Si es un número (1-5), usar el mapeo directo
+  if (diasSemana[dia]) {
+    return diasSemana[dia]
+  }
+  
+  // Si es una fecha ISO, extraer el día de la semana
+  try {
+    const date = new Date(dia)
+    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+    const dayName = days[date.getUTCDay()]
+    const dayNum = date.getUTCDate()
+    return `${dayName} ${dayNum}`
+  } catch {
+    return dia
+  }
 }
 
 export default function CronogramaPage() {
@@ -123,7 +137,7 @@ export default function CronogramaPage() {
   }
 
   return (
-    <main className="min-h-screen" style={{ backgroundColor: "#FBF8FF" }}>
+    <main className="min-h-screen bg-white dark:bg-slate-950">
       <Navbar />
       <div className="pt-14">
         {/* Top two-column layout */}

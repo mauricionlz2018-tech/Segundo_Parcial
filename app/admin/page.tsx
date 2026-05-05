@@ -24,6 +24,31 @@ const EMPTY_FORM: SesionFormData = {
   descripcion: "",
 }
 
+function getNombreDia(dia: string): string {
+  const diasSemana: Record<string, string> = {
+    "1": "Lunes",
+    "2": "Martes",
+    "3": "Miércoles",
+    "4": "Jueves",
+    "5": "Viernes"
+  }
+  
+  // Si es un número (1-5), usar el mapeo directo
+  if (diasSemana[dia]) {
+    return diasSemana[dia]
+  }
+  
+  // Si es una fecha ISO, extraer el día de la semana
+  try {
+    const date = new Date(dia)
+    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+    const dayName = days[date.getUTCDay()]
+    return dayName
+  } catch {
+    return dia
+  }
+}
+
 export default function AdminPage() {
   const router = useRouter()
   const { theme, setTheme } = useTheme()
@@ -453,7 +478,7 @@ export default function AdminPage() {
           </div>
         </aside>
 
-        <section className="flex-1 overflow-auto bg-[#FBF8FF] dark:bg-[#0F172A]">
+        <section className="flex-1 overflow-auto bg-white dark:bg-slate-950">
           <div className="flex items-center justify-between px-8 py-4 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-[#1E293B]">
             <div className="flex items-center gap-2 bg-white dark:bg-[#0F172A] border border-gray-100 dark:border-gray-700 rounded-full px-4 py-2 text-xs text-gray-400 dark:text-gray-500 w-[280px]">
               <Search size={14} />
@@ -533,12 +558,12 @@ export default function AdminPage() {
                         </div>
                         <button onClick={() => setActive("sesiones")} className="text-xs text-[#0F6B44] font-semibold">Ver todas</button>
                       </div>
-                      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                      <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
                         {sesiones.length === 0 ? (
                           <p className="text-xs text-gray-400 text-center py-8">No hay sesiones registradas aún.</p>
                         ) : (
                           sesiones.slice(0, 5).map((s, index) => (
-                            <div key={s.id} className={`flex items-center gap-4 px-5 py-4 ${index !== Math.min(sesiones.length, 5) - 1 ? "border-b border-gray-100" : ""}`}>
+                            <div key={s.id} className={`flex items-center gap-4 px-5 py-4 ${index !== Math.min(sesiones.length, 5) - 1 ? "border-b border-gray-100 dark:border-gray-700" : ""}`}>
                               <div className="flex flex-col items-center w-12">
                                 <span className="text-xs text-gray-400">{s.hora_inicio}</span>
                                 <Clock size={12} className="text-gray-300" />
@@ -560,7 +585,7 @@ export default function AdminPage() {
                     </div>
                     <div className="flex flex-col gap-4">
                       {ocupacionPorLugar.length > 0 && (
-                        <div className="bg-white rounded-2xl border border-gray-100 p-5">
+                        <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-5">
                           <div className="text-sm font-semibold text-[#1A1B22] dark:text-white mb-4">Ocupación por Escenario</div>
                           {ocupacionPorLugar.map((o) => (
                             <div key={o.label} className="mb-4 last:mb-0">
@@ -575,7 +600,7 @@ export default function AdminPage() {
                           ))}
                         </div>
                       )}
-                      <div className="bg-white rounded-2xl border border-gray-100 p-4">
+                      <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-4">
                         <p className="text-xs font-semibold text-[#1A1B22] dark:text-white">Acceso rápido</p>
                         <button
                           onClick={openCreateForm}
@@ -605,17 +630,17 @@ export default function AdminPage() {
               </div>
 
               <div className="grid grid-cols-[1fr_1fr_1fr_1.1fr] gap-4 mb-6">
-                <div className="bg-white rounded-2xl border border-gray-100 p-4">
+                <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-4">
                   <p className="text-[10px] text-gray-400 font-semibold">Total Sesiones</p>
-                  <p className="text-xl font-bold text-[#1A1B22]">{sesiones.length}</p>
+                  <p className="text-xl font-bold text-[#1A1B22] dark:text-white">{sesiones.length}</p>
                 </div>
-                <div className="bg-white rounded-2xl border border-gray-100 p-4">
+                <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-4">
                   <p className="text-[10px] text-gray-400 font-semibold">Escenarios</p>
-                  <p className="text-xl font-bold text-[#1A1B22]">{ocupacionPorLugar.length}</p>
+                  <p className="text-xl font-bold text-[#1A1B22] dark:text-white">{ocupacionPorLugar.length}</p>
                 </div>
-                <div className="bg-white rounded-2xl border border-gray-100 p-4">
+                <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-4">
                   <p className="text-[10px] text-gray-400 font-semibold">Ponentes</p>
-                  <p className="text-xl font-bold text-[#1A1B22]">{uniquePonentes.length}</p>
+                  <p className="text-xl font-bold text-[#1A1B22] dark:text-white">{uniquePonentes.length}</p>
                 </div>
                 <div className="bg-[#FFF7E5] rounded-2xl border border-[#F3D9A4] p-4">
                   <p className="text-[10px] text-[#735B24] font-semibold">Cupos ocupados</p>
@@ -628,9 +653,9 @@ export default function AdminPage() {
                   <div className="w-6 h-6 rounded-full border-2 animate-spin" style={{ borderColor: "#0F6B44", borderTopColor: "transparent" }} />
                 </div>
               ) : (
-                <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
                   <table className="w-full text-xs">
-                    <thead className="bg-[#F6F6F9] text-gray-400">
+                    <thead className="bg-[#F6F6F9] dark:bg-[#0F172A] text-gray-400">
                       <tr>
                         <th className="text-left px-5 py-3 font-semibold">Nombre de Sesión</th>
                         <th className="text-left px-5 py-3 font-semibold">Día</th>
@@ -641,7 +666,7 @@ export default function AdminPage() {
                         <th className="text-right px-5 py-3 font-semibold">Acciones</th>
                       </tr>
                     </thead>
-                    <tbody className="text-gray-600">
+                    <tbody className="text-gray-600 dark:text-gray-400">
                       {filteredSesiones.length === 0 ? (
                         <tr>
                           <td colSpan={7} className="text-center py-8 text-gray-400">
@@ -650,9 +675,9 @@ export default function AdminPage() {
                         </tr>
                       ) : (
                         filteredSesiones.map((row) => (
-                          <tr key={row.id} className="border-b border-gray-50 hover:bg-gray-50">
+                          <tr key={row.id} className="border-b border-gray-50 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#0F172A]">
                             <td className="px-5 py-3 font-semibold text-[#1A1B22] dark:text-white">{row.titulo}</td>
-                            <td className="px-5 py-3">{row.dia}</td>
+                            <td className="px-5 py-3 dark:text-white">{getNombreDia(row.dia)}</td>
                             <td className="px-5 py-3">{row.hora_inicio}</td>
                             <td className="px-5 py-3">
                               <span className="bg-[#EEF2F7] text-[#475569] px-2 py-1 rounded-full text-[10px]">
@@ -692,7 +717,7 @@ export default function AdminPage() {
               )}
 
               {ocupacionPorLugar.length > 0 && (
-                <div className="mt-6 bg-white rounded-2xl border border-gray-100 p-5">
+                <div className="mt-6 bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-5">
                   <p className="text-sm font-semibold text-[#1A1B22] dark:text-white mb-3">Ocupación de Escenarios</p>
                   {ocupacionPorLugar.map((o) => (
                     <div key={o.label} className="mb-4 last:mb-0">
@@ -749,8 +774,8 @@ export default function AdminPage() {
               ) : (
                 <div className="grid grid-cols-3 gap-5">
                   {filteredPonentes.map((c) => (
-                    <div key={c.nombre} className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
-                      <div className="w-14 h-14 rounded-full border-2 border-[#0F6B44] mx-auto mb-3 flex items-center justify-center text-xs font-semibold text-[#0F6B44]">
+                    <div key={c.nombre} className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-4 text-center">
+                      <div className="w-14 h-14 rounded-full border-2 border-[#0F6B44] mx-auto mb-3 flex items-center justify-center text-xs font-semibold text-[#0F6B44] dark:text-green-400">
                         {c.nombre.split(" ").slice(0, 2).map((p) => p[0]).join("").toUpperCase()}
                       </div>
                       <p className="text-xs font-semibold text-[#1A1B22] dark:text-white">{c.nombre}</p>

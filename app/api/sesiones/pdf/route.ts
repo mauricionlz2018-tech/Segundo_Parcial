@@ -2,15 +2,19 @@ import { NextResponse } from 'next/server'
 import { PDFDocument, rgb } from 'pdf-lib'
 import mysql from 'mysql2/promise'
 
-function getDayName(dayNumber: string | number): string {
-  const days: Record<string, string> = {
-    '1': 'Lunes',
-    '2': 'Martes',
-    '3': 'Miércoles',
-    '4': 'Jueves',
-    '5': 'Viernes',
-  }
-  return days[String(dayNumber)] || String(dayNumber)
+function getDayNameFromDate(dateString: string): string {
+  const date = new Date(dateString)
+  const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+  return days[date.getUTCDay()]
+}
+
+function formatDate(dateString: string): string {
+  const date = new Date(dateString)
+  const day = date.getUTCDate()
+  const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+  const month = monthNames[date.getUTCMonth()]
+  const year = date.getUTCFullYear()
+  return `${day} de ${month} de ${year}`
 }
 
 export async function GET() {
@@ -20,7 +24,7 @@ export async function GET() {
     connection = await mysql.createConnection({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
+      password: process.env.DB_PASSWORD || '',
       database: process.env.DB_NAME,
       port: Number(process.env.DB_PORT ?? 3306),
     })
@@ -39,11 +43,11 @@ export async function GET() {
     // Agrupar por día
     const grouped: Record<string, any[]> = {}
     sessionsList.forEach((session: any) => {
-      const dayNum = String(session.dia)
-      if (!grouped[dayNum]) {
-        grouped[dayNum] = []
+      const dayName = getDayNameFromDate(session.dia)
+      if (!grouped[dayName]) {
+        grouped[dayName] = []
       }
-      grouped[dayNum].push(session)
+      grouped[dayName].push(session)
     })
 
     console.log('Sesiones agrupadas:', Object.keys(grouped))
@@ -55,8 +59,9 @@ export async function GET() {
     const lightGreen = rgb(100 / 255, 252 / 255, 5 / 255) // #64FC05
     const darkGreen = rgb(6 / 255, 79 / 255, 68 / 255) // #064E3B
     const darkText = rgb(26 / 255, 27 / 255, 34 / 255) // #1A1B22
-    const lightText = rgb(100 / 255, 100 / 255, 100 / 255) // gris
+    const lightText = rgb(120 / 255, 120 / 255, 120 / 255)
     const white = rgb(255 / 255, 255 / 255, 255 / 255)
+    const veryLightGray = rgb(245 / 255, 245 / 255, 245 / 255)
 
     const boldFont = await pdfDoc.embedFont('Helvetica-Bold')
     const regularFont = await pdfDoc.embedFont('Helvetica')
@@ -64,184 +69,194 @@ export async function GET() {
     let page = pdfDoc.addPage([595, 842]) // A4
     let yPosition = 800
 
-    // Encabezado con fondo verde
+    // ===== ENCABEZADO =====
     page.drawRectangle({
       x: 0,
-      y: yPosition - 60,
+      y: yPosition - 70,
       width: 595,
-      height: 60,
+      height: 70,
       color: lightGreen,
     })
 
-    // Título
     page.drawText('12va JORNADA ACADÉMICA Y CULTURAL', {
       x: 40,
-      y: yPosition - 25,
-      size: 24,
+      y: yPosition - 30,
+      size: 26,
       color: darkText,
       font: boldFont,
-      maxWidth: 515,
     })
 
-    // Subtítulo
     page.drawText('Universidad Mexiquense del Bicentenario', {
       x: 40,
-      y: yPosition - 50,
-      size: 11,
+      y: yPosition - 55,
+      size: 10,
       color: darkText,
       font: regularFont,
     })
 
-    yPosition -= 80
+    yPosition -= 85
 
     // Fecha del evento
-    page.drawText('1 al 5 de Diciembre, 2025', {
-      x: 40,
-      y: yPosition,
-      size: 10,
-      color: lightText,
-      font: regularFont,
-    })
+    if (sessionsList.length > 0) {
+      const firstDate = formatDate(sessionsList[0].dia)
+      page.drawText(`Cronograma de Actividades - ${firstDate}`, {
+        x: 40,
+        y: yPosition,
+        size: 11,
+        color: darkGreen,
+        font: boldFont,
+      })
+    }
 
     yPosition -= 25
 
-    // Procesar cada día
-    const dayOrder = ['1', '2', '3', '4', '5']
+    // ===== PROCESAMIENTO DE DÍAS Y SESIONES =====
+    const dayOrder = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
     
-    for (const dayNum of dayOrder) {
-      const daySessions = grouped[dayNum]
+    for (const dayName of dayOrder) {
+      const daySessions = grouped[dayName]
       if (!daySessions) continue
 
       // Verificar si necesitamos nueva página
-      if (yPosition < 150) {
+      if (yPosition < 180) {
         page = pdfDoc.addPage([595, 842])
         yPosition = 800
       }
 
-      // Nombre del día
-      const dayName = getDayName(dayNum)
+      // ===== ENCABEZADO DEL DÍA =====
       page.drawRectangle({
         x: 40,
-        y: yPosition - 25,
+        y: yPosition - 30,
         width: 515,
-        height: 25,
+        height: 30,
         color: darkGreen,
       })
 
-      page.drawText(dayName, {
+      page.drawText(dayName.toUpperCase(), {
         x: 50,
-        y: yPosition - 15,
+        y: yPosition - 18,
         size: 14,
         color: white,
         font: boldFont,
       })
 
-      yPosition -= 35
+      yPosition -= 45
 
-      // Sesiones del día
+      // ===== SESIONES DEL DÍA =====
       for (const session of daySessions) {
-        // Verificar espacio disponible
+        // Verificar espacio
         if (yPosition < 100) {
           page = pdfDoc.addPage([595, 842])
           yPosition = 800
         }
 
-        // Caja de hora
+        const sessionHeight = 80
+        const timeBoxWidth = 90
+        const contentBoxWidth = 425
+
+        // ===== CAJA DE HORA (izquierda) =====
         page.drawRectangle({
-          x: 50,
-          y: yPosition - 35,
-          width: 70,
-          height: 30,
+          x: 40,
+          y: yPosition - sessionHeight,
+          width: timeBoxWidth,
+          height: sessionHeight,
           color: darkGreen,
         })
 
+        // Hora de inicio
         page.drawText(session.hora_inicio, {
-          x: 55,
-          y: yPosition - 18,
-          size: 11,
-          color: white,
+          x: 50,
+          y: yPosition - 25,
+          size: 12,
+          color: lightGreen,
           font: boldFont,
         })
 
-        // Contenedor de la sesión
-        page.drawRectangle({
-          x: 130,
-          y: yPosition - 35,
-          width: 425,
-          height: 30,
-          color: rgb(240 / 255, 250 / 255, 240 / 255), // Fondo muy claro
-          borderColor: darkGreen,
-          borderWidth: 1,
+        // Guión
+        page.drawText('a', {
+          x: 50,
+          y: yPosition - 40,
+          size: 9,
+          color: white,
+          font: regularFont,
         })
 
-        // Título de la sesión
+        // Hora de fin
+        page.drawText(session.hora_fin, {
+          x: 50,
+          y: yPosition - 55,
+          size: 12,
+          color: lightGreen,
+          font: boldFont,
+        })
+
+        // ===== CAJA DE CONTENIDO (derecha) =====
+        page.drawRectangle({
+          x: 40 + timeBoxWidth,
+          y: yPosition - sessionHeight,
+          width: contentBoxWidth,
+          height: sessionHeight,
+          color: veryLightGray,
+          borderColor: darkGreen,
+          borderWidth: 1.5,
+        })
+
+        // Título de la sesión (centrado dentro del cuadro)
+        const titleX = 40 + timeBoxWidth + 15
+        const titleMaxWidth = contentBoxWidth - 30
         page.drawText(session.titulo, {
-          x: 140,
-          y: yPosition - 10,
-          size: 11,
+          x: titleX,
+          y: yPosition - 20,
+          size: 12,
           color: darkText,
           font: boldFont,
-          maxWidth: 400,
+          maxWidth: titleMaxWidth,
         })
 
-        yPosition -= 45
-
-        // Información de la sesión (en gris más pequeño)
+        // Ponente
         page.drawText(`Ponente: ${session.ponente}`, {
-          x: 140,
-          y: yPosition,
-          size: 8,
+          x: titleX,
+          y: yPosition - 38,
+          size: 9,
           color: lightText,
           font: regularFont,
         })
 
-        yPosition -= 12
-
+        // Lugar
         page.drawText(`Lugar: ${session.lugar}`, {
-          x: 140,
-          y: yPosition,
-          size: 8,
+          x: titleX,
+          y: yPosition - 50,
+          size: 9,
           color: lightText,
           font: regularFont,
         })
 
-        yPosition -= 12
-
-        // Tipo de sesión (badge)
-        const badgeWidth = 50
+        // Tipo (badge)
+        const badgeX = titleX
+        const badgeWidth = 70
         page.drawRectangle({
-          x: 140,
-          y: yPosition - 10,
+          x: badgeX,
+          y: yPosition - 66,
           width: badgeWidth,
           height: 12,
-          color: rgb(200 / 255, 200 / 255, 200 / 255),
+          color: rgb(220 / 255, 220 / 255, 220 / 255),
         })
 
         page.drawText(session.tipo, {
-          x: 145,
-          y: yPosition - 8,
+          x: badgeX + 5,
+          y: yPosition - 64,
           size: 7,
           color: darkText,
           font: boldFont,
         })
 
-        yPosition -= 22
-
-        // Línea divisora
-        page.drawLine({
-          start: { x: 50, y: yPosition },
-          end: { x: 555, y: yPosition },
-          color: rgb(200 / 255, 200 / 255, 200 / 255),
-          thickness: 0.5,
-        })
-
-        yPosition -= 10
+        yPosition -= (sessionHeight + 15)
       }
 
       yPosition -= 10
     }
 
-    // Generar PDF
+    // ===== GENERAR PDF =====
     const pdfBytes = await pdfDoc.save()
 
     return new NextResponse(pdfBytes, {
