@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import {
-  LayoutGrid, CalendarDays, Users, MapPin, Settings, LogOut, Pencil, Trash2, X, Clock, Filter, Plus, AlertCircle, Search, Sun, Moon, Bell, User
+  LayoutGrid, CalendarDays, Users, MapPin, Settings, LogOut, Pencil, Trash2, X, Clock, Filter, Plus, AlertCircle, Search, Sun, Moon, Bell, User, Eye
 } from "lucide-react"
 import type { Sesion, SesionFormData, Usuario } from "@/types"
 import NuevaSesion from '@/components/NuevaSesion'
@@ -91,6 +91,9 @@ export default function AdminPage() {
 
   // Delete confirmation
   const [deleteId, setDeleteId] = useState<string | null>(null)
+
+  // View sesion details
+  const [viewingSesionId, setViewingSesionId] = useState<string | null>(null)
 
   // Logout confirmation
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
@@ -235,11 +238,20 @@ export default function AdminPage() {
 
   // Derived data from real DB
   const uniquePonentes = useMemo(() => {
-    const map = new Map<string, number>()
+    const map = new Map<string, { sesionesCount: number; fotoPonente: string | null }>()
     sesiones.forEach((s) => {
-      map.set(s.ponente, (map.get(s.ponente) ?? 0) + 1)
+      const existing = map.get(s.ponente) ?? { sesionesCount: 0, fotoPonente: null }
+      // Si hay foto y aún no la tenemos, la guardamos
+      map.set(s.ponente, {
+        sesionesCount: existing.sesionesCount + 1,
+        fotoPonente: s.foto_ponente || existing.fotoPonente,
+      })
     })
-    return [...map.entries()].map(([nombre, sesionesCount]) => ({ nombre, sesionesCount }))
+    return [...map.entries()].map(([nombre, { sesionesCount, fotoPonente }]) => ({ 
+      nombre, 
+      sesionesCount, 
+      fotoPonente 
+    }))
   }, [sesiones])
 
   const ocupacionPorLugar = useMemo(() => {
@@ -366,14 +378,22 @@ export default function AdminPage() {
   }
 
   async function handleDelete(id: string) {
-    const res = await fetch(`/api/admin/sesiones/${id}`, { method: "DELETE" })
-    if (res.ok) {
-      toast.success("Sesión eliminada exitosamente")
-      await fetchSesiones()
-    } else {
-      toast.error("Error al eliminar sesión")
+    try {
+      const res = await fetch(`/api/admin/sesiones/${id}`, { method: "DELETE" })
+      if (res.ok) {
+        toast.success("Sesión eliminada exitosamente")
+        await fetchSesiones()
+      } else {
+        const errorData = await res.json().catch(() => ({}))
+        console.error("Error deleting session:", res.status, errorData)
+        toast.error(errorData.error ?? "Error al eliminar sesión")
+      }
+    } catch (error) {
+      console.error("Error:", error)
+      toast.error("Error de red al eliminar sesión")
+    } finally {
+      setDeleteId(null)
     }
-    setDeleteId(null)
   }
 
   async function handleDeleteUsuario(id: string) {
@@ -689,6 +709,13 @@ export default function AdminPage() {
                             <td className="px-5 py-3">
                               <div className="flex items-center justify-end gap-2">
                                 <button
+                                  onClick={() => setViewingSesionId(row.id)}
+                                  className="text-gray-400 hover:text-blue-500"
+                                  title="Ver detalles"
+                                >
+                                  <Eye size={14} />
+                                </button>
+                                <button
                                   onClick={() => openEditForm(row)}
                                   className="text-gray-400 hover:text-[#0F6B44]"
                                   title="Editar"
@@ -775,9 +802,17 @@ export default function AdminPage() {
                 <div className="grid grid-cols-3 gap-5">
                   {filteredPonentes.map((c) => (
                     <div key={c.nombre} className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-4 text-center">
-                      <div className="w-14 h-14 rounded-full border-2 border-[#0F6B44] mx-auto mb-3 flex items-center justify-center text-xs font-semibold text-[#0F6B44] dark:text-green-400">
-                        {c.nombre.split(" ").slice(0, 2).map((p) => p[0]).join("").toUpperCase()}
-                      </div>
+                      {c.fotoPonente ? (
+                        <img 
+                          src={c.fotoPonente} 
+                          alt={c.nombre}
+                          className="w-14 h-14 rounded-full mx-auto mb-3 object-cover border-2 border-[#0F6B44]"
+                        />
+                      ) : (
+                        <div className="w-14 h-14 rounded-full border-2 border-[#0F6B44] mx-auto mb-3 flex items-center justify-center text-xs font-semibold text-[#0F6B44] dark:text-green-400">
+                          {c.nombre.split(" ").slice(0, 2).map((p) => p[0]).join("").toUpperCase()}
+                        </div>
+                      )}
                       <p className="text-xs font-semibold text-[#1A1B22] dark:text-white">{c.nombre}</p>
                       <p className="text-[10px] text-[#0F6B44] mt-1">{c.sesionesCount} sesión{c.sesionesCount !== 1 ? "es" : ""}</p>
                     </div>
@@ -1411,6 +1446,107 @@ export default function AdminPage() {
                 CANCELAR
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL VER DETALLES SESIÓN */}
+      {viewingSesionId && sesiones.find(s => s.id === viewingSesionId) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl w-[500px] max-h-[80vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white dark:bg-[#1E293B] border-b border-gray-100 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-[#1A1B22] dark:text-white">Detalles de la Sesión</h2>
+              </div>
+              <button
+                onClick={() => setViewingSesionId(null)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {sesiones.find(s => s.id === viewingSesionId) && (() => {
+              const sesion = sesiones.find(s => s.id === viewingSesionId)!
+              return (
+                <div className="p-6 space-y-5">
+                  {/* Foto del Ponente */}
+                  {sesion.foto_ponente && (
+                    <div className="flex justify-center mb-4">
+                      <img src={sesion.foto_ponente} alt={sesion.ponente} className="w-32 h-32 rounded-full object-cover border-4 border-[#0F6B44]" />
+                    </div>
+                  )}
+
+                  {/* Información Principal */}
+                  <div>
+                    <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">Título de la Sesión</p>
+                    <p className="text-sm font-bold text-[#1A1B22] dark:text-white">{sesion.titulo}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">Conferencista</p>
+                    <p className="text-sm text-[#1A1B22] dark:text-white">{sesion.ponente}</p>
+                  </div>
+
+                  {/* Información de Horario y Ubicación */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">Fecha</p>
+                      <p className="text-sm text-[#1A1B22] dark:text-white">{getNombreDia(sesion.dia)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">Tipo</p>
+                      <p className="text-sm text-[#1A1B22] dark:text-white">{sesion.tipo}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">Hora Inicio</p>
+                      <p className="text-sm text-[#1A1B22] dark:text-white">{sesion.hora_inicio}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">Hora Fin</p>
+                      <p className="text-sm text-[#1A1B22] dark:text-white">{sesion.hora_fin}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">Escenario</p>
+                    <p className="text-sm text-[#1A1B22] dark:text-white">{sesion.lugar}</p>
+                  </div>
+
+                  {/* Cupos */}
+                  <div>
+                    <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">Cupos</p>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                        <div
+                          className="bg-[#0F6B44] dark:bg-[#10B981] h-full"
+                          style={{ width: `${(sesion.cupos_ocupados / sesion.cupos_total) * 100}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-sm font-semibold text-[#1A1B22] dark:text-white">{sesion.cupos_ocupados}/{sesion.cupos_total}</p>
+                    </div>
+                  </div>
+
+                  {/* Descripción */}
+                  {sesion.descripcion && (
+                    <div>
+                      <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">Descripción</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{sesion.descripcion}</p>
+                    </div>
+                  )}
+
+                  {/* Botón Cerrar */}
+                  <div className="flex gap-2 mt-6">
+                    <button
+                      onClick={() => setViewingSesionId(null)}
+                      className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white text-xs font-semibold px-4 py-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+                    >
+                      Cerrar
+                    </button>
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         </div>
       )}

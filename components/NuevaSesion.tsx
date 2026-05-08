@@ -16,7 +16,7 @@ interface FormState {
   dia: string
   hora_inicio: string
   hora_fin: string
-  cupos_total: number
+  cupos_total: number | ""
   lugar: string
   descripcion: string
   ponente: string
@@ -27,13 +27,14 @@ interface FormState {
 
 const EMPTY_FORM: FormState = {
   titulo: "", tipo: "Conferencia", dia: "", hora_inicio: "",
-  hora_fin: "", cupos_total: 100, lugar: "", descripcion: "",
+  hora_fin: "", cupos_total: "", lugar: "", descripcion: "",
   ponente: "", perfil_profesional: "", afiliacion: "", biografia: "",
 }
 
 export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionProps) {
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [speakerPhotoUrl, setSpeakerPhotoUrl] = useState<string | null>(null)
+  const [speakerPhotoBase64, setSpeakerPhotoBase64] = useState<string | null>(null)
   const [institutionLogoUrl, setInstitutionLogoUrl] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -57,6 +58,14 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
     const file = e.target.files?.[0]
     if (!file) return
     setSpeakerPhotoUrl(URL.createObjectURL(file))
+    
+    // Convertir a base64
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const base64String = event.target?.result as string
+      setSpeakerPhotoBase64(base64String)
+    }
+    reader.readAsDataURL(file)
   }
 
   function handleInstitutionLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -68,9 +77,17 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
   // Helper genérico para actualizar el form
   function set(field: keyof FormState) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-      const val = field === "cupos_total" ? Number(e.target.value) : e.target.value
+      const val = e.target.value
       setForm((f) => ({ ...f, [field]: val }))
     }
+  }
+
+  // Manejador especial para cupos_total
+  function handleCuposChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value
+    // Permitir campo vacío o convertir a número
+    const numVal = val === "" ? "" : Number(val)
+    setForm((f) => ({ ...f, cupos_total: numVal }))
   }
 
   async function handleSubmit() {
@@ -78,6 +95,47 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
       setError("El nombre de la sesión y el conferencista son obligatorios.")
       return
     }
+
+    // Validar nombre del ponente (no solo números)
+    if (!/[a-zA-ZáéíóúàèìòùäëïöüÁÉÍÓÚÀÈÌÒÙÄËÏÖÜ]/.test(form.ponente)) {
+      setError("El nombre del conferencista debe contener letras válidas, no solo números.")
+      return
+    }
+
+    // Validar que hora_inicio no sea mayor a 16:30
+    if (form.hora_inicio && form.hora_inicio > "16:30") {
+      setError("La hora de inicio no puede ser mayor a 16:30 hrs.")
+      return
+    }
+
+    // Validar que hora_fin no sea mayor a 16:30
+    if (form.hora_fin && form.hora_fin > "16:30") {
+      setError("La hora de finalización no puede ser mayor a 16:30 hrs.")
+      return
+    }
+
+    // Validar que hora_inicio sea menor a hora_fin
+    if (form.hora_inicio && form.hora_fin && form.hora_inicio >= form.hora_fin) {
+      setError("La hora de inicio debe ser menor a la hora de finalización.")
+      return
+    }
+
+    // Validar que cupo máximo no esté vacío y sea válido
+    if (form.cupos_total === "" || form.cupos_total === 0) {
+      setError("El cupo máximo es obligatorio y debe ser al menos 1 persona.")
+      return
+    }
+
+    if (form.cupos_total > 100) {
+      setError("El cupo máximo no puede ser mayor a 100 personas.")
+      return
+    }
+
+    if (form.cupos_total < 1) {
+      setError("El cupo máximo debe ser al menos 1 persona.")
+      return
+    }
+
     if (conflict) {
       setError("Resuelve el conflicto de horario antes de guardar.")
       return
@@ -86,10 +144,16 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
     setError(null)
     try {
       await onSave({
-        titulo: form.titulo, ponente: form.ponente, dia: form.dia,
-        hora_inicio: form.hora_inicio, hora_fin: form.hora_fin,
-        tipo: form.tipo, lugar: form.lugar,
-        cupos_total: form.cupos_total, descripcion: form.descripcion,
+        titulo: form.titulo, 
+        ponente: form.ponente, 
+        dia: form.dia,
+        hora_inicio: form.hora_inicio, 
+        hora_fin: form.hora_fin,
+        tipo: form.tipo, 
+        lugar: form.lugar,
+        cupos_total: typeof form.cupos_total === "string" ? Number(form.cupos_total) : form.cupos_total, 
+        descripcion: form.descripcion,
+        foto_ponente: speakerPhotoBase64,
       })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al guardar la sesión.")
@@ -156,9 +220,9 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
                 >
                   <option>Conferencia</option>
                   <option>Taller</option>
-                  <option>Panel</option>
-                  <option>Seminario</option>
-                  <option>Mesa redonda</option>
+                  {/* <option>Panel</option> */}
+                  {/* <option>Seminario</option>
+                  <option>Mesa redonda</option> */}
                 </select>
               </div>
               <div>
@@ -174,23 +238,45 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
               <div>
                 <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mb-1">HORA INICIO</p>
                 <input type="time"
-                  className="w-full border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 text-xs bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white focus:outline-none focus:border-[#0F6B44] dark:focus:border-[#10B981] transition-colors"
+                  className={`w-full border rounded-md px-3 py-2 text-xs bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white focus:outline-none transition-colors ${
+                    form.hora_inicio && form.hora_inicio > "16:30"
+                      ? "border-red-400 dark:border-red-500 focus:border-red-500"
+                      : "border-gray-200 dark:border-gray-600 focus:border-[#0F6B44] dark:focus:border-[#10B981]"
+                  }`}
                   value={form.hora_inicio} onChange={set("hora_inicio")}
                 />
+                {form.hora_inicio && form.hora_inicio > "16:30" && (
+                  <p className="text-[10px] text-red-500 mt-1">No permitida después de 16:30</p>
+                )}
               </div>
               <div>
                 <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mb-1">HORA FIN</p>
                 <input type="time"
-                  className="w-full border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 text-xs bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white focus:outline-none focus:border-[#0F6B44] dark:focus:border-[#10B981] transition-colors"
+                  className={`w-full border rounded-md px-3 py-2 text-xs bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white focus:outline-none transition-colors ${
+                    form.hora_fin && form.hora_fin > "16:30"
+                      ? "border-red-400 dark:border-red-500 focus:border-red-500"
+                      : "border-gray-200 dark:border-gray-600 focus:border-[#0F6B44] dark:focus:border-[#10B981]"
+                  }`}
                   value={form.hora_fin} onChange={set("hora_fin")}
                 />
+                {form.hora_fin && form.hora_fin > "16:30" && (
+                  <p className="text-[10px] text-red-500 mt-1">No permitida después de 16:30</p>
+                )}
               </div>
               <div>
                 <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mb-1">CUPO MÁXIMO</p>
-                <input type="number" min={1}
-                  className="w-full border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 text-xs bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white focus:outline-none focus:border-[#0F6B44] dark:focus:border-[#10B981] transition-colors"
-                  value={form.cupos_total} onChange={set("cupos_total")}
+                <input type="number" min={1} max={100}
+                  className={`w-full border rounded-md px-3 py-2 text-xs bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white focus:outline-none transition-colors ${
+                    form.cupos_total !== "" && Number(form.cupos_total) > 100
+                      ? "border-red-400 dark:border-red-500 focus:border-red-500"
+                      : "border-gray-200 dark:border-gray-600 focus:border-[#0F6B44] dark:focus:border-[#10B981]"
+                  }`}
+                  value={form.cupos_total} onChange={handleCuposChange}
+                  placeholder="Ej. 50"
                 />
+                {form.cupos_total !== "" && Number(form.cupos_total) > 100 && (
+                  <p className="text-[10px] text-red-500 mt-1">El cupo máximo no puede ser mayor a 100</p>
+                )}
               </div>
             </div>
 
@@ -244,10 +330,17 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
             <div>
               <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mb-1">NOMBRE COMPLETO</p>
               <input
-                className="w-full border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 text-xs placeholder-gray-300 dark:placeholder-gray-600 bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white focus:outline-none focus:border-[#0F6B44] dark:focus:border-[#10B981] transition-colors"
+                className={`w-full border rounded-md px-3 py-2 text-xs placeholder-gray-300 dark:placeholder-gray-600 bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white focus:outline-none transition-colors ${
+                  form.ponente && !/[a-zA-ZáéíóúàèìòùäëïöüÁÉÍÓÚÀÈÌÒÙÄËÏÖÜ]/.test(form.ponente)
+                    ? "border-red-400 dark:border-red-500 focus:border-red-500"
+                    : "border-gray-200 dark:border-gray-600 focus:border-[#0F6B44] dark:focus:border-[#10B981]"
+                }`}
                 value={form.ponente} onChange={set("ponente")}
                 placeholder="Dr. Alejandro Silva Morales"
               />
+              {form.ponente && !/[a-zA-ZáéíóúàèìòùäëïöüÁÉÍÓÚÀÈÌÒÙÄËÏÖÜ]/.test(form.ponente) && (
+                <p className="text-[10px] text-red-500 mt-1">Debe contener letras válidas, no solo números</p>
+              )}
             </div>
 
             <div>

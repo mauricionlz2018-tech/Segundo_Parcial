@@ -23,7 +23,7 @@ export async function GET() {
   }
 
   const rows = await query(
-    "select id, titulo, ponente, dia, hora_inicio, hora_fin, tipo, lugar, cupos_total, cupos_ocupados, descripcion, created_at from sesiones order by dia, hora_inicio"
+    "select id, titulo, ponente, dia, hora_inicio, hora_fin, tipo, lugar, cupos_total, cupos_ocupados, descripcion, foto_ponente, created_at from sesiones order by dia, hora_inicio"
   )
 
   return NextResponse.json({ data: rows })
@@ -45,6 +45,7 @@ export async function POST(request: Request) {
   const lugar = String(body?.lugar ?? "").trim()
   const cuposTotal = Number(body?.cupos_total ?? 0)
   const descripcion = String(body?.descripcion ?? "").trim()
+  const fotoPonente = body?.foto_ponente ?? null
 
   if (!titulo || !ponente) {
     return NextResponse.json({ error: "Faltan datos requeridos." }, { status: 400 })
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
 
   const id = crypto.randomUUID()
   await pool.execute<ResultSetHeader>(
-    "insert into sesiones (id, titulo, ponente, dia, hora_inicio, hora_fin, tipo, lugar, cupos_total, cupos_ocupados, descripcion) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    "insert into sesiones (id, titulo, ponente, dia, hora_inicio, hora_fin, tipo, lugar, cupos_total, cupos_ocupados, descripcion, foto_ponente) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     [
       id,
       titulo,
@@ -65,6 +66,7 @@ export async function POST(request: Request) {
       cuposTotal,
       0,
       descripcion || null,
+      fotoPonente,
     ]
   )
 

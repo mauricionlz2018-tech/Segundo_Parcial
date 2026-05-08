@@ -12,6 +12,7 @@ export interface Sesion {
   cupos_total: number
   cupos_ocupados: number
   descripcion: string | null
+  foto_ponente: string | null
   created_at: string
 }
 
@@ -43,4 +44,5 @@ export interface SesionFormData {
   lugar: string
   cupos_total: number
   descripcion: string
+  foto_ponente?: string | null
 }

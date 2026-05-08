@@ -4,9 +4,10 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
-import { ArrowLeft, Mail, User, BookOpen, Trash2, Save, LogOut } from "lucide-react"
+import { ArrowLeft, Mail, User, BookOpen, Trash2, Save, LogOut, Clock, MapPin, CalendarDays, X } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
+import type { Sesion } from "@/types"
 
 interface Usuario {
   id: string
@@ -21,11 +22,14 @@ interface Usuario {
 export default function PerfilPage() {
   const router = useRouter()
   const [usuario, setUsuario] = useState<Usuario | null>(null)
+  const [sesionesRegistradas, setSesionesRegistradas] = useState<Sesion[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingSesiones, setLoadingSesiones] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [saving, setSaving] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState("")
+  const [removingSesion, setRemovingSesion] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     full_name: "",
@@ -56,6 +60,26 @@ export default function PerfilPage() {
 
     loadPerfil()
   }, [router])
+
+  // Cargar sesiones registradas
+  useEffect(() => {
+    async function loadSesiones() {
+      try {
+        setLoadingSesiones(true)
+        const res = await fetch("/api/sesiones/registro")
+        if (res.ok) {
+          const data = await res.json()
+          setSesionesRegistradas(data.data || [])
+        }
+      } catch (error) {
+        console.error("Error cargando sesiones:", error)
+      } finally {
+        setLoadingSesiones(false)
+      }
+    }
+
+    loadSesiones()
+  }, [])
 
   async function handleSave() {
     if (!formData.full_name.trim()) {
@@ -120,6 +144,26 @@ export default function PerfilPage() {
       toast.error("Error al eliminar tu cuenta")
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleRemoverSesion(sesionId: string) {
+    setRemovingSesion(sesionId)
+    try {
+      const res = await fetch(`/api/sesiones/${sesionId}/registro`, {
+        method: "DELETE",
+      })
+
+      if (res.ok) {
+        setSesionesRegistradas(sesionesRegistradas.filter((s) => s.id !== sesionId))
+        toast.success("Te desregistraste de la sesión")
+      } else {
+        toast.error("Error al desregistrarse")
+      }
+    } catch (error) {
+      toast.error("Error al desregistrarse")
+    } finally {
+      setRemovingSesion(null)
     }
   }
 
@@ -297,6 +341,64 @@ export default function PerfilPage() {
               )}
             </div>
           </div>
+
+          {/* Mis Sesiones Registradas */}
+          {usuario.role !== "admin" && (
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-8 mb-6">
+              <h2 className="text-xl font-bold text-[#1A1B22] dark:text-white mb-6 flex items-center gap-2">
+                <CalendarDays size={24} />
+                Mis Sesiones Registradas
+              </h2>
+
+              {loadingSesiones ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "#065F46", borderTopColor: "transparent" }} />
+                </div>
+              ) : sesionesRegistradas.length === 0 ? (
+                <div className="text-center py-8">
+                  <BookOpen size={32} className="text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-500 dark:text-gray-400">No has registrado ninguna sesión aún</p>
+                  <Link href="/cronograma" className="text-[#065F46] dark:text-[#10B981] font-semibold hover:underline mt-2 inline-block">
+                    Ver cronograma →
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {sesionesRegistradas.map((sesion) => (
+                    <div key={sesion.id} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-[#1A1B22] dark:text-white mb-2">
+                          {sesion.titulo}
+                        </h3>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-gray-600 dark:text-gray-400">
+                          <div className="flex items-center gap-1">
+                            <CalendarDays size={14} />
+                            {sesion.dia}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock size={14} />
+                            {sesion.hora_inicio} - {sesion.hora_fin}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <MapPin size={14} />
+                            {sesion.lugar}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleRemoverSesion(sesion.id)}
+                        disabled={removingSesion === sesion.id}
+                        className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition disabled:opacity-50 text-red-600 dark:text-red-400"
+                        title="Desregistrarse"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Danger Zone */}
           {!editMode && (

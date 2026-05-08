@@ -120,6 +120,33 @@ INSERT INTO `users` (`id`, `email`, `username`, `full_name`, `carrera`, `role`, 
 ('6ee409dc-4409-11f1-9cb8-202b2030804e', 'admin.ues', 'admin.ues', 'Administrador UES', NULL, 'admin', '$2a$10$3g1rvLaoYvWKSp.VH1nEjuRDp5Fza0wdiSLzoNrnDrOpEverWvwTS', '2026-04-29 20:24:33'),
 ('777b5521-5597-4cd7-92f0-954b378e3adc', 'mauricionolazco@umb.edu.mx', 'mauricio.nolazco155', 'Mauricio Nolazco Lonjino', 'Ingeniería en Sistemas Computacionales', 'alumno', '$2a$10$u/xccCaPtT.laFfIEsnun.dPhSw8bGsyXMKXz0WvjYxCfWLMja1Gq', '2026-04-29 20:17:40');
 
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `user_sesiones`
+--
+
+CREATE TABLE `user_sesiones` (
+  `id` char(36) NOT NULL,
+  `user_id` char(36) NOT NULL,
+  `sesion_id` char(36) NOT NULL,
+  `registered_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `espacios`
+--
+
+CREATE TABLE `espacios` (
+  `id` char(36) NOT NULL,
+  `nombre` varchar(255) NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `capacidad_maxima` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 --
 -- Índices para tablas volcadas
 --
