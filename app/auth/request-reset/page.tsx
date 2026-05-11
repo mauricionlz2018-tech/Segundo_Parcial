@@ -4,7 +4,7 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Mail, CheckCircle2 } from "lucide-react"
+import { Mail, CheckCircle2, Copy } from "lucide-react"
 
 export default function RequestResetPage() {
   const router = useRouter()
@@ -12,6 +12,8 @@ export default function RequestResetPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [resetToken, setResetToken] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -38,6 +40,17 @@ export default function RequestResetPage() {
     }
 
     setSuccess(true)
+    if (payload?.resetToken) {
+      setResetToken(payload.resetToken)
+    }
+  }
+
+  function copyToken() {
+    if (resetToken) {
+      navigator.clipboard.writeText(resetToken)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
   }
 
   if (success) {
@@ -49,15 +62,36 @@ export default function RequestResetPage() {
           </div>
           <h1 className="text-3xl font-bold text-gray-800 mb-4">¡Correo Enviado!</h1>
           <p className="text-gray-600 mb-6">
-            Si la cuenta existe, recibirás un correo con instrucciones para recuperar tu contraseña. 
-            El enlace será válido por 1 hora.
+            Se ha enviado un correo con instrucciones para recuperar tu contraseña.
           </p>
-          <p className="text-gray-500 text-sm mb-6">
-            Revisa tu carpeta de spam si no ves el correo en los próximos minutos.
-          </p>
+          
+          {resetToken && (
+            <div className="bg-blue-50 border-2 border-blue-400 rounded-lg p-4 mb-6">
+              <p className="text-sm text-gray-600 mb-2">Tu token de recuperación:</p>
+              <div className="bg-white p-3 rounded border border-gray-300 break-all font-mono text-sm flex items-center justify-between gap-2">
+                <span>{resetToken}</span>
+                <button
+                  onClick={copyToken}
+                  className="p-1 hover:bg-gray-100 rounded flex-shrink-0"
+                  title="Copiar"
+                >
+                  <Copy className="w-4 h-4 text-indigo-600" />
+                </button>
+              </div>
+              {copied && <p className="text-green-600 text-sm mt-2">✓ Copiado</p>}
+            </div>
+          )}
+          
+          <Link
+            href="/auth/reset"
+            className="inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition mb-4"
+          >
+            Ir a Recuperar Contraseña
+          </Link>
+          <br />
           <Link
             href="/auth/login"
-            className="inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+            className="inline-block px-6 py-2 text-indigo-600 hover:text-indigo-700 transition"
           >
             Volver al Login
           </Link>
@@ -73,7 +107,7 @@ export default function RequestResetPage() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <Link href="/" className="flex items-center gap-3">
             <Image
-              src="/images/logo.png"
+              src="/images/Umb_logo.png"
               alt="UES"
               width={40}
               height={40}
@@ -93,7 +127,7 @@ export default function RequestResetPage() {
             </div>
             <h1 className="text-2xl font-bold text-gray-800">Recuperar Contraseña</h1>
             <p className="text-gray-600 text-sm mt-2">
-              Ingresa tu usuario o correo para recibir un enlace de recuperación
+              Ingresa tu usuario o correo para recibir el token
             </p>
           </div>
 
@@ -124,7 +158,7 @@ export default function RequestResetPage() {
               disabled={loading}
               className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Enviando..." : "Enviar Enlace de Recuperación"}
+              {loading ? "Enviando..." : "Enviar Token"}
             </button>
           </form>
 
@@ -133,15 +167,6 @@ export default function RequestResetPage() {
               ¿Recuerdas tu contraseña?{" "}
               <Link href="/auth/login" className="text-indigo-600 font-medium hover:underline">
                 Volver al Login
-              </Link>
-            </p>
-          </div>
-
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-gray-500 text-xs text-center">
-              💡 <strong>Consejo:</strong> Si no tienes una cuenta, puedes{" "}
-              <Link href="/auth/register" className="text-indigo-600 font-medium hover:underline">
-                registrarte aquí
               </Link>
             </p>
           </div>

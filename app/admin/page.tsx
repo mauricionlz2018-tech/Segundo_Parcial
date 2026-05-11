@@ -71,6 +71,16 @@ export default function AdminPage() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [usuariosLoading, setUsuariosLoading] = useState(false)
   const [usuarioDeleteId, setUsuarioDeleteId] = useState<string | null>(null)
+  const [showCreateAdminForm, setShowCreateAdminForm] = useState(false)
+  const [adminForm, setAdminForm] = useState({
+    username: "",
+    email: "",
+    full_name: "",
+    password: "",
+    confirmPassword: "",
+  })
+  const [adminFormLoading, setAdminFormLoading] = useState(false)
+  const [adminFormError, setAdminFormError] = useState<string | null>(null)
 
   // Espacios state
   const [espacios, setEspacios] = useState<Array<any>>([])
@@ -312,7 +322,7 @@ export default function AdminPage() {
   function openEditForm(sesion: Sesion) {
     setEditingId(sesion.id)
     
-    console.log("📋 Sesión cargada:", sesion) // Debug
+    console.log("Sesión cargada:", sesion) // Debug
     
     // Asegurar que la fecha esté en formato YYYY-MM-DD para el input type="date"
     let diaFormato = sesion.dia || ""
@@ -441,6 +451,65 @@ export default function AdminPage() {
       toast.error("Error al eliminar usuario")
     }
     setUsuarioDeleteId(null)
+  }
+
+  async function handleCreateAdmin() {
+    setAdminFormError(null)
+
+    if (!adminForm.username.trim()) {
+      setAdminFormError("El usuario es requerido")
+      return
+    }
+
+    if (!adminForm.email.trim()) {
+      setAdminFormError("El email es requerido")
+      return
+    }
+
+    if (!adminForm.full_name.trim()) {
+      setAdminFormError("El nombre completo es requerido")
+      return
+    }
+
+    if (adminForm.password.length < 6) {
+      setAdminFormError("La contraseña debe tener al menos 6 caracteres")
+      return
+    }
+
+    if (adminForm.password !== adminForm.confirmPassword) {
+      setAdminFormError("Las contraseñas no coinciden")
+      return
+    }
+
+    setAdminFormLoading(true)
+    try {
+      const res = await fetch("/api/admin/usuarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: adminForm.username,
+          email: adminForm.email,
+          full_name: adminForm.full_name,
+          password: adminForm.password,
+          role: "admin",
+        }),
+      })
+
+      const data = await res.json().catch(() => null)
+
+      if (res.ok) {
+        toast.success("Administrador creado exitosamente")
+        setAdminForm({ username: "", email: "", full_name: "", password: "", confirmPassword: "" })
+        setShowCreateAdminForm(false)
+        await fetchUsuarios()
+      } else {
+        setAdminFormError(data?.error ?? "Error al crear administrador")
+      }
+    } catch (error) {
+      setAdminFormError("Error de red al crear administrador")
+    } finally {
+      setAdminFormLoading(false)
+    }
   }
 
   function handleEditPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -601,7 +670,7 @@ export default function AdminPage() {
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
                       <p className="text-2xl font-bold text-[#1A1B22] dark:text-white">{sesiones.length}</p>
                       <p className="text-xs text-gray-400 dark:text-gray-500 font-semibold">Total sesiones</p>
@@ -616,7 +685,7 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-[1.6fr_1fr] gap-5">
+                  <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-5">
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <div className="text-sm font-semibold text-[#1A1B22] dark:text-white">
@@ -746,7 +815,7 @@ export default function AdminPage() {
                             <td className="px-5 py-3 dark:text-white">{getNombreDia(row.dia)}</td>
                             <td className="px-5 py-3">{row.hora_inicio}</td>
                             <td className="px-5 py-3">
-                              <span className="bg-[#EEF2F7] text-[#475569] px-2 py-1 rounded-full text-[10px]">
+                              <span className="bg-[#EEF2F7] text-[#475569] px-2 py-1 rounded-full text-[10px] whitespace-nowrap inline-block">
                                 {row.lugar}
                               </span>
                             </td>
@@ -845,7 +914,7 @@ export default function AdminPage() {
                   {searchQuery ? "No se encontraron ponentes." : "No hay ponentes registrados aún."}
                 </p>
               ) : (
-                <div className="grid grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {filteredPonentes.map((c) => (
                     <div key={c.nombre} className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-4 text-center">
                       {c.fotoPonente ? (
@@ -894,7 +963,7 @@ export default function AdminPage() {
                   <div className="w-6 h-6 rounded-full border-2 animate-spin" style={{ borderColor: "#0F6B44", borderTopColor: "transparent" }} />
                 </div>
               ) : (
-                <div className="grid grid-cols-[1.2fr_1fr] gap-5">
+                <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-5">
                   {/* Lista de espacios */}
                   <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
                     <div className="grid grid-cols-[1fr_80px_80px] gap-4 px-5 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-[#0F172A]">
@@ -1067,7 +1136,7 @@ export default function AdminPage() {
                 <p className="text-xs text-gray-400 dark:text-gray-500">Administra los parámetros globales y tu perfil de identidad institucional.</p>
               </div>
 
-              <div className="grid grid-cols-[1.4fr_1fr] gap-5">
+              <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-5">
                 <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-5">
                   <div className="flex items-center gap-2 text-xs font-semibold text-[#1A1B22] dark:text-white mb-4">
                     <span className="bg-[#F8EBD0] dark:bg-[#8C6A1B] text-[#735B24] dark:text-yellow-100 px-2 py-1 rounded">Perfil del Administrador</span>
@@ -1152,9 +1221,20 @@ export default function AdminPage() {
                   <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">GESTIÓN</p>
                   <h1 className="text-xl font-bold text-[#1A1B22] dark:text-white">Usuarios del Sistema</h1>
                 </div>
+                <button
+                  onClick={() => {
+                    setShowCreateAdminForm(!showCreateAdminForm)
+                    setAdminForm({ username: "", email: "", full_name: "", password: "", confirmPassword: "" })
+                    setAdminFormError(null)
+                  }}
+                  className="bg-[#0F6B44] text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-2"
+                >
+                  <Plus size={14} />
+                  Crear Administrador
+                </button>
               </div>
 
-              <div className="grid grid-cols-[1fr_1fr_1fr_1fr] gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-4">
                   <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">Total Usuarios</p>
                   <p className="text-xl font-bold text-[#1A1B22] dark:text-white">{usuarios.length}</p>
@@ -1241,6 +1321,112 @@ export default function AdminPage() {
 
                   <div className="flex items-center justify-between px-5 py-3 text-[10px] text-gray-400">
                     <span>Mostrando {usuarios.length} usuarios</span>
+                  </div>
+                </div>
+              )}
+
+              {showCreateAdminForm && (
+                <div className="fixed inset-0 z-50 bg-black/35 flex items-center justify-center p-4">
+                  <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl w-[450px] px-6 py-5">
+                    <div className="flex items-center justify-between mb-5">
+                      <div>
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-white">Crear Administrador</h2>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Agregar un nuevo usuario con permisos de administrador</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setShowCreateAdminForm(false)
+                          setAdminForm({ username: "", email: "", full_name: "", password: "", confirmPassword: "" })
+                          setAdminFormError(null)
+                        }}
+                        className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                    
+                    {adminFormError && (
+                      <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-xs rounded-lg px-4 py-3">
+                        {adminFormError}
+                      </div>
+                    )}
+
+                    <div className="space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto">
+                      <div>
+                        <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Usuario</label>
+                        <input
+                          type="text"
+                          value={adminForm.username}
+                          onChange={(e) => setAdminForm({ ...adminForm, username: e.target.value })}
+                          placeholder="ejemplo_usuario"
+                          className="w-full text-xs border border-gray-300 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Email</label>
+                        <input
+                          type="email"
+                          value={adminForm.email}
+                          onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
+                          placeholder="admin@ejemplo.com"
+                          className="w-full text-xs border border-gray-300 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Nombre Completo</label>
+                        <input
+                          type="text"
+                          value={adminForm.full_name}
+                          onChange={(e) => setAdminForm({ ...adminForm, full_name: e.target.value })}
+                          placeholder="Juan Pérez"
+                          className="w-full text-xs border border-gray-300 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Contraseña</label>
+                        <input
+                          type="password"
+                          value={adminForm.password}
+                          onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
+                          placeholder="Mínimo 6 caracteres"
+                          className="w-full text-xs border border-gray-300 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Confirmar Contraseña</label>
+                        <input
+                          type="password"
+                          value={adminForm.confirmPassword}
+                          onChange={(e) => setAdminForm({ ...adminForm, confirmPassword: e.target.value })}
+                          placeholder="Confirmar contraseña"
+                          className="w-full text-xs border border-gray-300 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+                      <button
+                        onClick={handleCreateAdmin}
+                        disabled={adminFormLoading}
+                        className="flex-1 bg-[#0F6B44] text-white text-xs font-semibold py-2 rounded-lg disabled:opacity-50 hover:bg-[#0d5a38]"
+                      >
+                        {adminFormLoading ? "Creando..." : "Crear Administrador"}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowCreateAdminForm(false)
+                          setAdminForm({ username: "", email: "", full_name: "", password: "", confirmPassword: "" })
+                          setAdminFormError(null)
+                        }}
+                        className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1468,12 +1654,12 @@ export default function AdminPage() {
       {/* CONFIRMAR ELIMINAR */}
       {deleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
-          <div className="bg-[#1E293B] dark:bg-[#1E293B] rounded-xl shadow-xl w-[340px] px-5 py-4 text-xs">
+          <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-xl w-[340px] px-5 py-4 text-xs">
             <div className="flex items-center gap-2 text-red-600 mb-2">
               <Trash2 size={14} />
-              <h3 className="text-sm font-bold text-white">¿Eliminar sesión?</h3>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white">Eliminar sesión?</h3>
             </div>
-            <p className="text-[11px] text-gray-400 dark:text-gray-500">Esta acción no se puede deshacer.</p>
+            <p className="text-[11px] text-gray-600 dark:text-gray-400">Esta acción no se puede deshacer.</p>
             <div className="flex items-center gap-2 mt-4">
               <button
                 onClick={() => deleteId && handleDelete(deleteId)}
@@ -1483,7 +1669,7 @@ export default function AdminPage() {
               </button>
               <button
                 onClick={() => setDeleteId(null)}
-                className="border border-gray-700 dark:border-gray-700 text-gray-400 dark:text-gray-500 text-xs font-semibold px-4 py-2 rounded-md hover:bg-gray-800"
+                className="border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-400 text-xs font-semibold px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 Cancelar
               </button>
@@ -1495,12 +1681,12 @@ export default function AdminPage() {
       {/* CONFIRMAR ELIMINAR USUARIO */}
       {usuarioDeleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
-          <div className="bg-[#1E293B] dark:bg-[#1E293B] rounded-xl shadow-xl w-[340px] px-5 py-4 text-xs">
+          <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-xl w-[340px] px-5 py-4 text-xs">
             <div className="flex items-center gap-2 text-red-600 mb-2">
               <Trash2 size={14} />
-              <h3 className="text-sm font-bold text-white">¿Eliminar usuario?</h3>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white">Eliminar usuario?</h3>
             </div>
-            <p className="text-[11px] text-gray-400 dark:text-gray-500">Esta acción no se puede deshacer. Se eliminará toda la información del usuario.</p>
+            <p className="text-[11px] text-gray-600 dark:text-gray-400">Esta acción no se puede deshacer. Se eliminará toda la información del usuario.</p>
             <div className="flex items-center gap-2 mt-4">
               <button
                 onClick={() => usuarioDeleteId && handleDeleteUsuario(usuarioDeleteId)}
@@ -1510,7 +1696,7 @@ export default function AdminPage() {
               </button>
               <button
                 onClick={() => setUsuarioDeleteId(null)}
-                className="border border-gray-700 dark:border-gray-700 text-gray-400 dark:text-gray-500 text-xs font-semibold px-4 py-2 rounded-md hover:bg-gray-800"
+                className="border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-400 text-xs font-semibold px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 Cancelar
               </button>
@@ -1521,13 +1707,13 @@ export default function AdminPage() {
 
       {/* CONFIRMAR CERRAR SESIÓN */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(59,59,59,0.85)" }}>
-          <div className="bg-[#1E293B] dark:bg-[#1E293B] rounded-xl shadow-xl w-[320px] px-6 py-5 text-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-xl w-[320px] px-6 py-5 text-xs">
             <div className="flex items-center gap-2 text-red-600 mb-2">
               <LogOut size={14} />
-              <p className="text-sm font-bold text-white">¿Cerrar Sesión?</p>
+              <p className="text-sm font-bold text-gray-900 dark:text-white">Cerrar Sesión?</p>
             </div>
-            <p className="text-[11px] text-gray-400 dark:text-gray-500">¿Estás seguro de que deseas salir del panel de administrador?</p>
+            <p className="text-[11px] text-gray-600 dark:text-gray-400">¿Estás seguro de que deseas salir del panel de administrador?</p>
             <div className="flex flex-col gap-2 mt-4">
               <button
                 onClick={handleLogout}
@@ -1537,7 +1723,7 @@ export default function AdminPage() {
               </button>
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="border border-gray-700 dark:border-gray-700 text-gray-400 dark:text-gray-500 text-xs font-semibold py-2 rounded-md hover:bg-gray-800"
+                className="border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-400 text-xs font-semibold py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 CANCELAR
               </button>

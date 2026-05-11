@@ -24,11 +24,15 @@ export async function POST(request: Request) {
     // Enviar email con el token
     await sendPasswordResetEmail(user.email, token, user.full_name || user.username)
     
-    const payload: Record<string, string | boolean> = { ok: true }
+    const payload: Record<string, string | boolean> = { 
+      ok: true,
+      message: "Se ha enviado un correo con el token de recuperación"
+    }
 
-    // En desarrollo, mostrar el token (para testing)
+    // En desarrollo, devolver el token en la respuesta
     if (process.env.NODE_ENV !== "production") {
       payload.resetToken = token
+      payload.message = `Token enviado a ${user.email}: ${token}`
     }
 
     return NextResponse.json(payload)

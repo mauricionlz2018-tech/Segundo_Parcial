@@ -1,13 +1,14 @@
 "use client"
 
-import { useState, Suspense } from "react"
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Eye, EyeOff, CheckCircle2, Lock } from "lucide-react"
 
-function ResetPasswordContent() {
+export default function ResetPasswordPage() {
   const router = useRouter()
+  const [token, setToken] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -15,48 +16,60 @@ function ResetPasswordContent() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
-  const searchParams = useSearchParams()
-  const token = searchParams.get("token") ?? ""
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
 
+    // Validar token
+    if (!token.trim()) {
+      setError("Ingresa el token que recibiste por correo.")
+      return
+    }
+
+    // Validar contraseña
     if (password.length < 6) {
       setError("La contraseña debe tener al menos 6 caracteres.")
       return
     }
+
+    // Validar que coincidan
     if (password !== confirmPassword) {
       setError("Las contraseñas no coinciden.")
       return
     }
 
-    if (!token) {
-      setError("Token inválido o expirado.")
-      return
-    }
-
     setLoading(true)
-    const response = await fetch("/api/auth/reset", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, password }),
-    })
+    try {
+      const response = await fetch("/api/auth/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          token: token.trim(), 
+          password 
+        }),
+      })
 
-    const payload = await response.json().catch(() => null)
-    setLoading(false)
+      const payload = await response.json().catch(() => null)
 
-    if (!response.ok) {
-      setError(payload?.error ?? "No se pudo actualizar la contraseña.")
-      return
+      if (!response.ok) {
+        setError(payload?.error ?? "No se pudo actualizar la contraseña.")
+        setLoading(false)
+        return
+      }
+
+      // Éxito
+      setSuccess(true)
+      setTimeout(() => {
+        router.push("/auth/login")
+      }, 2500)
+    } catch (err) {
+      setError("Error al procesar la solicitud. Intenta de nuevo.")
+      setLoading(false)
     }
-
-    setSuccess(true)
-    setTimeout(() => {
-      router.push("/auth/login")
-    }, 2000)
   }
 
+  // Pantalla de éxito
   if (success) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-indigo-100 px-4">
@@ -66,72 +79,15 @@ function ResetPasswordContent() {
           </div>
           <h1 className="text-3xl font-bold text-gray-800 mb-4">¡Contraseña Actualizada!</h1>
           <p className="text-gray-600 mb-6">
-            Tu contraseña ha sido restablecida correctamente. Serás redirigido al login en unos momentos.
+            Tu contraseña ha sido cambiada correctamente. Ahora puedes iniciar sesión con tu nueva contraseña.
           </p>
           <Link
             href="/auth/login"
             className="inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
           >
-            Ir al Login Ahora
+            Ir al Login
           </Link>
         </div>
-      </div>
-    )
-  }
-
-  if (!token) {
-    return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-indigo-100">
-        {/* Header */}
-        <header className="bg-white shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 py-4">
-            <Link href="/" className="flex items-center gap-3">
-              <Image
-                src="/images/logo.png"
-                alt="UES"
-                width={40}
-                height={40}
-                className="rounded"
-              />
-              <span className="font-bold text-xl">UES</span>
-            </Link>
-          </div>
-        </header>
-
-        {/* Main Content */}
-        <main className="flex-1 flex items-center justify-center px-4 py-12">
-          <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-            <div className="text-red-500 text-5xl mb-4">⚠️</div>
-            <h1 className="text-2xl font-bold text-gray-800 mb-4">Enlace Inválido</h1>
-            <p className="text-gray-600 mb-6">
-              El enlace de recuperación expiró o no es válido. Los enlaces tienen una validez de 1 hora.
-            </p>
-            <p className="text-gray-500 text-sm mb-6">
-              Por favor, solicita un nuevo enlace de recuperación.
-            </p>
-            <div className="space-y-3">
-              <Link
-                href="/auth/request-reset"
-                className="block w-full px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition"
-              >
-                Solicitar Nuevo Enlace
-              </Link>
-              <Link
-                href="/auth/login"
-                className="block w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition"
-              >
-                Volver al Login
-              </Link>
-            </div>
-          </div>
-        </main>
-
-        {/* Footer */}
-        <footer className="bg-white border-t border-gray-200 py-6 px-4">
-          <div className="max-w-7xl mx-auto text-center text-gray-600 text-sm">
-            <p>&copy; 2026 Universidad Especializada de El Salvador. Todos los derechos reservados.</p>
-          </div>
-        </footer>
       </div>
     )
   }
@@ -143,7 +99,7 @@ function ResetPasswordContent() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <Link href="/" className="flex items-center gap-3">
             <Image
-              src="/images/logo.png"
+              src="/images/Umb_logo.png"
               alt="UES"
               width={40}
               height={40}
@@ -163,7 +119,7 @@ function ResetPasswordContent() {
             </div>
             <h1 className="text-2xl font-bold text-gray-800">Nueva Contraseña</h1>
             <p className="text-gray-600 text-sm mt-2">
-              Crea una contraseña segura para tu cuenta
+              Ingresa el token del correo y tu nueva contraseña
             </p>
           </div>
 
@@ -173,6 +129,25 @@ function ResetPasswordContent() {
                 {error}
               </div>
             )}
+
+            {/* Token Input */}
+            <div>
+              <label htmlFor="token" className="block text-sm font-medium text-gray-700 mb-2">
+                Token de Recuperación
+              </label>
+              <input
+                type="text"
+                id="token"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                placeholder="Copia el token del correo aquí"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                disabled={loading}
+              />
+              <p className="text-gray-500 text-xs mt-1">
+                📧 Busca el token en el correo que recibiste
+              </p>
+            </div>
 
             {/* Password Input */}
             <div>
@@ -224,7 +199,7 @@ function ResetPasswordContent() {
               </div>
             </div>
 
-            {/* Password Requirements */}
+            {/* Requirements */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
               ✓ Mínimo 6 caracteres
             </div>
@@ -234,15 +209,15 @@ function ResetPasswordContent() {
               disabled={loading}
               className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Actualizando..." : "Actualizar Contraseña"}
+              {loading ? "Actualizando..." : "Cambiar Contraseña"}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-gray-600 text-sm">
-              ¿Recordaste tu contraseña?{" "}
-              <Link href="/auth/login" className="text-indigo-600 font-medium hover:underline">
-                Volver al Login
+              ¿No tienes un token?{" "}
+              <Link href="/auth/request-reset" className="text-indigo-600 font-medium hover:underline">
+                Solicitar nuevo
               </Link>
             </p>
           </div>
@@ -256,24 +231,5 @@ function ResetPasswordContent() {
         </div>
       </footer>
     </div>
-  )
-}
-
-function ResetPasswordLoading() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-indigo-100">
-      <div className="text-center">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-indigo-600"></div>
-        <p className="mt-4 text-gray-600">Cargando...</p>
-      </div>
-    </div>
-  )
-}
-
-export default function ResetPasswordPage() {
-  return (
-    <Suspense fallback={<ResetPasswordLoading />}>
-      <ResetPasswordContent />
-    </Suspense>
   )
 }

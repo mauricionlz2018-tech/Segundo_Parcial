@@ -1,20 +1,35 @@
 import nodemailer from "nodemailer"
 
+let transporter: any
+
 // Configurar el transporte de email
-// Para desarrollo, usar Mailtrap o similar
-// Para producción, usar Gmail, Sendgrid, AWS SES, etc.
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || "smtp.gmail.com",
-  port: Number(process.env.EMAIL_PORT || 587),
-  secure: process.env.EMAIL_SECURE === "true", // true para 465, false para otros puertos
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-})
+if (process.env.NODE_ENV === "production") {
+  // Producción: usar credenciales reales
+  transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST || "smtp.gmail.com",
+    port: Number(process.env.EMAIL_PORT || 587),
+    secure: process.env.EMAIL_SECURE === "true",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD,
+    },
+  })
+} else {
+  // Desarrollo: transporte de prueba que no requiere credenciales
+  transporter = {
+    sendMail: async (mailOptions: any) => {
+      console.log("📧 Email de prueba (no se envía realmente):")
+      console.log(`  Para: ${mailOptions.to}`)
+      console.log(`  Asunto: ${mailOptions.subject}`)
+      console.log(`  Token: ${mailOptions.html?.match(/token-box[^>]*>(.*?)<\/div>/s)?.[1]?.replace(/<[^>]*>/g, "").trim() || "N/A"}`)
+      return { messageId: "test-" + Date.now() }
+    },
+  }
+}
 
 export async function sendPasswordResetEmail(email: string, resetToken: string, userName: string) {
-  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/auth/reset?token=${resetToken}`
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+  const resetPageUrl = `${appUrl}/auth/reset`
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -44,18 +59,30 @@ export async function sendPasswordResetEmail(email: string, resetToken: string, 
           .content {
             padding: 20px;
           }
-          .button {
-            display: inline-block;
-            background: #667eea;
-            color: white;
-            padding: 12px 30px;
-            border-radius: 4px;
-            text-decoration: none;
+          .token-box {
+            background: #f8f9fa;
+            border: 2px solid #667eea;
+            padding: 16px;
+            border-radius: 8px;
             margin: 20px 0;
-            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            font-size: 14px;
+            color: #333;
           }
-          .button:hover {
-            background: #764ba2;
+          .steps {
+            background: #e7f3ff;
+            border-left: 4px solid #667eea;
+            padding: 12px;
+            margin: 20px 0;
+            border-radius: 4px;
+          }
+          .steps ol {
+            margin: 10px 0;
+            padding-left: 20px;
+          }
+          .steps li {
+            margin: 8px 0;
           }
           .footer {
             margin-top: 20px;
@@ -77,32 +104,41 @@ export async function sendPasswordResetEmail(email: string, resetToken: string, 
       <body>
         <div class="container">
           <div class="header">
-            <h1>Recuperación de Contraseña</h1>
+            <h1>🔐 Recuperación de Contraseña</h1>
           </div>
           
           <div class="content">
             <p>Hola <strong>${userName}</strong>,</p>
             
-            <p>Recibimos una solicitud para recuperar tu contraseña. Si no fuiste tú, puedes ignorar este correo.</p>
+            <p>Recibimos una solicitud para recuperar tu contraseña.</p>
             
-            <p>Para establecer una nueva contraseña, haz clic en el siguiente botón:</p>
-            
-            <center>
-              <a href="${resetUrl}" class="button">Recuperar Contraseña</a>
-            </center>
-            
-            <p>O copia y pega este enlace en tu navegador:</p>
-            <p style="word-break: break-all; background: #f5f5f5; padding: 10px; border-radius: 4px;">
-              ${resetUrl}
-            </p>
-            
-            <div class="warning">
-              <strong>⚠️ Este enlace expira en 1 hora.</strong> Si no lo usas dentro de este tiempo, deberás solicitar un nuevo reset de contraseña.
+            <div class="steps">
+              <strong>Sigue estos pasos:</strong>
+              <ol>
+                <li>Copia el token que aparece abajo</li>
+                <li>Ve a: <strong>${resetPageUrl}</strong></li>
+                <li>Pega el token en el campo correspondiente</li>
+                <li>Ingresa tu nueva contraseña</li>
+                <li>¡Listo! Tu contraseña será actualizada</li>
+              </ol>
             </div>
             
+            <p><strong>Tu Token de Recuperación:</strong></p>
+            <div class="token-box">
+              ${resetToken}
+            </div>
+            
+            <div class="warning">
+              <strong>⚠️ Este token expira en 1 hora.</strong> Si necesitas recuperar tu contraseña después de este tiempo, deberás solicitar un nuevo token.
+            </div>
+            
+            <p style="color: #666; font-size: 14px;">
+              Si <strong>no solicitaste</strong> esta recuperación de contraseña, puedes ignorar este correo con seguridad. Tu cuenta no será afectada.
+            </p>
+            
             <div class="footer">
-              <p>Este es un mensaje automático, por favor no responders a este correo.</p>
-              <p>&copy; ${new Date().getFullYear()} Universidad. Todos los derechos reservados.</p>
+              <p>Este es un mensaje automático, por favor no respondas a este correo.</p>
+              <p>&copy; ${new Date().getFullYear()} Universidad Especializada de El Salvador. Todos los derechos reservados.</p>
             </div>
           </div>
         </div>
@@ -111,14 +147,26 @@ export async function sendPasswordResetEmail(email: string, resetToken: string, 
   `
 
   const textContent = `
+RECUPERACIÓN DE CONTRASEÑA
+=========================
+
 Hola ${userName},
 
-Recibimos una solicitud para recuperar tu contraseña. Si no fuiste tú, puedes ignorar este correo.
+Recibimos una solicitud para recuperar tu contraseña.
 
-Para establecer una nueva contraseña, accede a este enlace:
-${resetUrl}
+Sigue estos pasos:
+1. Copia el token que aparece abajo
+2. Ve a: ${resetPageUrl}
+3. Pega el token en el campo correspondiente
+4. Ingresa tu nueva contraseña
+5. ¡Listo! Tu contraseña será actualizada
 
-Este enlace expira en 1 hora. Si no lo usas dentro de este tiempo, deberás solicitar un nuevo reset de contraseña.
+Tu Token de Recuperación:
+${resetToken}
+
+Este token expira en 1 hora. Si necesitas recuperar tu contraseña después de este tiempo, deberás solicitar un nuevo token.
+
+Si NO solicitaste esta recuperación de contraseña, puedes ignorar este correo con seguridad. Tu cuenta no será afectada.
 
 Este es un mensaje automático, por favor no respondas a este correo.
   `
@@ -127,7 +175,7 @@ Este es un mensaje automático, por favor no respondas a este correo.
     const info = await transporter.sendMail({
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       to: email,
-      subject: "Recuperación de Contraseña - UES",
+      subject: "🔐 Recuperación de Contraseña - UES",
       html: htmlContent,
       text: textContent,
     })

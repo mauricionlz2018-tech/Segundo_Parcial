@@ -39,7 +39,8 @@ const EMPTY_FORM: FormState = {
 }
 
 export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionProps) {
-  const [form, setForm] = useState<FormState>(EMPTY_FORM)
+  const today = new Date().toISOString().split('T')[0]
+  const [form, setForm] = useState<FormState>({ ...EMPTY_FORM, dia: today })
   const [speakerPhotoUrl, setSpeakerPhotoUrl] = useState<string | null>(null)
   const [speakerPhotoBase64, setSpeakerPhotoBase64] = useState<string | null>(null)
   const [institutionLogoUrl, setInstitutionLogoUrl] = useState<string | null>(null)
@@ -47,6 +48,7 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
   const [error, setError] = useState<string | null>(null)
   const [espacios, setEspacios] = useState<Espacio[]>([])
   const [espaciosLoading, setEspaciosLoading] = useState(true)
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
 
   // Cargar espacios disponibles
   useEffect(() => {
@@ -200,7 +202,7 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={onClose}
+            onClick={() => setShowCancelConfirm(true)}
             className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-4 py-2 rounded-md border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#1E293B] transition-colors"
           >
             Cancelar
@@ -384,7 +386,7 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
               <input
                 className="w-full border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 text-xs placeholder-gray-300 dark:placeholder-gray-600 bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white focus:outline-none focus:border-[#0F6B44] dark:focus:border-[#10B981] transition-colors"
                 value={form.perfil_profesional} onChange={set("perfil_profesional")}
-                placeholder="Doctor en Ciencias Biológicas"
+                placeholder="Ej. Doctor en Ciencias Biológicas"
               />
             </div>
 
@@ -420,6 +422,32 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
           </div>
         </div>
       </div>
+
+      {showCancelConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-xl w-[340px] px-6 py-6 text-xs">
+            <div className="flex flex-col items-center text-center gap-3 mb-4">
+              <AlertTriangle size={24} className="text-red-600" />
+              <p className="text-sm font-bold text-gray-900 dark:text-white">¿Cancelar registro?</p>
+            </div>
+            <p className="text-[12px] text-gray-600 dark:text-gray-400 text-center mb-5">Se perderán todos los datos ingresados. ¿Deseas cancelar el proceso?</p>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={onClose}
+                className="w-full bg-[#C40000] text-white text-xs font-semibold py-2 rounded-md hover:bg-red-700 transition-colors"
+              >
+                Cancelar registro
+              </button>
+              <button
+                onClick={() => setShowCancelConfirm(false)}
+                className="w-full border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-400 text-xs font-semibold py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                Continuar editando
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
