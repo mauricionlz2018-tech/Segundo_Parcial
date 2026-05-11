@@ -4,7 +4,7 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Eye, EyeOff, CheckCircle2, Lock } from "lucide-react"
+import { Eye, CheckCircle2, Lock } from "lucide-react"
 
 export default function ResetPasswordPage() {
   const router = useRouter()
@@ -161,15 +161,18 @@ export default function ResetPasswordPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Mínimo 6 caracteres"
-                  className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 [&::-ms-reveal]:hidden"
                   disabled={loading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 hover:text-gray-700 transition-all ${
+                    showPassword ? "text-gray-700" : "text-gray-500"
+                  }`}
+                  aria-label="toggle password"
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  <Eye size={18} />
                 </button>
               </div>
             </div>
@@ -186,15 +189,18 @@ export default function ResetPasswordPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Repite tu contraseña"
-                  className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 [&::-ms-reveal]:hidden"
                   disabled={loading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 hover:text-gray-700 transition-all ${
+                    showConfirm ? "text-gray-700" : "text-gray-500"
+                  }`}
+                  aria-label="toggle confirmation"
                 >
-                  {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                  <Eye size={18} />
                 </button>
               </div>
             </div>

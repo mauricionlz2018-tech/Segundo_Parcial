@@ -87,9 +87,9 @@ export async function POST(request: Request) {
     )
   }
 
-  if (role !== "admin" && role !== "user") {
+  if (role !== "admin" && role !== "alumno") {
     return NextResponse.json(
-      { error: "El rol debe ser 'admin' o 'user'." },
+      { error: "El rol debe ser 'admin' o 'alumno'." },
       { status: 400 }
     )
   }

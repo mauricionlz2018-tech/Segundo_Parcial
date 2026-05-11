@@ -4,7 +4,7 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Eye, EyeOff, CheckCircle2 } from "lucide-react"
+import { Eye, CheckCircle2 } from "lucide-react"
 
 const CARRERAS = [
   "Ingeniería en Innovación Agrícola Sustentable",
@@ -209,10 +209,19 @@ export default function RegisterPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 pr-8 text-sm text-[#1A1B22] dark:text-white outline-none focus:border-[#64FC05] dark:focus:border-[#10B981] focus:ring-1 focus:ring-[#64FC05] dark:focus:ring-[#10B981] transition bg-gray-50/40 dark:bg-[#0F172A]"
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 pr-8 text-sm text-[#1A1B22] dark:text-white outline-none focus:border-[#64FC05] dark:focus:border-[#10B981] focus:ring-1 focus:ring-[#64FC05] dark:focus:ring-[#10B981] transition bg-gray-50/40 dark:bg-[#0F172A] [&::-ms-reveal]:hidden"
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-600" aria-label="toggle">
-                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 transition-all ${
+                      showPassword
+                        ? "text-gray-600 dark:text-gray-400"
+                        : "text-gray-400 dark:text-gray-600"
+                    }`}
+                    aria-label="toggle password"
+                  >
+                    <Eye size={14} />
                   </button>
                 </div>
               </div>
@@ -228,10 +237,19 @@ export default function RegisterPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 pr-8 text-sm text-[#1A1B22] dark:text-white outline-none focus:border-[#64FC05] dark:focus:border-[#10B981] focus:ring-1 focus:ring-[#64FC05] dark:focus:ring-[#10B981] transition bg-gray-50/40 dark:bg-[#0F172A]"
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 pr-8 text-sm text-[#1A1B22] dark:text-white outline-none focus:border-[#64FC05] dark:focus:border-[#10B981] focus:ring-1 focus:ring-[#64FC05] dark:focus:ring-[#10B981] transition bg-gray-50/40 dark:bg-[#0F172A] [&::-ms-reveal]:hidden"
                   />
-                  <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-600" aria-label="toggle">
-                    {showConfirm ? <EyeOff size={14} /> : <Eye size={14} />}
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 transition-all ${
+                      showConfirm
+                        ? "text-gray-600 dark:text-gray-400"
+                        : "text-gray-400 dark:text-gray-600"
+                    }`}
+                    aria-label="toggle confirmation"
+                  >
+                    <Eye size={14} />
                   </button>
                 </div>
               </div>

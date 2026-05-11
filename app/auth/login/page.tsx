@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { Eye, EyeOff, ArrowLeft } from "lucide-react"
+import { Eye, ArrowLeft } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -117,15 +117,19 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3.5 py-2.5 pr-10 text-sm text-[#1A1B22] dark:text-white outline-none focus:border-[#64FC05] dark:focus:border-[#10B981] focus:ring-1 focus:ring-[#64FC05] dark:focus:ring-[#10B981] transition bg-gray-50/50 dark:bg-[#0F172A]"
+                  className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3.5 py-2.5 pr-10 text-sm text-[#1A1B22] dark:text-white outline-none focus:border-[#64FC05] dark:focus:border-[#10B981] focus:ring-1 focus:ring-[#64FC05] dark:focus:ring-[#10B981] transition bg-gray-50/50 dark:bg-[#0F172A] [&::-ms-reveal]:hidden"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 hover:text-gray-600 dark:hover:text-gray-300 transition-all ${
+                    showPassword
+                      ? "text-gray-600 dark:text-gray-300"
+                      : "text-gray-400 dark:text-gray-500"
+                  }`}
                   aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                 >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  <Eye size={16} />
                 </button>
               </div>
             </div>

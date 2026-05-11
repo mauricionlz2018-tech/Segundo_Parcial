@@ -82,6 +82,19 @@ export default function AdminPage() {
   const [adminFormLoading, setAdminFormLoading] = useState(false)
   const [adminFormError, setAdminFormError] = useState<string | null>(null)
 
+  // Create user state
+  const [showCreateUserForm, setShowCreateUserForm] = useState(false)
+  const [userForm, setUserForm] = useState({
+    username: "",
+    email: "",
+    full_name: "",
+    carrera: "",
+    password: "",
+    confirmPassword: "",
+  })
+  const [userFormLoading, setUserFormLoading] = useState(false)
+  const [userFormError, setUserFormError] = useState<string | null>(null)
+
   // Espacios state
   const [espacios, setEspacios] = useState<Array<any>>([])
   const [espaciosLoading, setEspaciosLoading] = useState(false)
@@ -111,6 +124,9 @@ export default function AdminPage() {
 
   // Logout confirmation
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+
+  // Delete own account confirmation
+  const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false)
 
   // Photo upload state for edit form
   const [editPhotoUrl, setEditPhotoUrl] = useState<string | null>(null)
@@ -453,6 +469,26 @@ export default function AdminPage() {
     setUsuarioDeleteId(null)
   }
 
+  async function handleDeleteOwnAccount() {
+    if (!currentUser) return
+    
+    const res = await fetch("/api/admin/usuarios", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: currentUser.id }),
+    })
+    
+    if (res.ok) {
+      toast.success("Cuenta eliminada exitosamente")
+      setShowDeleteAccountConfirm(false)
+      // Logout después de eliminar cuenta
+      await handleLogout()
+    } else {
+      const data = await res.json().catch(() => ({}))
+      toast.error(data.error ?? "Error al eliminar cuenta")
+    }
+  }
+
   async function handleCreateAdmin() {
     setAdminFormError(null)
 
@@ -509,6 +545,66 @@ export default function AdminPage() {
       setAdminFormError("Error de red al crear administrador")
     } finally {
       setAdminFormLoading(false)
+    }
+  }
+
+  async function handleCreateUser() {
+    setUserFormError(null)
+
+    if (!userForm.username.trim()) {
+      setUserFormError("El usuario es requerido")
+      return
+    }
+
+    if (!userForm.email.trim()) {
+      setUserFormError("El email es requerido")
+      return
+    }
+
+    if (!userForm.full_name.trim()) {
+      setUserFormError("El nombre completo es requerido")
+      return
+    }
+
+    if (userForm.password.length < 6) {
+      setUserFormError("La contraseña debe tener al menos 6 caracteres")
+      return
+    }
+
+    if (userForm.password !== userForm.confirmPassword) {
+      setUserFormError("Las contraseñas no coinciden")
+      return
+    }
+
+    setUserFormLoading(true)
+    try {
+      const res = await fetch("/api/admin/usuarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: userForm.username,
+          email: userForm.email,
+          full_name: userForm.full_name,
+          carrera: userForm.carrera || null,
+          password: userForm.password,
+          role: "alumno",
+        }),
+      })
+
+      const data = await res.json().catch(() => null)
+
+      if (res.ok) {
+        toast.success("Usuario creado exitosamente")
+        setUserForm({ username: "", email: "", full_name: "", carrera: "", password: "", confirmPassword: "" })
+        setShowCreateUserForm(false)
+        await fetchUsuarios()
+      } else {
+        setUserFormError(data?.error ?? "Error al crear usuario")
+      }
+    } catch (error) {
+      setUserFormError("Error de red al crear usuario")
+    } finally {
+      setUserFormLoading(false)
     }
   }
 
@@ -656,8 +752,8 @@ export default function AdminPage() {
 
           {/* PANEL PRINCIPAL */}
           {active === "panel" && (
-            <div className="px-8 pb-10">
-              <div className="flex items-center justify-between mb-4">
+            <div className="px-8 pb-10 py-6">
+              <div className="flex items-center justify-between mb-5">
                 <div>
                   <div className="text-[11px] font-semibold text-[#0F6B44] dark:text-[#10B981] uppercase">12va Jornada Académica</div>
                   <h1 className="text-2xl font-bold text-[#1A1B22] dark:text-white">Panel de Control</h1>
@@ -753,8 +849,8 @@ export default function AdminPage() {
 
           {/* SESIONES */}
           {active === "sesiones" && (
-            <div className="px-8 pb-10 pt-10">
-              <div className="flex items-center justify-between mb-5">
+            <div className="px-8 pb-10 py-6">
+              <div className="flex items-center justify-between mb-[5px]">
                 <h1 className="text-xl font-bold text-[#1A1B22] dark:text-white">Administración de Sesiones</h1>
                 <button
                   onClick={openCreateForm}
@@ -879,8 +975,8 @@ export default function AdminPage() {
 
           {/* PONENTES */}
           {active === "ponentes" && (
-            <div className="px-8 pb-10 pt-10">
-              <div className="flex items-center justify-between mb-6">
+            <div className="px-8 pb-10 py-6">
+              <div className="flex items-center justify-between mb-[5px]">
                 <div>
                   <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">DIRECTORIO ACADÉMICO</p>
                   <h1 className="text-xl font-bold text-[#1A1B22] dark:text-white">Gestión de Conferencistas</h1>
@@ -940,7 +1036,7 @@ export default function AdminPage() {
           {/* ESPACIOS */}
           {active === "espacios" && (
             <div className="px-8 pb-10 pt-10">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-[5px]">
                 <div>
                   <h1 className="text-xl font-bold text-[#0F6B44] dark:text-[#10B981]">Gestión de Espacios</h1>
                   <p className="text-xs text-gray-400 dark:text-gray-500">Administra los espacios y sedes del evento.</p>
@@ -1056,14 +1152,7 @@ export default function AdminPage() {
                           </label>
                           <input
                             type="number"
-                            value={espacioForm.capacidad_maxima}
-                            onChange={(e) =>
-                              setEspacioForm({
-                                ...espacioForm,
-                                capacidad_maxima: parseInt(e.target.value) || 50,
-                              })
-                            }
-                            min="1"
+                            placeholder="Ej: 100"
                             className="w-full text-xs border border-gray-100 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
                           />
                         </div>
@@ -1210,28 +1299,54 @@ export default function AdminPage() {
                   </label>
                 </div>
               </div>
+
+              <div className="mt-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900 rounded-2xl p-5">
+                <p className="text-xs font-semibold text-red-700 dark:text-red-400 mb-3">Zona de Peligro</p>
+                <p className="text-[11px] text-red-600 dark:text-red-500 mb-4">
+                  Las acciones en esta sección son irreversibles. Por favor, procede con cuidado.
+                </p>
+                <button
+                  onClick={() => setShowDeleteAccountConfirm(true)}
+                  className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-lg"
+                >
+                  Eliminar mi cuenta
+                </button>
+              </div>
             </div>
           )}
 
           {/* USUARIOS */}
           {active === "usuarios" && (
-            <div className="px-8 pb-10 pt-10">
-              <div className="flex items-center justify-between mb-6">
+            <div className="px-8 pb-10 py-6">
+              <div className="flex items-center justify-between mb-[5px]">
                 <div>
                   <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">GESTIÓN</p>
                   <h1 className="text-xl font-bold text-[#1A1B22] dark:text-white">Usuarios del Sistema</h1>
                 </div>
-                <button
-                  onClick={() => {
-                    setShowCreateAdminForm(!showCreateAdminForm)
-                    setAdminForm({ username: "", email: "", full_name: "", password: "", confirmPassword: "" })
-                    setAdminFormError(null)
-                  }}
-                  className="bg-[#0F6B44] text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-2"
-                >
-                  <Plus size={14} />
-                  Crear Administrador
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setShowCreateUserForm(!showCreateUserForm)
+                      setUserForm({ username: "", email: "", full_name: "", carrera: "", password: "", confirmPassword: "" })
+                      setUserFormError(null)
+                    }}
+                    className="bg-[#53F000] text-black text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-2"
+                  >
+                    <Plus size={14} />
+                    Nuevo Usuario
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowCreateAdminForm(!showCreateAdminForm)
+                      setAdminForm({ username: "", email: "", full_name: "", password: "", confirmPassword: "" })
+                      setAdminFormError(null)
+                    }}
+                    className="bg-[#0F6B44] text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-2"
+                  >
+                    <Plus size={14} />
+                    Crear Administrador
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -1302,7 +1417,7 @@ export default function AdminPage() {
                             </td>
                             <td className="px-5 py-3">
                               <div className="flex items-center justify-end gap-2">
-                                {user.role !== "admin" && (
+                                {user.id !== currentUser?.id && (
                                   <button
                                     onClick={() => setUsuarioDeleteId(user.id)}
                                     className="text-gray-400 hover:text-red-500"
@@ -1421,6 +1536,123 @@ export default function AdminPage() {
                           setShowCreateAdminForm(false)
                           setAdminForm({ username: "", email: "", full_name: "", password: "", confirmPassword: "" })
                           setAdminFormError(null)
+                        }}
+                        className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {showCreateUserForm && (
+                <div className="fixed inset-0 z-50 bg-black/35 flex items-center justify-center p-4">
+                  <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl w-[450px] px-6 py-5">
+                    <div className="flex items-center justify-between mb-5">
+                      <div>
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-white">Crear Nuevo Usuario</h2>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Agregar un nuevo usuario alumno al sistema</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setShowCreateUserForm(false)
+                          setUserForm({ username: "", email: "", full_name: "", carrera: "", password: "", confirmPassword: "" })
+                          setUserFormError(null)
+                        }}
+                        className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                    
+                    {userFormError && (
+                      <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-xs rounded-lg px-4 py-3">
+                        {userFormError}
+                      </div>
+                    )}
+
+                    <div className="space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto">
+                      <div>
+                        <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Usuario</label>
+                        <input
+                          type="text"
+                          value={userForm.username}
+                          onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
+                          placeholder="ejemplo_usuario"
+                          className="w-full text-xs border border-gray-300 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Email</label>
+                        <input
+                          type="email"
+                          value={userForm.email}
+                          onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                          placeholder="usuario@ejemplo.com"
+                          className="w-full text-xs border border-gray-300 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Nombre Completo</label>
+                        <input
+                          type="text"
+                          value={userForm.full_name}
+                          onChange={(e) => setUserForm({ ...userForm, full_name: e.target.value })}
+                          placeholder="Juan Pérez"
+                          className="w-full text-xs border border-gray-300 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Carrera (Opcional)</label>
+                        <input
+                          type="text"
+                          value={userForm.carrera}
+                          onChange={(e) => setUserForm({ ...userForm, carrera: e.target.value })}
+                          placeholder="Ej: Ingeniería en Sistemas"
+                          className="w-full text-xs border border-gray-300 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Contraseña</label>
+                        <input
+                          type="password"
+                          value={userForm.password}
+                          onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                          placeholder="Mínimo 6 caracteres"
+                          className="w-full text-xs border border-gray-300 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Confirmar Contraseña</label>
+                        <input
+                          type="password"
+                          value={userForm.confirmPassword}
+                          onChange={(e) => setUserForm({ ...userForm, confirmPassword: e.target.value })}
+                          placeholder="Confirmar contraseña"
+                          className="w-full text-xs border border-gray-300 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+                      <button
+                        onClick={handleCreateUser}
+                        disabled={userFormLoading}
+                        className="flex-1 bg-[#53F000] text-black text-xs font-semibold py-2 rounded-lg disabled:opacity-50 hover:bg-[#40d700]"
+                      >
+                        {userFormLoading ? "Creando..." : "Crear Usuario"}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowCreateUserForm(false)
+                          setUserForm({ username: "", email: "", full_name: "", carrera: "", password: "", confirmPassword: "" })
+                          setUserFormError(null)
                         }}
                         className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
                       >
@@ -1697,6 +1929,45 @@ export default function AdminPage() {
               <button
                 onClick={() => setUsuarioDeleteId(null)}
                 className="border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-400 text-xs font-semibold px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRMAR ELIMINAR PROPIA CUENTA */}
+      {showDeleteAccountConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+          <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-xl w-[380px] px-6 py-5 text-xs">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="bg-red-100 dark:bg-red-900/20 rounded-full p-2.5">
+                <AlertCircle size={18} className="text-red-600 dark:text-red-400" />
+              </div>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white">Eliminar cuenta</h3>
+            </div>
+            <p className="text-[11px] text-gray-600 dark:text-gray-400 mb-2">
+              ¿Estás seguro de que deseas eliminar tu cuenta? Esta acción es permanente e irreversible.
+            </p>
+            <p className="text-[11px] text-gray-600 dark:text-gray-400 mb-5 font-semibold">
+              Se eliminará:
+            </p>
+            <ul className="text-[10px] text-gray-600 dark:text-gray-400 mb-5 space-y-1 list-disc list-inside">
+              <li>Tu perfil y datos personales</li>
+              <li>Todas tus sesiones activas</li>
+              <li>Tu historial en el sistema</li>
+            </ul>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleDeleteOwnAccount}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-md"
+              >
+                Sí, eliminar mi cuenta
+              </button>
+              <button
+                onClick={() => setShowDeleteAccountConfirm(false)}
+                className="flex-1 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-400 text-xs font-semibold px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 Cancelar
               </button>
