@@ -13,16 +13,11 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [remember, setRemember] = useState(false)
   const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
-  const [resetToken, setResetToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [resetLoading, setResetLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
-    setSuccess("")
-    setResetToken(null)
     setLoading(true)
 
     const response = await fetch("/api/auth/login", {
@@ -48,37 +43,7 @@ export default function LoginPage() {
   }
 
   async function handleResetPassword() {
-    setError("")
-    setSuccess("")
-    setResetToken(null)
-
-    const value = email.trim()
-    if (!value) {
-      setError("Ingresa tu usuario o correo para recuperar la contraseña.")
-      return
-    }
-
-    setResetLoading(true)
-    const response = await fetch("/api/auth/request-reset", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identifier: value }),
-    })
-
-    const payload = await response.json().catch(() => null)
-    if (!response.ok) {
-      setError(payload?.error ?? "No se pudo iniciar la recuperación.")
-      setResetLoading(false)
-      return
-    }
-
-    if (payload?.resetToken) {
-      setResetToken(payload.resetToken)
-      setSuccess("Usa el token para restablecer tu contraseña.")
-    } else {
-      setSuccess("Si tu cuenta existe, podras restablecer tu contrasena.")
-    }
-    setResetLoading(false)
+    router.push("/auth/request-reset")
   }
 
   return (
@@ -179,10 +144,9 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={handleResetPassword}
-                disabled={resetLoading}
-                className="text-xs text-[#065F46] dark:text-[#10B981] hover:underline font-medium disabled:opacity-60"
+                className="text-xs text-[#065F46] dark:text-[#10B981] hover:underline font-medium"
               >
-                {resetLoading ? "Enviando..." : "¿Olvidaste tu contraseña?"}
+                ¿Olvidaste tu contraseña?
               </button>
             </div>
 
@@ -191,24 +155,6 @@ export default function LoginPage() {
               <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg px-3 py-2">
                 {error}
               </p>
-            )}
-
-            {success && (
-              <p className="text-xs text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg px-3 py-2">
-                {success}
-              </p>
-            )}
-
-            {resetToken && (
-              <div className="text-xs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2">
-                <div className="font-mono">Token: {resetToken}</div>
-                <Link
-                  href={`/auth/reset?token=${resetToken}`}
-                  className="text-[#065F46] dark:text-[#10B981] font-semibold hover:underline"
-                >
-                  Ir a restablecer contrasena
-                </Link>
-              </div>
             )}
 
             {/* Submit */}

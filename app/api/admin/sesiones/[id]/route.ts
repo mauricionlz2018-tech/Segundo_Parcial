@@ -26,7 +26,7 @@ export async function GET(
   const { id } = await params
 
   const rows = await query(
-    "select id, titulo, ponente, dia, hora_inicio, hora_fin, tipo, lugar, cupos_total, cupos_ocupados, descripcion, foto_ponente, created_at from sesiones where id = ?",
+    "select id, titulo, ponente, dia, hora_inicio, hora_fin, tipo, lugar, cupos_total, cupos_ocupados, descripcion, foto_ponente, perfil_profesional, afiliacion, biografia, created_at from sesiones where id = ?",
     [id]
   )
 
@@ -69,13 +69,16 @@ export async function PUT(
   const cuposTotal = Number(body?.cupos_total ?? 0)
   const descripcion = String(body?.descripcion ?? "").trim()
   const fotoPonente = body?.foto_ponente ?? null
+  const perfilProfesional = String(body?.perfil_profesional ?? "").trim() || null
+  const afiliacion = String(body?.afiliacion ?? "").trim() || null
+  const biografia = String(body?.biografia ?? "").trim() || null
 
   if (!titulo || !ponente) {
     return NextResponse.json({ error: "Faltan datos requeridos." }, { status: 400 })
   }
 
   await query(
-    "update sesiones set titulo = ?, ponente = ?, dia = ?, hora_inicio = ?, hora_fin = ?, tipo = ?, lugar = ?, cupos_total = ?, descripcion = ?, foto_ponente = ? where id = ?",
+    "update sesiones set titulo = ?, ponente = ?, dia = ?, hora_inicio = ?, hora_fin = ?, tipo = ?, lugar = ?, cupos_total = ?, descripcion = ?, foto_ponente = ?, perfil_profesional = ?, afiliacion = ?, biografia = ? where id = ?",
     [
       titulo,
       ponente,
@@ -87,6 +90,9 @@ export async function PUT(
       cuposTotal,
       descripcion || null,
       fotoPonente,
+      perfilProfesional,
+      afiliacion,
+      biografia,
       id,
     ]
   )

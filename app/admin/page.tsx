@@ -22,6 +22,10 @@ const EMPTY_FORM: SesionFormData = {
   lugar: "",
   cupos_total: 50,
   descripcion: "",
+  foto_ponente: null,
+  perfil_profesional: null,
+  afiliacion: null,
+  biografia: null,
 }
 
 function getNombreDia(dia: string): string {
@@ -97,6 +101,9 @@ export default function AdminPage() {
 
   // Logout confirmation
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+
+  // Photo upload state for edit form
+  const [editPhotoUrl, setEditPhotoUrl] = useState<string | null>(null)
 
   // Search
   const [searchQuery, setSearchQuery] = useState("")
@@ -227,11 +234,9 @@ export default function AdminPage() {
   useEffect(() => {
     if (!loading) {
       fetchSesiones()
+      fetchEspacios()
       if (active === "usuarios") {
         fetchUsuarios()
-      }
-      if (active === "espacios") {
-        fetchEspacios()
       }
     }
   }, [loading, fetchSesiones, fetchUsuarios, fetchEspacios, active])
@@ -306,17 +311,44 @@ export default function AdminPage() {
 
   function openEditForm(sesion: Sesion) {
     setEditingId(sesion.id)
+    
+    console.log("📋 Sesión cargada:", sesion) // Debug
+    
+    // Asegurar que la fecha esté en formato YYYY-MM-DD para el input type="date"
+    let diaFormato = sesion.dia || ""
+    if (diaFormato) {
+      // Si viene de la BD es YYYY-MM-DD, usarlo tal cual
+      // Si viene en otro formato, intentar convertir
+      if (!diaFormato.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // Si NO está en YYYY-MM-DD, intentar convertir
+        const partes = diaFormato.split('/')
+        if (partes.length === 3) {
+          diaFormato = `${partes[2]}-${partes[1]}-${partes[0]}`
+        }
+      }
+    }
+    
+    console.log("📅 Fecha convertida:", diaFormato) // Debug
+    
     setEditForm({
       titulo: sesion.titulo,
       ponente: sesion.ponente,
-      dia: sesion.dia,
-      hora_inicio: sesion.hora_inicio,
-      hora_fin: sesion.hora_fin,
-      tipo: sesion.tipo,
-      lugar: sesion.lugar,
+      dia: diaFormato,
+      hora_inicio: sesion.hora_inicio || "",
+      hora_fin: sesion.hora_fin || "",
+      tipo: sesion.tipo || "Conferencia",
+      lugar: sesion.lugar || "",
       cupos_total: sesion.cupos_total,
-      descripcion: sesion.descripcion ?? "",
+      descripcion: sesion.descripcion || "",
+      foto_ponente: sesion.foto_ponente ?? null,
+      perfil_profesional: sesion.perfil_profesional ?? null,
+      afiliacion: sesion.afiliacion ?? null,
+      biografia: sesion.biografia ?? null,
     })
+    console.log("✅ Perfil profesional guardado:", sesion.perfil_profesional) // Debug
+    if (sesion.foto_ponente) {
+      setEditPhotoUrl(sesion.foto_ponente)
+    }
     setFormError(null)
     setShowEditForm(true)
   }
@@ -409,6 +441,20 @@ export default function AdminPage() {
       toast.error("Error al eliminar usuario")
     }
     setUsuarioDeleteId(null)
+  }
+
+  function handleEditPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setEditPhotoUrl(URL.createObjectURL(file))
+    
+    // Convertir a base64
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const base64String = event.target?.result as string
+      setEditForm((f) => ({ ...f, foto_ponente: base64String }))
+    }
+    reader.readAsDataURL(file)
   }
 
   async function handleLogout() {
@@ -573,10 +619,10 @@ export default function AdminPage() {
                   <div className="grid grid-cols-[1.6fr_1fr] gap-5">
                     <div>
                       <div className="flex items-center justify-between mb-3">
-                        <div className="text-sm font-semibold text-[#1A1B22]">
+                        <div className="text-sm font-semibold text-[#1A1B22] dark:text-white">
                           Sesiones Registradas
                         </div>
-                        <button onClick={() => setActive("sesiones")} className="text-xs text-[#0F6B44] font-semibold">Ver todas</button>
+                        <button onClick={() => setActive("sesiones")} className="text-xs text-[#0F6B44] dark:text-[#10B981] font-semibold">Ver todas</button>
                       </div>
                       <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
                         {sesiones.length === 0 ? (
@@ -638,7 +684,7 @@ export default function AdminPage() {
 
           {/* SESIONES */}
           {active === "sesiones" && (
-            <div className="px-8 pb-10">
+            <div className="px-8 pb-10 pt-10">
               <div className="flex items-center justify-between mb-5">
                 <h1 className="text-xl font-bold text-[#1A1B22] dark:text-white">Administración de Sesiones</h1>
                 <button
@@ -651,15 +697,15 @@ export default function AdminPage() {
 
               <div className="grid grid-cols-[1fr_1fr_1fr_1.1fr] gap-4 mb-6">
                 <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-4">
-                  <p className="text-[10px] text-gray-400 font-semibold">Total Sesiones</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">Total Sesiones</p>
                   <p className="text-xl font-bold text-[#1A1B22] dark:text-white">{sesiones.length}</p>
                 </div>
                 <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-4">
-                  <p className="text-[10px] text-gray-400 font-semibold">Escenarios</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">Escenarios</p>
                   <p className="text-xl font-bold text-[#1A1B22] dark:text-white">{ocupacionPorLugar.length}</p>
                 </div>
                 <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-4">
-                  <p className="text-[10px] text-gray-400 font-semibold">Ponentes</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">Ponentes</p>
                   <p className="text-xl font-bold text-[#1A1B22] dark:text-white">{uniquePonentes.length}</p>
                 </div>
                 <div className="bg-[#FFF7E5] rounded-2xl border border-[#F3D9A4] p-4">
@@ -764,28 +810,28 @@ export default function AdminPage() {
 
           {/* PONENTES */}
           {active === "ponentes" && (
-            <div className="px-8 pb-10">
+            <div className="px-8 pb-10 pt-10">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <p className="text-[10px] text-gray-400 font-semibold">DIRECTORIO ACADÉMICO</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">DIRECTORIO ACADÉMICO</p>
                   <h1 className="text-xl font-bold text-[#1A1B22] dark:text-white">Gestión de Conferencistas</h1>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-2 bg-white border border-gray-100 rounded-full px-3 py-2 text-xs text-gray-400">
+                  <div className="flex items-center gap-2 bg-white dark:bg-[#0F172A] border border-gray-100 dark:border-gray-700 rounded-full px-3 py-2 text-xs text-gray-400 dark:text-gray-500">
                     <Search size={12} />
                     <input
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Buscar ponente..."
-                      className="bg-transparent outline-none text-xs text-gray-500"
+                      className="bg-transparent outline-none text-xs text-gray-500 dark:text-gray-400"
                     />
                   </div>
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center"
+                    className="w-8 h-8 rounded-lg bg-white dark:bg-[#1E293B] border border-gray-100 dark:border-gray-700 flex items-center justify-center"
                     title="Limpiar búsqueda"
                   >
-                    <Filter size={14} className="text-gray-400" />
+                    <Filter size={14} className="text-gray-400 dark:text-gray-500" />
                   </button>
                 </div>
               </div>
@@ -824,11 +870,11 @@ export default function AdminPage() {
 
           {/* ESPACIOS */}
           {active === "espacios" && (
-            <div className="px-8 pb-10">
+            <div className="px-8 pb-10 pt-10">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h1 className="text-xl font-bold text-[#0F6B44]">Gestión de Espacios</h1>
-                  <p className="text-xs text-gray-400">Administra los espacios y sedes del evento.</p>
+                  <h1 className="text-xl font-bold text-[#0F6B44] dark:text-[#10B981]">Gestión de Espacios</h1>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">Administra los espacios y sedes del evento.</p>
                 </div>
                 <button
                   onClick={() => {
@@ -850,25 +896,25 @@ export default function AdminPage() {
               ) : (
                 <div className="grid grid-cols-[1.2fr_1fr] gap-5">
                   {/* Lista de espacios */}
-                  <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                    <div className="grid grid-cols-[1fr_80px_80px] gap-4 px-5 py-3 border-b border-gray-100 bg-gray-50">
-                      <p className="text-xs font-semibold text-gray-400">ESPACIO</p>
-                      <p className="text-xs font-semibold text-gray-400">CAPACIDAD</p>
-                      <p className="text-xs font-semibold text-gray-400">ACCIONES</p>
+                  <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+                    <div className="grid grid-cols-[1fr_80px_80px] gap-4 px-5 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-[#0F172A]">
+                      <p className="text-xs font-semibold text-gray-400 dark:text-gray-500">ESPACIO</p>
+                      <p className="text-xs font-semibold text-gray-400 dark:text-gray-500">CAPACIDAD</p>
+                      <p className="text-xs font-semibold text-gray-400 dark:text-gray-500">ACCIONES</p>
                     </div>
                     {espacios.length === 0 ? (
-                      <p className="text-xs text-gray-400 text-center py-8">No hay espacios registrados.</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-8">No hay espacios registrados.</p>
                     ) : (
                       <div>
                         {espacios.map((esp: any) => (
                           <div
                             key={esp.id}
-                            className="grid grid-cols-[1fr_80px_80px] gap-4 px-5 py-3 border-b border-gray-100 items-center hover:bg-gray-50"
+                            className="grid grid-cols-[1fr_80px_80px] gap-4 px-5 py-3 border-b border-gray-100 dark:border-gray-700 items-center hover:bg-gray-50 dark:hover:bg-[#0F172A]"
                           >
                             <div>
                               <p className="text-xs font-semibold text-[#1A1B22] dark:text-white">{esp.nombre}</p>
                               {esp.descripcion && (
-                                <p className="text-[10px] text-gray-400">{esp.descripcion}</p>
+                                <p className="text-[10px] text-gray-400 dark:text-gray-500">{esp.descripcion}</p>
                               )}
                             </div>
                             <p className="text-xs font-semibold text-[#1A1B22] dark:text-white">{esp.capacidad_maxima}</p>
@@ -904,13 +950,13 @@ export default function AdminPage() {
 
                   {/* Formulario */}
                   {showEspacioForm && (
-                    <div className="bg-white rounded-2xl border border-gray-100 p-5">
+                    <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-5">
                       <h3 className="text-sm font-semibold text-[#1A1B22] dark:text-white mb-4">
                         {editingEspacioId ? "Editar Espacio" : "Nuevo Espacio"}
                       </h3>
                       <div className="space-y-3">
                         <div>
-                          <label className="text-xs font-semibold text-gray-400">Nombre</label>
+                          <label className="text-xs font-semibold text-gray-400 dark:text-gray-500">Nombre</label>
                           <input
                             type="text"
                             value={espacioForm.nombre}
@@ -918,11 +964,11 @@ export default function AdminPage() {
                               setEspacioForm({ ...espacioForm, nombre: e.target.value })
                             }
                             placeholder="Ej: Aula Magna"
-                            className="w-full text-xs border border-gray-100 rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
+                            className="w-full text-xs border border-gray-100 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
                           />
                         </div>
                         <div>
-                          <label className="text-xs font-semibold text-gray-400">
+                          <label className="text-xs font-semibold text-gray-400 dark:text-gray-500">
                             Descripción (opcional)
                           </label>
                           <textarea
@@ -931,12 +977,12 @@ export default function AdminPage() {
                               setEspacioForm({ ...espacioForm, descripcion: e.target.value })
                             }
                             placeholder="Ej: Auditorio principal con capacidad amplia"
-                            className="w-full text-xs border border-gray-100 rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44] resize-none"
+                            className="w-full text-xs border border-gray-100 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44] resize-none"
                             rows={3}
                           />
                         </div>
                         <div>
-                          <label className="text-xs font-semibold text-gray-400">
+                          <label className="text-xs font-semibold text-gray-400 dark:text-gray-500">
                             Capacidad Máxima
                           </label>
                           <input
@@ -949,7 +995,7 @@ export default function AdminPage() {
                               })
                             }
                             min="1"
-                            className="w-full text-xs border border-gray-100 rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
+                            className="w-full text-xs border border-gray-100 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
                           />
                         </div>
                         <div className="flex gap-2 pt-2">
@@ -1015,19 +1061,19 @@ export default function AdminPage() {
 
           {/* CONFIGURACIÓN */}
           {active === "configuracion" && (
-            <div className="px-8 pb-10">
+            <div className="px-8 pb-10 pt-10">
               <div className="mb-6">
-                <h1 className="text-xl font-bold text-[#0F6B44]">Configuración del Sistema</h1>
-                <p className="text-xs text-gray-400">Administra los parámetros globales y tu perfil de identidad institucional.</p>
+                <h1 className="text-xl font-bold text-[#0F6B44] dark:text-[#10B981]">Configuración del Sistema</h1>
+                <p className="text-xs text-gray-400 dark:text-gray-500">Administra los parámetros globales y tu perfil de identidad institucional.</p>
               </div>
 
               <div className="grid grid-cols-[1.4fr_1fr] gap-5">
-                <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-[#1A1B22] mb-4">
-                    <span className="bg-[#F8EBD0] text-[#735B24] px-2 py-1 rounded">Perfil del Administrador</span>
+                <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-5">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-[#1A1B22] dark:text-white mb-4">
+                    <span className="bg-[#F8EBD0] dark:bg-[#8C6A1B] text-[#735B24] dark:text-yellow-100 px-2 py-1 rounded">Perfil del Administrador</span>
                   </div>
                   <div className="grid grid-cols-[120px_1fr] gap-4">
-                    <div className="bg-[#F8F9FB] rounded-xl border border-gray-100 flex items-center justify-center h-24">
+                    <div className="bg-[#F8F9FB] dark:bg-[#0F172A] rounded-xl border border-gray-100 dark:border-gray-700 flex items-center justify-center h-24">
                       <img src="/images/Umb_logo.png" alt="UMB" className="h-10" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -1049,48 +1095,48 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-gray-100 p-5">
+                <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-5">
                   <p className="text-xs font-semibold text-[#1A1B22] dark:text-white mb-4">Seguridad</p>
                   <div className="flex flex-col gap-3">
                     <div>
-                      <p className="text-[10px] text-gray-400 font-semibold">CONTRASEÑA ACTUAL</p>
-                      <input type="password" className="w-full border border-gray-200 rounded-md px-3 py-2 text-xs" placeholder="••••••" />
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">CONTRASEÑA ACTUAL</p>
+                      <input type="password" className="w-full border border-gray-200 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-md px-3 py-2 text-xs" placeholder="••••••" />
                     </div>
                     <div>
-                      <p className="text-[10px] text-gray-400 font-semibold">NUEVA CONTRASEÑA</p>
-                      <input type="password" className="w-full border border-gray-200 rounded-md px-3 py-2 text-xs" placeholder="Nueva" />
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">NUEVA CONTRASEÑA</p>
+                      <input type="password" className="w-full border border-gray-200 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-md px-3 py-2 text-xs" placeholder="Nueva" />
                     </div>
                     <div>
-                      <p className="text-[10px] text-gray-400 font-semibold">CONFIRMAR</p>
-                      <input type="password" className="w-full border border-gray-200 rounded-md px-3 py-2 text-xs" placeholder="Confirmar" />
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">CONFIRMAR</p>
+                      <input type="password" className="w-full border border-gray-200 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-md px-3 py-2 text-xs" placeholder="Confirmar" />
                     </div>
                     <button className="bg-[#8C6A1B] text-white text-xs font-semibold px-4 py-2 rounded-md w-fit">Actualizar Seguridad</button>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-6 bg-white rounded-2xl border border-gray-100 p-5">
+              <div className="mt-6 bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-5">
                 <p className="text-xs font-semibold text-[#1A1B22] dark:text-white mb-4">Notificaciones del Sistema</p>
                 <div className="grid grid-cols-2 gap-4">
-                  <label className="flex items-start gap-3 border border-gray-100 rounded-xl p-3 text-xs">
+                  <label className="flex items-start gap-3 border border-gray-100 dark:border-gray-700 dark:bg-[#0F172A] rounded-xl p-3 text-xs">
                     <input type="checkbox" defaultChecked className="mt-1" />
                     <div>
-                      <p className="font-semibold">Nuevos Registros</p>
-                      <p className="text-[10px] text-gray-400">Notificar cuando un estudiante o docente se inscriba.</p>
+                      <p className="font-semibold text-[#1A1B22] dark:text-white">Nuevos Registros</p>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500">Notificar cuando un estudiante o docente se inscriba.</p>
                     </div>
                   </label>
-                  <label className="flex items-start gap-3 border border-gray-100 rounded-xl p-3 text-xs">
+                  <label className="flex items-start gap-3 border border-gray-100 dark:border-gray-700 dark:bg-[#0F172A] rounded-xl p-3 text-xs">
                     <input type="checkbox" defaultChecked className="mt-1" />
                     <div>
-                      <p className="font-semibold">Conflictos de Horario</p>
-                      <p className="text-[10px] text-gray-400">Alertas inmediatas sobre traslape de eventos.</p>
+                      <p className="font-semibold text-[#1A1B22] dark:text-white">Conflictos de Horario</p>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500">Alertas inmediatas sobre traslape de eventos.</p>
                     </div>
                   </label>
-                  <label className="flex items-start gap-3 border border-gray-100 rounded-xl p-3 text-xs">
+                  <label className="flex items-start gap-3 border border-gray-100 dark:border-gray-700 dark:bg-[#0F172A] rounded-xl p-3 text-xs">
                     <input type="checkbox" className="mt-1" />
                     <div>
-                      <p className="font-semibold">Reportes Diarios</p>
-                      <p className="text-[10px] text-gray-400">Resumen ejecutivo enviado por correo cada mañana.</p>
+                      <p className="font-semibold text-[#1A1B22] dark:text-white">Reportes Diarios</p>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500">Resumen ejecutivo enviado por correo cada mañana.</p>
                     </div>
                   </label>
                 </div>
@@ -1100,26 +1146,26 @@ export default function AdminPage() {
 
           {/* USUARIOS */}
           {active === "usuarios" && (
-            <div className="px-8 pb-10">
+            <div className="px-8 pb-10 pt-10">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <p className="text-[10px] text-gray-400 font-semibold">GESTIÓN</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">GESTIÓN</p>
                   <h1 className="text-xl font-bold text-[#1A1B22] dark:text-white">Usuarios del Sistema</h1>
                 </div>
               </div>
 
               <div className="grid grid-cols-[1fr_1fr_1fr_1fr] gap-4 mb-6">
-                <div className="bg-white rounded-2xl border border-gray-100 p-4">
-                  <p className="text-[10px] text-gray-400 font-semibold">Total Usuarios</p>
-                  <p className="text-xl font-bold text-[#1A1B22]">{usuarios.length}</p>
+                <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-4">
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">Total Usuarios</p>
+                  <p className="text-xl font-bold text-[#1A1B22] dark:text-white">{usuarios.length}</p>
                 </div>
-                <div className="bg-white rounded-2xl border border-gray-100 p-4">
-                  <p className="text-[10px] text-gray-400 font-semibold">Administradores</p>
-                  <p className="text-xl font-bold text-[#1A1B22]">{usuarios.filter(u => u.role === "admin").length}</p>
+                <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-4">
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">Administradores</p>
+                  <p className="text-xl font-bold text-[#1A1B22] dark:text-white">{usuarios.filter(u => u.role === "admin").length}</p>
                 </div>
-                <div className="bg-white rounded-2xl border border-gray-100 p-4">
-                  <p className="text-[10px] text-gray-400 font-semibold">Alumnos</p>
-                  <p className="text-xl font-bold text-[#1A1B22]">{usuarios.filter(u => u.role === "alumno").length}</p>
+                <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-4">
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">Alumnos</p>
+                  <p className="text-xl font-bold text-[#1A1B22] dark:text-white">{usuarios.filter(u => u.role === "alumno").length}</p>
                 </div>
                 <div className="bg-[#FFEBEE] rounded-2xl border border-[#FFCDD2] p-4">
                   <p className="text-[10px] text-red-600 font-semibold">Registros Hoy</p>
@@ -1135,9 +1181,9 @@ export default function AdminPage() {
                   <div className="w-6 h-6 rounded-full border-2 animate-spin" style={{ borderColor: "#0F6B44", borderTopColor: "transparent" }} />
                 </div>
               ) : (
-                <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
                   <table className="w-full text-xs">
-                    <thead className="bg-[#F6F6F9] text-gray-400">
+                    <thead className="bg-[#F6F6F9] dark:bg-[#0F172A] text-gray-400 dark:text-gray-500">
                       <tr>
                         <th className="text-left px-5 py-3 font-semibold">Usuario</th>
                         <th className="text-left px-5 py-3 font-semibold">Email</th>
@@ -1148,7 +1194,7 @@ export default function AdminPage() {
                         <th className="text-right px-5 py-3 font-semibold">Acciones</th>
                       </tr>
                     </thead>
-                    <tbody className="text-gray-600">
+                    <tbody className="text-gray-600 dark:text-gray-400">
                       {usuarios.length === 0 ? (
                         <tr>
                           <td colSpan={7} className="text-center py-8 text-gray-400">
@@ -1157,11 +1203,11 @@ export default function AdminPage() {
                         </tr>
                       ) : (
                         usuarios.map((user) => (
-                          <tr key={user.id} className="border-b border-gray-50 hover:bg-gray-50">
+                          <tr key={user.id} className="border-b border-gray-50 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#0F172A]">
                             <td className="px-5 py-3 font-semibold text-[#1A1B22] dark:text-white">{user.username}</td>
-                            <td className="px-5 py-3">{user.email}</td>
-                            <td className="px-5 py-3">{user.full_name || "—"}</td>
-                            <td className="px-5 py-3">{user.carrera || "—"}</td>
+                            <td className="px-5 py-3 dark:text-white">{user.email}</td>
+                            <td className="px-5 py-3 dark:text-white">{user.full_name || "—"}</td>
+                            <td className="px-5 py-3 dark:text-white">{user.carrera || "—"}</td>
                             <td className="px-5 py-3">
                               <span className={`px-2 py-1 rounded-full text-[10px] font-semibold ${
                                 user.role === "admin"
@@ -1215,40 +1261,40 @@ export default function AdminPage() {
       {/* FORMULARIO EDITAR SESIÓN - Modal anterior con datos precargados */}
       {showEditForm && (
         <div className="fixed inset-0 z-40 bg-black/20" onClick={(e) => { if (e.target === e.currentTarget) setShowEditForm(false) }}>
-          <div className="absolute inset-y-0 right-0 w-[420px] bg-white shadow-2xl p-6 overflow-y-auto">
+          <div className="absolute inset-y-0 right-0 w-[420px] bg-white dark:bg-[#1E293B] shadow-2xl p-6 overflow-y-auto">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <p className="text-[10px] text-gray-400 font-semibold">PANEL ADMINISTRATIVO</p>
-                <h2 className="text-base font-bold text-[#1A1B22] dark:text-white">
+                <p className="text-[10px] text-gray-500 dark:text-gray-500 font-semibold">PANEL ADMINISTRATIVO</p>
+                <h2 className="text-base font-bold text-gray-900 dark:text-white">
                   Editar Sesión Académica
                 </h2>
-                <p className="text-xs text-gray-400">Modifique los datos de la sesión seleccionada.</p>
+                <p className="text-xs text-gray-600 dark:text-gray-500">Modifique los datos de la sesión seleccionada.</p>
               </div>
-              <button onClick={() => setShowEditForm(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setShowEditForm(false)} className="text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
                 <X size={16} />
               </button>
             </div>
 
             {formError && (
-              <div className="mb-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-md px-3 py-2">
+              <div className="mb-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-xs rounded-md px-3 py-2">
                 {formError}
               </div>
             )}
 
             <div className="space-y-4 text-xs">
               <div>
-                <p className="text-[10px] text-gray-400 font-semibold">NOMBRE DE LA SESIÓN *</p>
+                <p className="text-[10px] text-gray-700 dark:text-gray-400 font-semibold">Nombre de la sesión *</p>
                 <input
-                  className="w-full bg-[#F6F2FF] border border-gray-200 rounded-md px-3 py-2"
+                  className="w-full bg-white dark:bg-[#0F172A] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-2 focus:outline-none focus:border-[#0F6B44]"
                   value={editForm.titulo}
                   onChange={(e) => setEditForm((f) => ({ ...f, titulo: e.target.value }))}
                   placeholder="Ej. Conferencia sobre IA"
                 />
               </div>
               <div>
-                <p className="text-[10px] text-gray-400 font-semibold">CONFERENCISTA *</p>
+                <p className="text-[10px] text-gray-700 dark:text-gray-400 font-semibold">Conferencista *</p>
                 <input
-                  className="w-full border border-gray-200 rounded-md px-3 py-2"
+                  className="w-full bg-white dark:bg-[#0F172A] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-2 focus:outline-none focus:border-[#0F6B44]"
                   value={editForm.ponente}
                   onChange={(e) => setEditForm((f) => ({ ...f, ponente: e.target.value }))}
                   placeholder="Ej. Dr. Juan Pérez"
@@ -1256,68 +1302,118 @@ export default function AdminPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-[10px] text-gray-400 font-semibold">TIPO DE SESIÓN</p>
-                  <input
-                    className="w-full border border-gray-200 rounded-md px-3 py-2"
+                  <p className="text-[10px] text-gray-700 dark:text-gray-400 font-semibold">Tipo de sesión</p>
+                  <select
+                    className="w-full bg-white dark:bg-[#0F172A] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-2 focus:outline-none focus:border-[#0F6B44]"
                     value={editForm.tipo}
                     onChange={(e) => setEditForm((f) => ({ ...f, tipo: e.target.value }))}
-                    placeholder="Conferencia / Taller"
-                  />
+                  >
+                    <option value="Conferencia">Conferencia</option>
+                    <option value="Taller">Taller</option>
+                    <option value="Panel">Panel</option>
+                    <option value="Otro">Otro</option>
+                  </select>
                 </div>
                 <div>
-                  <p className="text-[10px] text-gray-400 font-semibold">CUPO MÁXIMO</p>
+                  <p className="text-[10px] text-gray-700 dark:text-gray-400 font-semibold">Cupo máximo</p>
                   <input
                     type="number"
                     min={1}
-                    className="w-full border border-gray-200 rounded-md px-3 py-2"
+                    className="w-full bg-white dark:bg-[#0F172A] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-2 focus:outline-none focus:border-[#0F6B44]"
                     value={editForm.cupos_total}
                     onChange={(e) => setEditForm((f) => ({ ...f, cupos_total: Number(e.target.value) }))}
                   />
                 </div>
               </div>
               <div>
-                <p className="text-[10px] text-gray-400 font-semibold">DÍA</p>
+                <p className="text-[10px] text-gray-700 dark:text-gray-400 font-semibold">Día</p>
                 <input
-                  className="w-full border border-gray-200 rounded-md px-3 py-2"
+                  type="date"
+                  className="w-full bg-white dark:bg-[#0F172A] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-2 focus:outline-none focus:border-[#0F6B44]"
                   value={editForm.dia}
                   onChange={(e) => setEditForm((f) => ({ ...f, dia: e.target.value }))}
-                  placeholder="Ej. lunes / 2025-12-01"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-[10px] text-gray-400 font-semibold">HORA INICIO</p>
+                  <p className="text-[10px] text-gray-700 dark:text-gray-400 font-semibold">Hora inicio</p>
                   <input
                     type="time"
-                    className="w-full border border-gray-200 rounded-md px-3 py-2"
+                    className="w-full bg-white dark:bg-[#0F172A] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-2 focus:outline-none focus:border-[#0F6B44]"
                     value={editForm.hora_inicio}
                     onChange={(e) => setEditForm((f) => ({ ...f, hora_inicio: e.target.value }))}
                   />
                 </div>
                 <div>
-                  <p className="text-[10px] text-gray-400 font-semibold">HORA FIN</p>
+                  <p className="text-[10px] text-gray-700 dark:text-gray-400 font-semibold">Hora fin</p>
                   <input
                     type="time"
-                    className="w-full border border-gray-200 rounded-md px-3 py-2"
+                    className="w-full bg-white dark:bg-[#0F172A] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-2 focus:outline-none focus:border-[#0F6B44]"
                     value={editForm.hora_fin}
                     onChange={(e) => setEditForm((f) => ({ ...f, hora_fin: e.target.value }))}
                   />
                 </div>
               </div>
               <div>
-                <p className="text-[10px] text-gray-400 font-semibold">ESCENARIO / LUGAR</p>
+                <p className="text-[10px] text-gray-700 dark:text-gray-400 font-semibold">Perfil profesional</p>
                 <input
-                  className="w-full border border-gray-200 rounded-md px-3 py-2"
-                  value={editForm.lugar}
-                  onChange={(e) => setEditForm((f) => ({ ...f, lugar: e.target.value }))}
-                  placeholder="Ej. Aula Magna"
+                  className="w-full bg-white dark:bg-[#0F172A] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-2 focus:outline-none focus:border-[#0F6B44]"
+                  value={editForm.perfil_profesional || ""}
+                  onChange={(e) => setEditForm((f) => ({ ...f, perfil_profesional: e.target.value || null }))}
+                  placeholder="Ej. Doctor en Ciencias"
                 />
               </div>
               <div>
-                <p className="text-[10px] text-gray-400 font-semibold">DESCRIPCIÓN (OPCIONAL)</p>
+                <p className="text-[10px] text-gray-700 dark:text-gray-400 font-semibold">Afiliación</p>
+                <input
+                  className="w-full bg-white dark:bg-[#0F172A] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-2 focus:outline-none focus:border-[#0F6B44]"
+                  value={editForm.afiliacion || ""}
+                  onChange={(e) => setEditForm((f) => ({ ...f, afiliacion: e.target.value || null }))}
+                  placeholder="Ej. Universidad Nacional"
+                />
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-700 dark:text-gray-400 font-semibold">Foto del ponente</p>
+                <div className="flex items-center gap-2">
+                  <label className="flex-1 bg-white dark:bg-[#0F172A] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-2 focus:outline-none focus:border-[#0F6B44] cursor-pointer text-xs">
+                    Seleccionar archivo
+                    <input type="file" accept="image/*" className="hidden" onChange={handleEditPhotoChange} />
+                  </label>
+                  {editPhotoUrl && (
+                    <img src={editPhotoUrl} alt="preview" className="w-10 h-10 rounded-md object-cover border border-gray-300 dark:border-gray-700" />
+                  )}
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-700 dark:text-gray-400 font-semibold">Biografía</p>
+                <textarea
+                  rows={2}
+                  className="w-full bg-white dark:bg-[#0F172A] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-2 focus:outline-none focus:border-[#0F6B44] resize-none"
+                  value={editForm.biografia || ""}
+                  onChange={(e) => setEditForm((f) => ({ ...f, biografia: e.target.value || null }))}
+                  placeholder="Describa brevemente la biografía del ponente..."
+                />
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-700 dark:text-gray-400 font-semibold">Escenario / Lugar</p>
+                <select
+                  className="w-full bg-white dark:bg-[#0F172A] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-2 focus:outline-none focus:border-[#0F6B44]"
+                  value={editForm.lugar}
+                  onChange={(e) => setEditForm((f) => ({ ...f, lugar: e.target.value }))}
+                >
+                  <option value="">Seleccionar un escenario</option>
+                  {espacios.map((espacio: any) => (
+                    <option key={espacio.id} value={espacio.nombre}>
+                      {espacio.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-700 dark:text-gray-400 font-semibold">Descripción (opcional)</p>
                 <textarea
                   rows={3}
-                  className="w-full border border-gray-200 rounded-md px-3 py-2"
+                  className="w-full bg-white dark:bg-[#0F172A] border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-2 focus:outline-none focus:border-[#0F6B44] resize-none"
                   value={editForm.descripcion}
                   onChange={(e) => setEditForm((f) => ({ ...f, descripcion: e.target.value }))}
                   placeholder="Descripción breve de la sesión..."
@@ -1327,11 +1423,11 @@ export default function AdminPage() {
                 <button
                   onClick={() => setShowSaveConfirm(true)}
                   disabled={formSaving || !editForm.titulo || !editForm.ponente}
-                  className="bg-[#53F000] text-black text-xs font-semibold px-4 py-2 rounded-md disabled:opacity-50"
+                  className="bg-[#53F000] text-black text-xs font-semibold px-4 py-2 rounded-md disabled:opacity-50 hover:bg-[#40d700]"
                 >
                   Guardar Cambios
                 </button>
-                <button onClick={() => setShowEditForm(false)} className="text-xs font-semibold text-gray-400">Cancelar</button>
+                <button onClick={() => setShowEditForm(false)} className="text-xs font-semibold text-gray-700 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-400">Cancelar</button>
               </div>
             </div>
           </div>
@@ -1341,30 +1437,30 @@ export default function AdminPage() {
       {/* CONFIRMAR GUARDAR CAMBIOS */}
       {showSaveConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
-          <div className="bg-white rounded-xl shadow-xl w-[360px] px-5 py-4 text-xs">
-            <h3 className="text-sm font-bold text-[#1A1B22]">
+          <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-xl w-[360px] px-5 py-4 text-xs">
+            <h3 className="text-sm font-bold text-gray-900 dark:text-white">
               ¿Guardar cambios?
             </h3>
-            <p className="text-[11px] text-gray-500 mt-1">
+            <p className="text-[11px] text-gray-600 dark:text-gray-500 mt-1">
               ¿Estás seguro de que deseas aplicar las modificaciones a esta sesión?
             </p>
             <div className="flex items-center gap-2 mt-4">
               <button
                 onClick={handleUpdateSession}
                 disabled={formSaving}
-                className="bg-[#53F000] text-black text-xs font-semibold px-4 py-2 rounded-md disabled:opacity-50"
+                className="bg-[#53F000] text-black text-xs font-semibold px-4 py-2 rounded-md disabled:opacity-50 hover:bg-[#40d700]"
               >
                 {formSaving ? "Guardando..." : "Guardar Cambios"}
               </button>
               <button
                 onClick={() => setShowSaveConfirm(false)}
                 disabled={formSaving}
-                className="border border-gray-200 text-gray-500 text-xs font-semibold px-4 py-2 rounded-md"
+                className="border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-500 text-xs font-semibold px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 Cancelar
               </button>
             </div>
-            {formError && <p className="text-red-500 text-[11px] mt-2">{formError}</p>}
+            {formError && <p className="text-red-600 dark:text-red-400 text-[11px] mt-2">{formError}</p>}
           </div>
         </div>
       )}
@@ -1372,22 +1468,22 @@ export default function AdminPage() {
       {/* CONFIRMAR ELIMINAR */}
       {deleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
-          <div className="bg-white rounded-xl shadow-xl w-[340px] px-5 py-4 text-xs">
+          <div className="bg-[#1E293B] dark:bg-[#1E293B] rounded-xl shadow-xl w-[340px] px-5 py-4 text-xs">
             <div className="flex items-center gap-2 text-red-600 mb-2">
               <Trash2 size={14} />
-              <h3 className="text-sm font-bold text-[#1A1B22] dark:text-white">¿Eliminar sesión?</h3>
+              <h3 className="text-sm font-bold text-white">¿Eliminar sesión?</h3>
             </div>
-            <p className="text-[11px] text-gray-500">Esta acción no se puede deshacer.</p>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500">Esta acción no se puede deshacer.</p>
             <div className="flex items-center gap-2 mt-4">
               <button
                 onClick={() => deleteId && handleDelete(deleteId)}
-                className="bg-[#C40000] text-white text-xs font-semibold px-4 py-2 rounded-md"
+                className="bg-[#C40000] text-white text-xs font-semibold px-4 py-2 rounded-md hover:bg-red-700"
               >
                 Eliminar
               </button>
               <button
                 onClick={() => setDeleteId(null)}
-                className="border border-gray-200 text-gray-500 text-xs font-semibold px-4 py-2 rounded-md"
+                className="border border-gray-700 dark:border-gray-700 text-gray-400 dark:text-gray-500 text-xs font-semibold px-4 py-2 rounded-md hover:bg-gray-800"
               >
                 Cancelar
               </button>
@@ -1399,22 +1495,22 @@ export default function AdminPage() {
       {/* CONFIRMAR ELIMINAR USUARIO */}
       {usuarioDeleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
-          <div className="bg-white rounded-xl shadow-xl w-[340px] px-5 py-4 text-xs">
+          <div className="bg-[#1E293B] dark:bg-[#1E293B] rounded-xl shadow-xl w-[340px] px-5 py-4 text-xs">
             <div className="flex items-center gap-2 text-red-600 mb-2">
               <Trash2 size={14} />
-              <h3 className="text-sm font-bold text-[#1A1B22] dark:text-white">¿Eliminar usuario?</h3>
+              <h3 className="text-sm font-bold text-white">¿Eliminar usuario?</h3>
             </div>
-            <p className="text-[11px] text-gray-500">Esta acción no se puede deshacer. Se eliminará toda la información del usuario.</p>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500">Esta acción no se puede deshacer. Se eliminará toda la información del usuario.</p>
             <div className="flex items-center gap-2 mt-4">
               <button
                 onClick={() => usuarioDeleteId && handleDeleteUsuario(usuarioDeleteId)}
-                className="bg-[#C40000] text-white text-xs font-semibold px-4 py-2 rounded-md"
+                className="bg-[#C40000] text-white text-xs font-semibold px-4 py-2 rounded-md hover:bg-red-700"
               >
                 Eliminar
               </button>
               <button
                 onClick={() => setUsuarioDeleteId(null)}
-                className="border border-gray-200 text-gray-500 text-xs font-semibold px-4 py-2 rounded-md"
+                className="border border-gray-700 dark:border-gray-700 text-gray-400 dark:text-gray-500 text-xs font-semibold px-4 py-2 rounded-md hover:bg-gray-800"
               >
                 Cancelar
               </button>
@@ -1426,22 +1522,22 @@ export default function AdminPage() {
       {/* CONFIRMAR CERRAR SESIÓN */}
       {showLogoutConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(59,59,59,0.85)" }}>
-          <div className="bg-white rounded-xl shadow-xl w-[320px] px-6 py-5 text-xs">
+          <div className="bg-[#1E293B] dark:bg-[#1E293B] rounded-xl shadow-xl w-[320px] px-6 py-5 text-xs">
             <div className="flex items-center gap-2 text-red-600 mb-2">
               <LogOut size={14} />
-              <p className="text-sm font-bold text-[#1A1B22] dark:text-white">¿Cerrar Sesión?</p>
+              <p className="text-sm font-bold text-white">¿Cerrar Sesión?</p>
             </div>
-            <p className="text-[11px] text-gray-500">¿Estás seguro de que deseas salir del panel de administrador?</p>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500">¿Estás seguro de que deseas salir del panel de administrador?</p>
             <div className="flex flex-col gap-2 mt-4">
               <button
                 onClick={handleLogout}
-                className="bg-[#C40000] text-white text-xs font-semibold py-2 rounded-md"
+                className="bg-[#C40000] text-white text-xs font-semibold py-2 rounded-md hover:bg-red-700"
               >
                 CERRAR SESIÓN
               </button>
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="border border-gray-200 text-gray-500 text-xs font-semibold py-2 rounded-md"
+                className="border border-gray-700 dark:border-gray-700 text-gray-400 dark:text-gray-500 text-xs font-semibold py-2 rounded-md hover:bg-gray-800"
               >
                 CANCELAR
               </button>
@@ -1568,8 +1664,8 @@ export default function AdminPage() {
                 <div className="flex items-start gap-3">
                   <div className="w-2 h-2 bg-[#0F6B44] rounded-full mt-1.5 flex-shrink-0"></div>
                   <div className="flex-1">
-                    <p className="text-xs font-semibold text-[#1A1B22] dark:text-white">Nueva sesion creada</p>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">Se ha agregado una nueva sesion academica al evento.</p>
+                    <p className="text-xs font-semibold text-[#1A1B22] dark:text-white">Nueva sesión creada</p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">Se ha agregado una nueva sesión académica al evento.</p>
                     <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2">Hace 5 minutos</p>
                   </div>
                 </div>
@@ -1589,7 +1685,7 @@ export default function AdminPage() {
                   <div className="w-2 h-2 bg-yellow-400 rounded-full mt-1.5 flex-shrink-0"></div>
                   <div className="flex-1">
                     <p className="text-xs font-semibold text-[#1A1B22] dark:text-white">Capacidad casi llena</p>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">La sesion Programacion Web React ha alcanzado el 80% de su capacidad.</p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">La sesión Programación Web React ha alcanzado el 80% de su capacidad.</p>
                     <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2">Hace 1 hora</p>
                   </div>
                 </div>

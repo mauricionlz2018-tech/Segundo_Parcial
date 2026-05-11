@@ -1,8 +1,15 @@
 "use client"
 
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import { Upload, AlertTriangle } from "lucide-react"
 import type { Sesion, SesionFormData } from "@/types"
+
+interface Espacio {
+  id: string
+  nombre: string
+  descripcion: string | null
+  capacidad_maxima: number
+}
 
 interface NuevaSesionProps {
   onClose: () => void
@@ -38,6 +45,25 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
   const [institutionLogoUrl, setInstitutionLogoUrl] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [espacios, setEspacios] = useState<Espacio[]>([])
+  const [espaciosLoading, setEspaciosLoading] = useState(true)
+
+  // Cargar espacios disponibles
+  useEffect(() => {
+    async function fetchEspacios() {
+      try {
+        const response = await fetch("/api/espacios")
+        const data = await response.json()
+        setEspacios(data.data || [])
+      } catch (err) {
+        console.error("Error al cargar espacios:", err)
+        setEspacios([])
+      } finally {
+        setEspaciosLoading(false)
+      }
+    }
+    fetchEspacios()
+  }, [])
 
   // ✅ Detección de conflictos: rangos de hora que se solapan en mismo lugar y día
   const conflict = useMemo(() => {
@@ -193,7 +219,7 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
       <div className="flex gap-5 px-8 py-6 flex-1">
         {/* Izquierda: Info de sesión */}
         <div className="flex-1 bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-6">
-          <h2 className="text-sm font-semibold text-[#1A1B22] dark:text-white mb-5">Información de la sesión</h2>
+          <h2 className="text-sm font-semibold text-[#1A1B22] dark:text-white mb-5">Información de la sesión <span className="text-red-500">*Campos obligatorios</span></h2>
 
           {error && (
             <div className="mb-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-600 dark:text-red-300 text-xs rounded-md px-3 py-2">
@@ -203,7 +229,7 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
 
           <div className="space-y-4 text-xs">
             <div>
-              <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mb-1">NOMBRE DE LA SESIÓN *</p>
+              <p className="text-[10px] text-gray-700 dark:text-gray-300 font-semibold mb-1">Nombre de la sesión <span className="text-red-500">*</span></p>
               <input
                 className="w-full border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 text-xs placeholder-gray-300 dark:placeholder-gray-600 bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white focus:outline-none focus:border-[#0F6B44] dark:focus:border-[#10B981] transition-colors"
                 value={form.titulo} onChange={set("titulo")}
@@ -213,7 +239,7 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mb-1">TIPO DE SESIÓN</p>
+                <p className="text-[10px] text-gray-700 dark:text-gray-300 font-semibold mb-1">Tipo de sesión</p>
                 <select
                   className="w-full border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 text-xs bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white focus:outline-none focus:border-[#0F6B44] dark:focus:border-[#10B981] transition-colors"
                   value={form.tipo} onChange={set("tipo")}
@@ -226,7 +252,7 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
                 </select>
               </div>
               <div>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mb-1">FECHA</p>
+                <p className="text-[10px] text-gray-700 dark:text-gray-300 font-semibold mb-1">Fecha</p>
                 <input type="date"
                   className="w-full border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 text-xs bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white focus:outline-none focus:border-[#0F6B44] dark:focus:border-[#10B981] transition-colors"
                   value={form.dia} onChange={set("dia")}
@@ -236,7 +262,7 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
 
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mb-1">HORA INICIO</p>
+                <p className="text-[10px] text-gray-700 dark:text-gray-300 font-semibold mb-1">Hora de inicio</p>
                 <input type="time"
                   className={`w-full border rounded-md px-3 py-2 text-xs bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white focus:outline-none transition-colors ${
                     form.hora_inicio && form.hora_inicio > "16:30"
@@ -250,7 +276,7 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
                 )}
               </div>
               <div>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mb-1">HORA FIN</p>
+                <p className="text-[10px] text-gray-700 dark:text-gray-300 font-semibold mb-1">Hora de finalización</p>
                 <input type="time"
                   className={`w-full border rounded-md px-3 py-2 text-xs bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white focus:outline-none transition-colors ${
                     form.hora_fin && form.hora_fin > "16:30"
@@ -264,7 +290,7 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
                 )}
               </div>
               <div>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mb-1">CUPO MÁXIMO</p>
+                <p className="text-[10px] text-gray-700 dark:text-gray-300 font-semibold mb-1">Cupo máximo <span className="text-red-500">*</span></p>
                 <input type="number" min={1} max={100}
                   className={`w-full border rounded-md px-3 py-2 text-xs bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white focus:outline-none transition-colors ${
                     form.cupos_total !== "" && Number(form.cupos_total) > 100
@@ -281,14 +307,24 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
             </div>
 
             <div>
-              <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mb-1">ESCENARIO</p>
-              <input
+              <p className="text-[10px] text-gray-700 dark:text-gray-300 font-semibold mb-1">Escenario <span className="text-red-500">*</span></p>
+              <select
                 className={`w-full border rounded-md px-3 py-2 text-xs bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white focus:outline-none transition-colors ${
                   conflict ? "border-amber-400 dark:border-amber-500 focus:border-amber-500 dark:focus:border-amber-600" : "border-gray-200 dark:border-gray-600 focus:border-[#0F6B44] dark:focus:border-[#10B981]"
                 }`}
-                value={form.lugar} onChange={set("lugar")}
-                placeholder="Ej. Aula Magna"
-              />
+                value={form.lugar}
+                onChange={set("lugar")}
+                disabled={espaciosLoading}
+              >
+                <option value="">
+                  {espaciosLoading ? "Cargando espacios..." : "Selecciona un escenario"}
+                </option>
+                {espacios.map((espacio) => (
+                  <option key={espacio.id} value={espacio.nombre}>
+                    {espacio.nombre}
+                  </option>
+                ))}
+              </select>
               {conflict && (
                 <div className="mt-2 flex items-start gap-2 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-[11px] rounded-md px-3 py-2">
                   <AlertTriangle size={12} className="mt-0.5 shrink-0" />
@@ -298,7 +334,7 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
             </div>
 
             <div>
-              <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mb-1">DESCRIPCIÓN BREVE (OPCIONAL)</p>
+              <p className="text-[10px] text-gray-700 dark:text-gray-300 font-semibold mb-1">Descripción breve (opcional)</p>
               <textarea rows={4}
                 className="w-full border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 text-xs resize-none bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none focus:border-[#0F6B44] dark:focus:border-[#10B981] transition-colors"
                 value={form.descripcion} onChange={set("descripcion")}
@@ -310,8 +346,8 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
 
         {/* Derecha: Info del ponente */}
         <div className="w-[300px] shrink-0 bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-6">
-          <h2 className="text-sm font-semibold text-[#0F6B44] dark:text-[#10B981] mb-5 uppercase tracking-wide">
-            Información del Ponente
+          <h2 className="text-sm font-semibold text-[#0F6B44] dark:text-[#10B981] mb-5 tracking-wide">
+            Información del ponente
           </h2>
 
           <div className="space-y-4 text-xs">
@@ -320,15 +356,15 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
                 ? <img src={speakerPhotoUrl} alt="Ponente" className="h-full w-full object-cover" />
                 : (<>
                     <Upload size={18} className="text-gray-300 dark:text-gray-600 mb-1" />
-                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Cargar fotografía</span>
-                    <span className="text-[9px] text-gray-300 dark:text-gray-600">PNG, JPG hasta 5 MB</span>
+                    <span className="text-[10px] text-gray-600 dark:text-gray-400 font-medium">Cargar fotografía</span>
+                    <span className="text-[9px] text-gray-500 dark:text-gray-500">PNG, JPG hasta 5 MB</span>
                   </>)
               }
               <input type="file" accept="image/*" className="hidden" onChange={handleSpeakerPhotoChange} />
             </label>
 
             <div>
-              <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mb-1">NOMBRE COMPLETO</p>
+              <p className="text-[10px] text-gray-700 dark:text-gray-300 font-semibold mb-1">Nombre completo <span className="text-red-500">*</span></p>
               <input
                 className={`w-full border rounded-md px-3 py-2 text-xs placeholder-gray-300 dark:placeholder-gray-600 bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white focus:outline-none transition-colors ${
                   form.ponente && !/[a-zA-ZáéíóúàèìòùäëïöüÁÉÍÓÚÀÈÌÒÙÄËÏÖÜ]/.test(form.ponente)
@@ -344,7 +380,7 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
             </div>
 
             <div>
-              <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mb-1">PERFIL PROFESIONAL (GRADO)</p>
+              <p className="text-[10px] text-gray-700 dark:text-gray-300 font-semibold mb-1">Perfil profesional (grado)</p>
               <input
                 className="w-full border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 text-xs placeholder-gray-300 dark:placeholder-gray-600 bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white focus:outline-none focus:border-[#0F6B44] dark:focus:border-[#10B981] transition-colors"
                 value={form.perfil_profesional} onChange={set("perfil_profesional")}
@@ -353,7 +389,7 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
             </div>
 
             <div>
-              <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mb-1">AFILIACIÓN INSTITUCIONAL (OPCIONAL)</p>
+              <p className="text-[10px] text-gray-700 dark:text-gray-300 font-semibold mb-1">Afiliación institucional (opcional)</p>
               <input
                 className="w-full border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 text-xs placeholder-gray-300 dark:placeholder-gray-600 bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white focus:outline-none focus:border-[#0F6B44] dark:focus:border-[#10B981] transition-colors"
                 value={form.afiliacion} onChange={set("afiliacion")}
@@ -366,15 +402,15 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
                 ? <img src={institutionLogoUrl} alt="Institución" className="h-full w-full object-contain p-2" />
                 : (<>
                     <Upload size={16} className="text-gray-300 dark:text-gray-600 mb-1" />
-                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Cargar logo de la institución</span>
-                    <span className="text-[9px] text-gray-300 dark:text-gray-600">PNG, JPG hasta 5 MB</span>
+                    <span className="text-[10px] text-gray-600 dark:text-gray-400 font-medium">Cargar logo de la institución</span>
+                    <span className="text-[9px] text-gray-500 dark:text-gray-500">PNG, JPG hasta 5 MB</span>
                   </>)
               }
               <input type="file" accept="image/*" className="hidden" onChange={handleInstitutionLogoChange} />
             </label>
 
             <div>
-              <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mb-1">BIOGRAFÍA / RESEÑA CURRICULAR</p>
+              <p className="text-[10px] text-gray-700 dark:text-gray-300 font-semibold mb-1">Biografía / Reseña curricular</p>
               <textarea rows={4}
                 className="w-full border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 text-xs resize-none placeholder-gray-300 dark:placeholder-gray-600 bg-white dark:bg-[#0F172A] text-gray-900 dark:text-white focus:outline-none focus:border-[#0F6B44] dark:focus:border-[#10B981] transition-colors"
                 value={form.biografia} onChange={set("biografia")}

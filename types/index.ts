@@ -13,6 +13,9 @@ export interface Sesion {
   cupos_ocupados: number
   descripcion: string | null
   foto_ponente: string | null
+  perfil_profesional: string | null
+  afiliacion: string | null
+  biografia: string | null
   created_at: string
 }
 
@@ -45,4 +48,7 @@ export interface SesionFormData {
   cupos_total: number
   descripcion: string
   foto_ponente?: string | null
+  perfil_profesional?: string | null
+  afiliacion?: string | null
+  biografia?: string | null
 }
