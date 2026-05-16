@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Menu, X, LogOut, User } from "lucide-react"
+import { Menu, X, LogOut, User, AlertCircle } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
 
 const navLinks = [
@@ -16,6 +17,7 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [user, setUser] = useState<{ email: string; role: string; username: string } | null>(null)
   const [role, setRole] = useState<string | null>(null)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
 
@@ -36,12 +38,17 @@ export default function Navbar() {
     loadUser()
   }, [])
 
-  async function handleSignOut() {
+  async function confirmLogout() {
     await fetch("/api/auth/logout", { method: "POST" })
     setUser(null)
     setRole(null)
+    setShowLogoutConfirm(false)
     router.push("/")
     router.refresh()
+  }
+
+  function handleSignOut() {
+    setShowLogoutConfirm(true)
   }
 
   return (
@@ -49,8 +56,16 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
         <div className="flex items-center justify-between h-14">
           {/* Brand */}
-          <Link href="/" className="text-sm font-bold text-black dark:text-white tracking-wide uppercase">
-            UES San José del Rincón
+          <Link href="/" className="flex items-center gap-3">
+            <Image
+              src="/images/sanjose.png"
+              alt="San José del Rincón"
+              width={80}
+              height={80}
+            />
+            <span className="text-sm font-bold text-black dark:text-white tracking-wide uppercase">
+              UES San José del Rincón
+            </span>
           </Link>
 
           {/* Desktop nav */}
@@ -152,7 +167,7 @@ export default function Navbar() {
                 )}
                 <button
                   onClick={() => { setIsOpen(false); handleSignOut() }}
-                  className="text-sm text-red-600 py-1 text-left"
+                  className="text-sm text-red-600 dark:text-red-400 py-1 text-left hover:font-semibold transition-colors"
                 >
                   Cerrar sesión
                 </button>
@@ -177,6 +192,36 @@ export default function Navbar() {
               </>
             )}
           </nav>
+        </div>
+      )}
+
+      {/* Logout confirmation modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-[#1E293B] rounded-lg shadow-xl p-6 max-w-sm mx-4 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-3 mb-4">
+              <AlertCircle className="w-6 h-6 text-yellow-600 dark:text-yellow-500" />
+              <h2 className="text-lg font-bold text-black dark:text-white">Cerrar Sesión</h2>
+            </div>
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
+              ¿Estás seguro de que deseas cerrar tu sesión?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors font-medium flex items-center gap-2"
+              >
+                <LogOut size={16} />
+                Cerrar Sesión
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </header>

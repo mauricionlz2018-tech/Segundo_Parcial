@@ -52,9 +52,18 @@ export default function SedesPage() {
           className="px-6 lg:px-16 py-12"
           style={{ background: "linear-gradient(135deg, #64FC05 0%, #006341 100%)" }}
         >
-          <p className="text-xs font-semibold tracking-widest text-white/70 uppercase mb-2">
-            12va Jornada Académica y Cultural
-          </p>
+          <div className="flex items-center gap-3 mb-3">
+            <Image
+              src="/images/sanjose.png"
+              alt="San José del Rincón"
+              width={56}
+              height={56}
+              className="rounded-md"
+            />
+            <p className="text-xs font-semibold tracking-widest text-white/70 uppercase">
+              12va Jornada Académica y Cultural
+            </p>
+          </div>
           <h1 className="text-3xl md:text-4xl font-black text-white">Sedes del Evento</h1>
           <p className="text-white/75 mt-2 text-sm">
             Conoce los espacios donde se desarrollará la jornada — 1 al 5 de Diciembre, 2025

@@ -4,10 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import {
-  LayoutGrid, CalendarDays, Users, MapPin, Settings, LogOut, Pencil, Trash2, X, Clock, Filter, Plus, AlertCircle, Search, Sun, Moon, Bell, User, Eye
+  LayoutGrid, CalendarDays, Users, MapPin, Settings, LogOut, Pencil, Trash2, X, Clock, Filter, Plus, AlertCircle, Search, Sun, Moon, Bell, User, Eye, Menu
 } from "lucide-react"
 import type { Sesion, SesionFormData, Usuario } from "@/types"
 import NuevaSesion from '@/components/NuevaSesion'
+import Image from "next/image"
+import { useIsMobile } from '@/components/ui/use-mobile'
 import { toast } from "sonner"
 
 type View = "panel" | "sesiones" | "ponentes" | "configuracion" | "usuarios" | "espacios"
@@ -56,8 +58,10 @@ function getNombreDia(dia: string): string {
 export default function AdminPage() {
   const router = useRouter()
   const { theme, setTheme } = useTheme()
+  const isMobile = useIsMobile()
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [active, setActive] = useState<View>("panel")
   const [currentUser, setCurrentUser] = useState<Usuario | null>(null)
   const [showNotifications, setShowNotifications] = useState(false)
@@ -638,12 +642,22 @@ export default function AdminPage() {
   return (
     <main className="min-h-screen bg-[#FBF8FF] dark:bg-[#0F172A]">
       <div className="flex min-h-screen">
-        <aside className="w-[240px] bg-white dark:bg-[#1E293B] border-r border-gray-100 dark:border-gray-700 flex flex-col justify-between">
+        {/* Sidebar - Desktop */}
+        <aside className="hidden lg:flex w-[240px] bg-white dark:bg-[#1E293B] border-r border-gray-100 dark:border-gray-700 flex-col justify-between fixed left-0 top-0 bottom-0">
           <div className="px-6 pt-6">
-            <div className="text-xs font-bold uppercase text-black dark:text-white leading-tight">
-              UES SAN JOSÉ DEL
-              <br />
-              RINCÓN
+            <div className="flex items-center gap-3 mb-4">
+              <Image
+                src="/images/sanjose.png"
+                alt="San José del Rincón"
+                width={56}
+                height={56}
+                className="rounded-md"
+              />
+              <div className="text-xs font-bold uppercase text-black dark:text-white leading-tight">
+                UES SAN JOSÉ DEL
+                <br />
+                RINCÓN
+              </div>
             </div>
             <nav className="mt-6 flex flex-col gap-2 text-sm">
               <button
@@ -709,16 +723,138 @@ export default function AdminPage() {
           </div>
         </aside>
 
-        <section className="flex-1 overflow-auto bg-white dark:bg-slate-950">
-          <div className="flex items-center justify-between px-8 py-4 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-[#1E293B]">
-            <div className="flex items-center gap-2 bg-white dark:bg-[#0F172A] border border-gray-100 dark:border-gray-700 rounded-full px-4 py-2 text-xs text-gray-400 dark:text-gray-500 w-[280px]">
-              <Search size={14} />
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={searchPlaceholder}
-                className="w-full bg-transparent outline-none text-xs text-gray-500 dark:text-gray-400"
-              />
+        {/* Sidebar - Mobile */}
+        {mobileMenuOpen && (
+          <aside className="fixed inset-0 z-40 lg:hidden bg-black/50" onClick={() => setMobileMenuOpen(false)}>
+            <div 
+              className="absolute left-0 top-0 bottom-0 w-[240px] bg-white dark:bg-[#1E293B] border-r border-gray-100 dark:border-gray-700 flex flex-col justify-between"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-6 pt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <Image
+                      src="/images/sanjose.png"
+                      alt="San José del Rincón"
+                      width={90}
+                      height={90}
+                    />
+                    <div className="text-xs font-bold uppercase text-black dark:text-white leading-tight">
+                      UES SAN JOSÉ DEL
+                      <br />
+                      RINCÓN
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+                <nav className="mt-6 flex flex-col gap-2 text-sm">
+                  <button
+                    onClick={() => {
+                      setActive("panel")
+                      setMobileMenuOpen(false)
+                    }}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg ${active === "panel" ? "bg-[#EAFBE2] dark:bg-[#10B981]/20 text-[#0F6B44] dark:text-[#10B981]" : "text-gray-500 dark:text-gray-400 hover:text-[#0F6B44] dark:hover:text-[#10B981]"}`}
+                  >
+                    <LayoutGrid size={14} />
+                    Panel de Control
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActive("sesiones")
+                      setMobileMenuOpen(false)
+                    }}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg ${active === "sesiones" ? "bg-[#EAFBE2] text-[#0F6B44]" : "text-gray-500 hover:text-[#0F6B44]"}`}
+                  >
+                    <CalendarDays size={14} />
+                    Sesiones
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActive("ponentes")
+                      setMobileMenuOpen(false)
+                    }}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg ${active === "ponentes" ? "bg-[#EAFBE2] dark:bg-[#10B981]/20 text-[#0F6B44] dark:text-[#10B981]" : "text-gray-500 dark:text-gray-400 hover:text-[#0F6B44] dark:hover:text-[#10B981]"}`}
+                  >
+                    <Users size={14} />
+                    Ponentes
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActive("usuarios")
+                      setMobileMenuOpen(false)
+                    }}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg ${active === "usuarios" ? "bg-[#EAFBE2] dark:bg-[#10B981]/20 text-[#0F6B44] dark:text-[#10B981]" : "text-gray-500 dark:text-gray-400 hover:text-[#0F6B44] dark:hover:text-[#10B981]"}`}
+                  >
+                    <Users size={14} />
+                    Usuarios
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActive("espacios")
+                      setMobileMenuOpen(false)
+                    }}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg ${active === "espacios" ? "bg-[#EAFBE2] dark:bg-[#10B981]/20 text-[#0F6B44] dark:text-[#10B981]" : "text-gray-500 dark:text-gray-400 hover:text-[#0F6B44] dark:hover:text-[#10B981]"}`}
+                  >
+                    <MapPin size={14} />
+                    Espacios
+                  </button>
+                </nav>
+              </div>
+
+              <div className="px-6 pb-6">
+                <button
+                  onClick={openCreateForm}
+                  className="w-full bg-[#53F000] dark:bg-[#10B981] text-black dark:text-white text-xs font-semibold py-2 rounded-md mb-4 flex items-center justify-center gap-1"
+                >
+                  <Plus size={12} />
+                  Nueva Sesión
+                </button>
+                <button
+                  onClick={() => {
+                    setActive("configuracion")
+                    setMobileMenuOpen(false)
+                  }}
+                  className={`flex items-center gap-2 text-xs mb-2 ${active === "configuracion" ? "text-[#0F6B44] dark:text-[#10B981]" : "text-gray-500 dark:text-gray-400"}`}
+                >
+                  <Settings size={12} />
+                  Ajustes
+                </button>
+                <button
+                  onClick={() => setShowLogoutConfirm(true)}
+                  className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400"
+                >
+                  <LogOut size={12} />
+                  Cerrar Sesión
+                </button>
+              </div>
+            </div>
+          </aside>
+        )}
+
+        <section className="flex-1 overflow-auto bg-white dark:bg-slate-950 lg:ml-[240px]">
+          <div className="flex items-center justify-between px-4 lg:px-8 py-4 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-[#1E293B]">
+            <div className="flex items-center gap-3 flex-1">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="lg:hidden p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                title="Menú"
+              >
+                <Menu size={20} />
+              </button>
+              <div className="hidden sm:flex items-center gap-2 bg-white dark:bg-[#0F172A] border border-gray-100 dark:border-gray-700 rounded-full px-4 py-2 text-xs text-gray-400 dark:text-gray-500 flex-1 max-w-[280px]">
+                <Search size={14} />
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={searchPlaceholder}
+                  className="w-full bg-transparent outline-none text-xs text-gray-500 dark:text-gray-400"
+                />
+              </div>
             </div>
             <div className="flex items-center gap-3 text-gray-400 dark:text-gray-500">
               <button
@@ -1236,16 +1372,16 @@ export default function AdminPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-[10px] text-gray-400 font-semibold">NOMBRE COMPLETO</p>
-                        <p className="text-xs font-semibold">{currentUser?.full_name ?? currentUser?.username ?? "—"}</p>
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">NOMBRE COMPLETO</p>
+                        <p className="text-xs font-semibold dark:text-white">{currentUser?.full_name ?? currentUser?.username ?? "—"}</p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-gray-400 font-semibold">CORREO INSTITUCIONAL</p>
-                        <p className="text-xs font-semibold">{currentUser?.email ?? "—"}</p>
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">CORREO INSTITUCIONAL</p>
+                        <p className="text-xs font-semibold dark:text-white">{currentUser?.email ?? "—"}</p>
                       </div>
                       <div className="col-span-2">
-                        <p className="text-[10px] text-gray-400 font-semibold">ROL</p>
-                        <div className="bg-[#F8F9FB] border border-gray-100 rounded-md px-3 py-2 text-xs font-semibold capitalize">
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">ROL</p>
+                        <div className="bg-[#F8F9FB] dark:bg-[#0F172A] border border-gray-100 dark:border-gray-700 rounded-md px-3 py-2 text-xs font-semibold capitalize dark:text-white">
                           {currentUser?.role ?? "—"}
                         </div>
                       </div>
@@ -1276,21 +1412,21 @@ export default function AdminPage() {
               <div className="mt-6 bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-5">
                 <p className="text-xs font-semibold text-[#1A1B22] dark:text-white mb-4">Notificaciones del Sistema</p>
                 <div className="grid grid-cols-2 gap-4">
-                  <label className="flex items-start gap-3 border border-gray-100 dark:border-gray-700 dark:bg-[#0F172A] rounded-xl p-3 text-xs">
+                  <label className="flex items-start gap-3 border border-gray-100 dark:border-gray-700 bg-white dark:bg-[#0F172A] rounded-xl p-3 text-xs">
                     <input type="checkbox" defaultChecked className="mt-1" />
                     <div>
                       <p className="font-semibold text-[#1A1B22] dark:text-white">Nuevos Registros</p>
                       <p className="text-[10px] text-gray-400 dark:text-gray-500">Notificar cuando un estudiante o docente se inscriba.</p>
                     </div>
                   </label>
-                  <label className="flex items-start gap-3 border border-gray-100 dark:border-gray-700 dark:bg-[#0F172A] rounded-xl p-3 text-xs">
+                  <label className="flex items-start gap-3 border border-gray-100 dark:border-gray-700 bg-white dark:bg-[#0F172A] rounded-xl p-3 text-xs">
                     <input type="checkbox" defaultChecked className="mt-1" />
                     <div>
                       <p className="font-semibold text-[#1A1B22] dark:text-white">Conflictos de Horario</p>
                       <p className="text-[10px] text-gray-400 dark:text-gray-500">Alertas inmediatas sobre traslape de eventos.</p>
                     </div>
                   </label>
-                  <label className="flex items-start gap-3 border border-gray-100 dark:border-gray-700 dark:bg-[#0F172A] rounded-xl p-3 text-xs">
+                  <label className="flex items-start gap-3 border border-gray-100 dark:border-gray-700 bg-white dark:bg-[#0F172A] rounded-xl p-3 text-xs">
                     <input type="checkbox" className="mt-1" />
                     <div>
                       <p className="font-semibold text-[#1A1B22] dark:text-white">Reportes Diarios</p>

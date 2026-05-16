@@ -55,43 +55,43 @@ export default function RequestResetPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-indigo-100 px-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#FBF8FF] dark:bg-[#0F172A] px-4">
         <div className="text-center max-w-md">
           <div className="flex justify-center mb-4">
-            <CheckCircle2 className="w-16 h-16 text-green-500" />
+            <CheckCircle2 className="w-16 h-16 text-[#10B981]" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">¡Correo Enviado!</h1>
-          <p className="text-gray-600 mb-6">
+          <h1 className="text-3xl font-bold text-[#1A1B22] dark:text-white mb-4">¡Correo Enviado!</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             Se ha enviado un correo con instrucciones para recuperar tu contraseña.
           </p>
           
           {resetToken && (
-            <div className="bg-blue-50 border-2 border-blue-400 rounded-lg p-4 mb-6">
-              <p className="text-sm text-gray-600 mb-2">Tu token de recuperación:</p>
-              <div className="bg-white p-3 rounded border border-gray-300 break-all font-mono text-sm flex items-center justify-between gap-2">
-                <span>{resetToken}</span>
+            <div className="bg-[#EAFBE2] dark:bg-[#10B981]/20 border-2 border-[#10B981] rounded-lg p-4 mb-6">
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">Tu token de recuperación:</p>
+              <div className="bg-white dark:bg-[#0F172A] p-3 rounded border border-gray-300 dark:border-gray-700 break-all font-mono text-sm flex items-center justify-between gap-2">
+                <span className="dark:text-white">{resetToken}</span>
                 <button
                   onClick={copyToken}
-                  className="p-1 hover:bg-gray-100 rounded flex-shrink-0"
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded flex-shrink-0"
                   title="Copiar"
                 >
-                  <Copy className="w-4 h-4 text-indigo-600" />
+                  <Copy className="w-4 h-4 text-[#0F6B44] dark:text-[#10B981]" />
                 </button>
               </div>
-              {copied && <p className="text-green-600 text-sm mt-2">✓ Copiado</p>}
+              {copied && <p className="text-[#0F6B44] dark:text-[#10B981] text-sm mt-2">Copiado</p>}
             </div>
           )}
           
           <Link
             href="/auth/reset"
-            className="inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition mb-4"
+            className="inline-block px-6 py-2 bg-[#0F6B44] hover:bg-[#0A4A2F] text-white rounded-lg transition mb-4"
           >
             Ir a Recuperar Contraseña
           </Link>
           <br />
           <Link
             href="/auth/login"
-            className="inline-block px-6 py-2 text-indigo-600 hover:text-indigo-700 transition"
+            className="inline-block px-6 py-2 text-[#0F6B44] dark:text-[#10B981] hover:text-[#0A4A2F] dark:hover:text-[#86EFAC] transition"
           >
             Volver al Login
           </Link>
@@ -101,9 +101,9 @@ export default function RequestResetPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-indigo-100">
+    <div className="min-h-screen flex flex-col bg-[#FBF8FF] dark:bg-[#0F172A]">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-white dark:bg-[#1E293B] shadow-sm border-b border-gray-100 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <Link href="/" className="flex items-center gap-3">
             <Image
@@ -113,33 +113,38 @@ export default function RequestResetPage() {
               height={40}
               className="rounded"
             />
-            <span className="font-bold text-xl">UES</span>
           </Link>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+        <div className="bg-white dark:bg-[#1E293B] rounded-lg shadow-lg p-8 max-w-md w-full border border-gray-100 dark:border-gray-700">
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
-              <Mail className="w-12 h-12 text-indigo-600" />
+              <Image
+                src="/images/sanjose.png"
+                alt="San José del Rincón"
+                width={48}
+                height={48}
+                className="rounded-md"
+              />
             </div>
-            <h1 className="text-2xl font-bold text-gray-800">Recuperar Contraseña</h1>
-            <p className="text-gray-600 text-sm mt-2">
+            <h1 className="text-2xl font-bold text-[#1A1B22] dark:text-white">Recuperar Contraseña</h1>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
               Ingresa tu usuario o correo para recibir el token
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900 rounded-lg p-4 text-red-700 dark:text-red-400 text-sm">
                 {error}
               </div>
             )}
 
             <div>
-              <label htmlFor="identifier" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="identifier" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Usuario o Correo Electrónico
               </label>
               <input
@@ -148,7 +153,7 @@ export default function RequestResetPage() {
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 placeholder="tu.usuario o tu@email.com"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10B981] bg-white dark:bg-[#0F172A] text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                 disabled={loading}
               />
             </div>
@@ -156,16 +161,16 @@ export default function RequestResetPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-2 bg-[#0F6B44] hover:bg-[#0A4A2F] text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Enviando..." : "Enviar Token"}
             </button>
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-gray-600 text-sm">
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
               ¿Recuerdas tu contraseña?{" "}
-              <Link href="/auth/login" className="text-indigo-600 font-medium hover:underline">
+              <Link href="/auth/login" className="text-[#0F6B44] dark:text-[#10B981] font-medium hover:underline">
                 Volver al Login
               </Link>
             </p>
@@ -174,9 +179,9 @@ export default function RequestResetPage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 py-6 px-4">
-        <div className="max-w-7xl mx-auto text-center text-gray-600 text-sm">
-          <p>&copy; 2026 Universidad Especializada de El Salvador. Todos los derechos reservados.</p>
+      <footer className="bg-white dark:bg-[#1E293B] border-t border-gray-200 dark:border-gray-700 py-6 px-4">
+        <div className="max-w-7xl mx-auto text-center text-gray-600 dark:text-gray-400 text-sm">
+          <p>&copy; 2026 Universidad Mexiquense del Bicentenario. Todos los derechos reservados.</p>
         </div>
       </footer>
     </div>

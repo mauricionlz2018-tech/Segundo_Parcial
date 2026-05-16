@@ -70,6 +70,14 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-sm px-4">
         {/* Brand header above card */}
         <div className="text-center mb-6">
+          <div className="flex items-center justify-center mb-4">
+            <Image
+              src="/images/sanjose.png"
+              alt="San José del Rincón"
+              width={90}
+              height={90}
+            />
+          </div>
           <h1 className="text-lg font-bold text-[#1A1B22] dark:text-white tracking-wide uppercase">
             UES San José del Rincón
           </h1>

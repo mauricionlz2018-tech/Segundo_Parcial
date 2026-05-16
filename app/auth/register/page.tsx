@@ -120,14 +120,14 @@ export default function RegisterPage() {
                 alt="Logo"
                 fill
                 className="object-cover rounded-bl-3xl"
-                sizes="48px"
+                sizes="64px"
               />
             </div>
           </div>
 
           {/* Header */}
           <div className="mb-6">
-            <p className="text-xs font-semibold tracking-widest text-gray-400 dark:text-gray-500 uppercase mb-1">
+            <p className="text-xs font-semibold tracking-widest text-gray-400 dark:text-gray-500 uppercase mb-1 text-center">
               UES San José del Rincón
             </p>
             <h1 className="text-2xl font-bold text-[#1A1B22] dark:text-white">Crear cuenta</h1>

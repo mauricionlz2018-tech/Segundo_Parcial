@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import { Share2, BarChart2, Rss } from "lucide-react"
 
@@ -17,6 +18,21 @@ export default function Footer() {
   return (
     <footer className="bg-white dark:bg-[#1A1F2E] border-t border-gray-200 dark:border-gray-800 py-10 px-6 lg:px-10">
       <div className="max-w-7xl mx-auto">
+        {/* Brand section */}
+        <div className="flex items-center gap-3 mb-8 pb-8 border-b border-gray-200 dark:border-gray-800">
+          <Image
+            src="/images/sanjose.png"
+            alt="San José del Rincón"
+            width={56}
+            height={56}
+            className="rounded-md"
+          />
+          <div>
+            <h2 className="text-sm font-bold text-black dark:text-white uppercase tracking-wide">UES San José del Rincón</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Universidad Mexiquense del Bicentenario</p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-3 gap-8">
           {/* Navigation */}
           <div>
