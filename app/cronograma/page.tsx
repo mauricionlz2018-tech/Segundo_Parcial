@@ -62,8 +62,26 @@ function getNombreDia(dia: string): string {
 export default function CronogramaPage() {
   const [sesiones, setSesiones] = useState<Record<string, Sesion[]>>({})
   const [diaActivo, setDiaActivo] = useState<string>("todos")
-  const [agendados, setAgendados] = useState<Set<string>>(new Set())
+  const [sesionesInscritas, setSesionesInscritas] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [inscribiendo, setInscribiendo] = useState<string | null>(null)
+
+  // Obtener usuario actual
+  useEffect(() => {
+    async function getUser() {
+      try {
+        const res = await fetch("/api/auth/me")
+        const data = await res.json()
+        if (data.user && data.user.id) {
+          setUserId(data.user.id)
+        }
+      } catch (err) {
+        console.error("Error obteniendo usuario:", err)
+      }
+    }
+    getUser()
+  }, [])
 
   async function downloadPDF() {
     try {
@@ -100,13 +118,68 @@ export default function CronogramaPage() {
     loadSesiones()
   }, [])
 
-  function toggleAgenda(key: string) {
-    setAgendados((prev) => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
+  // Cargar sesiones inscritas del usuario desde BD
+  useEffect(() => {
+    if (!userId) return
+
+    async function loadSesionesInscritas() {
+      try {
+        const res = await fetch(`/api/usuarios/mis-sesiones?userId=${userId}`)
+        const data = await res.json()
+        const inscritasIds = new Set<string>(
+          (data.data || []).map((s: Sesion) => s.id)
+        )
+        setSesionesInscritas(inscritasIds)
+      } catch (error) {
+        console.error("Error cargando sesiones inscritas:", error)
+      }
+    }
+
+    loadSesionesInscritas()
+  }, [userId])
+
+  async function toggleAgenda(sesionId: string, sesionTitulo: string) {
+    if (!userId) {
+      alert("Debes iniciar sesión para agendar sesiones")
+      return
+    }
+
+    setInscribiendo(sesionId)
+    try {
+      if (sesionesInscritas.has(sesionId)) {
+        // Desinscribir
+        const res = await fetch(`/api/sesiones/${sesionId}/inscribir?userId=${userId}`, {
+          method: "DELETE",
+        })
+        if (res.ok) {
+          setSesionesInscritas(prev => {
+            const next = new Set(prev)
+            next.delete(sesionId)
+            return next
+          })
+        } else {
+          alert("Error al desinscribirse")
+        }
+      } else {
+        // Inscribir
+        const res = await fetch(`/api/sesiones/${sesionId}/inscribir`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId }),
+        })
+        if (res.ok) {
+          setSesionesInscritas(prev => new Set([...prev, sesionId]))
+        } else {
+          const error = await res.json()
+          alert(`Error: ${error.error}`)
+        }
+      }
+    } catch (error) {
+      console.error("Error:", error)
+      alert("Error al actualizar agenda")
+    } finally {
+      setInscribiendo(null)
+    }
   }
 
   const dias = Object.keys(sesiones).sort()
@@ -173,35 +246,38 @@ export default function CronogramaPage() {
           <div className="bg-white dark:bg-slate-900 border-l border-gray-100 dark:border-gray-800 px-6 py-8 flex flex-col gap-6">
             <h2 className="text-sm font-bold text-[#1A1B22] dark:text-white">Mi Agenda Personal</h2>
 
-            {agendados.size === 0 ? (
+            {!userId || sesionesInscritas.size === 0 ? (
               <div className="flex flex-col items-center justify-center text-center gap-2 py-6">
                 <div className="w-10 h-10 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-700 flex items-center justify-center">
                   <BookOpen size={16} className="text-gray-300 dark:text-gray-700" />
                 </div>
                 <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed max-w-[160px]">
-                  Inicia sesión para agregar tus sesiones preferidas.
+                  {!userId ? "Inicia sesión para agregar tus sesiones preferidas." : "Aún no has agendado sesiones."}
                 </p>
               </div>
             ) : (
               <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto">
-                {Array.from(agendados).map((key) => (
-                  <div key={key} className="text-xs text-[#065F46] dark:text-green-400 bg-green-50 dark:bg-green-950/30 rounded-lg px-3 py-2 font-medium">
-                    {key}
-                  </div>
-                ))}
+                {Object.values(sesiones)
+                  .flat()
+                  .filter((s) => sesionesInscritas.has(s.id))
+                  .map((sesion) => (
+                    <div key={sesion.id} className="text-xs text-[#065F46] dark:text-green-400 bg-green-50 dark:bg-green-950/30 rounded-lg px-3 py-2 font-medium">
+                      {sesion.titulo}
+                    </div>
+                  ))}
               </div>
             )}
 
             <div className="mt-auto">
               <div className="mb-1 flex items-center justify-between">
                 <span className="text-[10px] text-gray-400 dark:text-gray-600 uppercase tracking-wider font-semibold">Sesiones Registradas</span>
-                <span className="text-[10px] text-gray-400 dark:text-gray-600">{agendados.size}/{totalSesiones}</span>
+                <span className="text-[10px] text-gray-400 dark:text-gray-600">{sesionesInscritas.size}/{totalSesiones}</span>
               </div>
               <div className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all"
                   style={{
-                    width: `${totalSesiones > 0 ? (agendados.size / totalSesiones) * 100 : 0}%`,
+                    width: `${totalSesiones > 0 ? (sesionesInscritas.size / totalSesiones) * 100 : 0}%`,
                     backgroundColor: "#64FC05",
                   }}
                 />
@@ -304,17 +380,18 @@ export default function CronogramaPage() {
                       {evento.cupos_ocupados} / {evento.cupos_total} cupos
                     </div>
                     <button
-                      onClick={() => toggleAgenda(evento.titulo)}
-                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${
-                        agendados.has(evento.titulo)
+                      onClick={() => toggleAgenda(evento.id, evento.titulo)}
+                      disabled={inscribiendo === evento.id}
+                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition disabled:opacity-50 ${
+                        sesionesInscritas.has(evento.id)
                           ? "text-white"
                           : "text-[#065F46] border border-[#065F46] hover:bg-green-50 dark:hover:bg-green-950/30"
                       }`}
                       style={{
-                        backgroundColor: agendados.has(evento.titulo) ? "#065F46" : undefined,
+                        backgroundColor: sesionesInscritas.has(evento.id) ? "#065F46" : undefined,
                       }}
                     >
-                      {agendados.has(evento.titulo) ? "Agendado" : "+ Agendar"}
+                      {inscribiendo === evento.id ? "..." : sesionesInscritas.has(evento.id) ? "Agendado" : "+ Agendar"}
                     </button>
                   </div>
                 </div>
@@ -363,17 +440,18 @@ export default function CronogramaPage() {
                       {evento.cupos_ocupados} / {evento.cupos_total} cupos
                     </div>
                     <button
-                      onClick={() => toggleAgenda(evento.titulo)}
-                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${
-                        agendados.has(evento.titulo)
+                      onClick={() => toggleAgenda(evento.id, evento.titulo)}
+                      disabled={inscribiendo === evento.id}
+                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition disabled:opacity-50 ${
+                        sesionesInscritas.has(evento.id)
                           ? "text-white"
                           : "text-[#065F46] border border-[#065F46] hover:bg-green-50 dark:hover:bg-green-950/30"
                       }`}
                       style={{
-                        backgroundColor: agendados.has(evento.titulo) ? "#065F46" : undefined,
+                        backgroundColor: sesionesInscritas.has(evento.id) ? "#065F46" : undefined,
                       }}
                     >
-                      {agendados.has(evento.titulo) ? "Agendado" : "+ Agendar"}
+                      {inscribiendo === evento.id ? "..." : sesionesInscritas.has(evento.id) ? "Agendado" : "+ Agendar"}
                     </button>
                   </div>
                 </div>

@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Spinner } from "@/components/ui/spinner"
-import { Clock, MapPin, User, Trash2 } from "lucide-react"
+import { Clock, MapPin, User, Trash2, RotateCw } from "lucide-react"
 
 interface Sesion {
   id: string
@@ -53,12 +53,15 @@ export default function SesionesPage() {
       try {
         const res = await fetch("/api/auth/me")
         const data = await res.json()
-        if (data.id) {
-          setUserId(data.id)
+        if (data.user && data.user.id) {
+          console.log("✅ Usuario obtenido:", data.user.id)
+          setUserId(data.user.id)
         } else {
+          console.log("❌ No hay usuario:", data)
           router.push("/auth/login")
         }
-      } catch {
+      } catch (err) {
+        console.error("❌ Error obteniendo usuario:", err)
         router.push("/auth/login")
       }
     }
@@ -104,11 +107,18 @@ export default function SesionesPage() {
       })
 
       if (res.ok) {
-        // Actualizar listas
-        setSesionesDisponibles(prev =>
-          prev.map(s => (s.id === sesion.id ? { ...s, inscrito: true } : s))
+        // Recargar sesiones desde BD
+        const resDisponibles = await fetch(
+          `/api/sesiones/disponibles?userId=${userId}${filtroTipo ? `&tipo=${filtroTipo}` : ""}`
         )
-        setSesionesInscritas(prev => [...prev, sesion])
+        const dataDisponibles = await resDisponibles.json()
+        setSesionesDisponibles(dataDisponibles.data || [])
+
+        const resInscritas = await fetch(`/api/usuarios/mis-sesiones?userId=${userId}`)
+        const dataInscritas = await resInscritas.json()
+        setSesionesInscritas(dataInscritas.data || [])
+        
+        alert("¡Inscripción exitosa!")
       } else {
         const error = await res.json()
         alert(`Error: ${error.error}`)
@@ -131,11 +141,19 @@ export default function SesionesPage() {
       )
 
       if (res.ok) {
-        setSesionesInscritas(prev => prev.filter(s => s.id !== sesion.id))
-        setSesionesDisponibles(prev =>
-          prev.map(s => (s.id === sesion.id ? { ...s, inscrito: false } : s))
+        // Recargar sesiones desde BD
+        const resDisponibles = await fetch(
+          `/api/sesiones/disponibles?userId=${userId}${filtroTipo ? `&tipo=${filtroTipo}` : ""}`
         )
+        const dataDisponibles = await resDisponibles.json()
+        setSesionesDisponibles(dataDisponibles.data || [])
+
+        const resInscritas = await fetch(`/api/usuarios/mis-sesiones?userId=${userId}`)
+        const dataInscritas = await resInscritas.json()
+        setSesionesInscritas(dataInscritas.data || [])
+
         setConfirmDelete(null)
+        alert("¡Desinscripción exitosa!")
       } else {
         alert("Error al desinscribirse")
       }
@@ -149,6 +167,30 @@ export default function SesionesPage() {
 
   const porcentajeCupos = (sesion: Sesion) =>
     Math.round((sesion.cupos_ocupados / sesion.cupos_total) * 100)
+
+  const recargarSesiones = async () => {
+    if (!userId) return
+    setLoading(true)
+    try {
+      const resDisponibles = await fetch(
+        `/api/sesiones/disponibles?userId=${userId}${filtroTipo ? `&tipo=${filtroTipo}` : ""}`,
+        { cache: "no-store" }
+      )
+      const dataDisponibles = await resDisponibles.json()
+      setSesionesDisponibles(dataDisponibles.data || [])
+
+      const resInscritas = await fetch(
+        `/api/usuarios/mis-sesiones?userId=${userId}`,
+        { cache: "no-store" }
+      )
+      const dataInscritas = await resInscritas.json()
+      setSesionesInscritas(dataInscritas.data || [])
+    } catch (error) {
+      console.error("Error recargando sesiones:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -168,13 +210,24 @@ export default function SesionesPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-[#0F172A] py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              Sesiones Académicas
-            </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-400">
-              Explora y únete a las sesiones que te interesen
-            </p>
+          <div className="mb-12 flex justify-between items-start">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                Sesiones Académicas
+              </h1>
+              <p className="text-lg text-gray-600 dark:text-gray-400">
+                Explora y únete a las sesiones que te interesen
+              </p>
+            </div>
+            <Button
+              onClick={recargarSesiones}
+              disabled={loading}
+              variant="outline"
+              className="whitespace-nowrap"
+            >
+              <RotateCw size={18} className="mr-2" />
+              Recargar
+            </Button>
           </div>
 
           {/* Tabs */}

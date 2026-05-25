@@ -14,18 +14,30 @@ export async function GET(request: Request) {
       SELECT 
         s.id, s.titulo, s.ponente, s.dia, s.hora_inicio, s.hora_fin,
         s.tipo, s.lugar, s.cupos_total, s.cupos_ocupados, s.descripcion,
-        s.perfil_profesional, s.afiliacion, s.biografia,
-        (CASE 
-          WHEN EXISTS(
-            SELECT 1 FROM user_sesiones us 
-            WHERE us.sesion_id = s.id AND us.user_id = ?
-          ) THEN 1 
-          ELSE 0 
-        END) as inscrito
-      FROM sesiones s
-      WHERE 1=1
+        s.perfil_profesional, s.afiliacion, s.biografia
     `
-    const params: any[] = [userId || null]
+    
+    // Si hay userId, agrega el campo inscrito
+    if (userId) {
+      query += `, (CASE 
+        WHEN EXISTS(
+          SELECT 1 FROM user_sesiones us 
+          WHERE us.sesion_id = s.id AND us.user_id = ?
+        ) THEN 1 
+        ELSE 0 
+      END) as inscrito`
+    } else {
+      query += `, 0 as inscrito`
+    }
+    
+    query += ` FROM sesiones s WHERE 1=1`
+    
+    const params: any[] = []
+    
+    // Agregar userId al inicio de params si existe
+    if (userId) {
+      params.push(userId)
+    }
 
     if (tipo) {
       query += ` AND s.tipo = ?`

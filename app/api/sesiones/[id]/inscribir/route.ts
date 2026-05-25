@@ -40,8 +40,12 @@ export async function POST(
   try {
     const body = await request.json().catch(() => ({}))
     const userId = body.userId
+    const sesionId = params.id
 
-    if (!userId || !params.id) {
+    console.log("📋 POST /inscribir:", { userId, sesionId })
+
+    if (!userId || !sesionId) {
+      console.log("❌ Parámetros faltantes:", { userId, sesionId })
       return NextResponse.json({ error: "Parámetros faltantes" }, { status: 400 })
     }
 
@@ -49,8 +53,10 @@ export async function POST(
     const existing = await pool.query(
       `SELECT id FROM user_sesiones 
        WHERE user_id = ? AND sesion_id = ?`,
-      [userId, params.id]
+      [userId, sesionId]
     )
+
+    console.log("🔍 Ya inscrito?:", existing.length > 0)
 
     if (existing.length > 0) {
       return NextResponse.json(
@@ -63,15 +69,19 @@ export async function POST(
     const sesion = await pool.query<any>(
       `SELECT id, titulo, cupos_total, cupos_ocupados, dia, hora_inicio 
        FROM sesiones WHERE id = ?`,
-      [params.id]
+      [sesionId]
     )
 
+    console.log("📊 Sesión encontrada:", sesion[0] ? "Sí" : "No")
+
     if (sesion.length === 0) {
+      console.log("❌ Sesión no encontrada")
       return NextResponse.json({ error: "Sesión no encontrada" }, { status: 404 })
     }
 
     const { cupos_total, cupos_ocupados } = sesion[0]
     if (cupos_ocupados >= cupos_total) {
+      console.log("❌ Sin cupos disponibles")
       return NextResponse.json(
         { error: "No hay cupos disponibles en esta sesión" },
         { status: 409 }
@@ -80,18 +90,24 @@ export async function POST(
 
     // Inscribir usuario
     const inscripcionId = uuid()
+    console.log("📝 Insertando inscripción:", { inscripcionId, userId, sesionId })
+    
     await pool.query(
       `INSERT INTO user_sesiones (id, user_id, sesion_id) 
        VALUES (?, ?, ?)`,
-      [inscripcionId, userId, params.id]
+      [inscripcionId, userId, sesionId]
     )
+
+    console.log("✅ Inscripción insertada")
 
     // Actualizar cupos
     await pool.query(
       `UPDATE sesiones SET cupos_ocupados = cupos_ocupados + 1 
        WHERE id = ?`,
-      [params.id]
+      [sesionId]
     )
+
+    console.log("✅ Cupos actualizados")
 
     return NextResponse.json({
       success: true,
@@ -99,8 +115,8 @@ export async function POST(
       inscripcionId,
     })
   } catch (error) {
-    console.error("Error al inscribirse:", error)
-    return NextResponse.json({ error: "Error al inscribirse" }, { status: 500 })
+    console.error("❌ ERROR EN POST /inscribir:", error)
+    return NextResponse.json({ error: "Error al inscribirse", details: String(error) }, { status: 500 })
   }
 }
 
