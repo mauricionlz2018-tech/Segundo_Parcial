@@ -21,21 +21,18 @@ export async function POST(request: Request) {
   try {
     const token = await createPasswordReset(user.id)
     
-    // Enviar email con el token
-    await sendPasswordResetEmail(user.email, token, user.full_name || user.username)
+    // Enviar email con el token (sin bloquear si falla)
+    sendPasswordResetEmail(user.email, token, user.full_name || user.username)
+      .catch((error) => {
+        console.error("Error enviando email de recuperación:", error.message)
+        // Log del error pero no fallar
+      })
     
-    const payload: Record<string, string | boolean> = { 
+    // Siempre devolver el mismo mensaje sin revelar el token
+    return NextResponse.json({ 
       ok: true,
       message: "Se ha enviado un correo con el token de recuperación"
-    }
-
-    // En desarrollo, devolver el token en la respuesta
-    if (process.env.NODE_ENV !== "production") {
-      payload.resetToken = token
-      payload.message = `Token enviado a ${user.email}: ${token}`
-    }
-
-    return NextResponse.json(payload)
+    })
   } catch (error) {
     console.error("Error en request-reset:", error)
     // En desarrollo, no fallar. En producción, responder con error

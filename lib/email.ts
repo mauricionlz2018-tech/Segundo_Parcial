@@ -2,26 +2,26 @@ import nodemailer from "nodemailer"
 
 let transporter: any
 
-// Configurar el transporte de email
-if (process.env.NODE_ENV === "production") {
-  // Producción: usar credenciales reales
+// Configurar transporte con Gmail usando nodemailer
+if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
+  // Usar Gmail SMTP
   transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || "smtp.gmail.com",
-    port: Number(process.env.EMAIL_PORT || 587),
-    secure: process.env.EMAIL_SECURE === "true",
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASSWORD,
     },
   })
 } else {
-  // Desarrollo: transporte de prueba que no requiere credenciales
+  // Modo desarrollo: simular email
   transporter = {
     sendMail: async (mailOptions: any) => {
-      console.log("📧 Email de prueba (no se envía realmente):")
+      console.log("📧 Email (modo desarrollo):")
+      console.log(`  De: ${mailOptions.from}`)
       console.log(`  Para: ${mailOptions.to}`)
       console.log(`  Asunto: ${mailOptions.subject}`)
-      console.log(`  Token: ${mailOptions.html?.match(/token-box[^>]*>(.*?)<\/div>/s)?.[1]?.replace(/<[^>]*>/g, "").trim() || "N/A"}`)
       return { messageId: "test-" + Date.now() }
     },
   }
@@ -146,48 +146,23 @@ export async function sendPasswordResetEmail(email: string, resetToken: string, 
     </html>
   `
 
-  const textContent = `
-RECUPERACIÓN DE CONTRASEÑA
-=========================
-
-Hola ${userName},
-
-Recibimos una solicitud para recuperar tu contraseña.
-
-Sigue estos pasos:
-1. Copia el token que aparece abajo
-2. Ve a: ${resetPageUrl}
-3. Pega el token en el campo correspondiente
-4. Ingresa tu nueva contraseña
-5. ¡Listo! Tu contraseña será actualizada
-
-Tu Token de Recuperación:
-${resetToken}
-
-Este token expira en 1 hora. Si necesitas recuperar tu contraseña después de este tiempo, deberás solicitar un nuevo token.
-
-Si NO solicitaste esta recuperación de contraseña, puedes ignorar este correo con seguridad. Tu cuenta no será afectada.
-
-Este es un mensaje automático, por favor no respondas a este correo.
-  `
-
   try {
+    console.log("🔄 Intentando enviar email...")
+    console.log(`   FROM: ${process.env.EMAIL_FROM}`)
+    console.log(`   TO: ${email}`)
+    console.log(`   USER CONFIG: ${process.env.EMAIL_USER}`)
+    
     const info = await transporter.sendMail({
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       to: email,
       subject: "🔐 Recuperación de Contraseña - UES",
       html: htmlContent,
-      text: textContent,
     })
 
-    console.log(`Email enviado: ${info.messageId}`)
+    console.log(`✅ Email enviado exitosamente: ${info.messageId}`)
     return true
   } catch (error) {
-    console.error("Error enviando email:", error)
-    // En desarrollo, no fallar si no está configurado el email
-    if (process.env.NODE_ENV === "production") {
-      throw error
-    }
+    console.error("❌ Error enviando email:", error)
     return true
   }
 }
