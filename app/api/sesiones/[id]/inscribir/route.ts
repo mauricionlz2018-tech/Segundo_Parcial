@@ -7,24 +7,27 @@ export const runtime = "nodejs"
 // GET: Verificar si el usuario está inscrito
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: sesionId } = await params
     const url = new URL(request.url)
     const userId = url.searchParams.get("userId")
 
-    if (!userId || !params.id) {
+    if (!userId || !sesionId) {
       return NextResponse.json({ error: "Parámetros faltantes" }, { status: 400 })
     }
 
-    const result = await pool.query<{ inscrito: number }>(
+    const [result] = await pool.query<any>(
       `SELECT COUNT(*) as inscrito FROM user_sesiones 
        WHERE user_id = ? AND sesion_id = ?`,
-      [userId, params.id]
+      [userId, sesionId]
     )
 
+    const inscrito = (result as any[])[0]?.inscrito === 1
+
     return NextResponse.json({
-      inscrito: result[0]?.inscrito === 1,
+      inscrito,
     })
   } catch (error) {
     console.error("Error verificando inscripción:", error)
@@ -35,12 +38,12 @@ export async function GET(
 // POST: Inscribirse en sesión
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: sesionId } = await params
     const body = await request.json().catch(() => ({}))
     const userId = body.userId
-    const sesionId = params.id
 
     console.log("📋 POST /inscribir:", { userId, sesionId })
 
@@ -50,15 +53,15 @@ export async function POST(
     }
 
     // Verificar si ya está inscrito
-    const existing = await pool.query(
+    const [existing] = await pool.query(
       `SELECT id FROM user_sesiones 
        WHERE user_id = ? AND sesion_id = ?`,
       [userId, sesionId]
     )
 
-    console.log("🔍 Ya inscrito?:", existing.length > 0)
+    console.log("🔍 Ya inscrito?:", (existing as any[]).length > 0)
 
-    if (existing.length > 0) {
+    if ((existing as any[]).length > 0) {
       return NextResponse.json(
         { error: "Ya estás inscrito en esta sesión" },
         { status: 409 }
@@ -123,13 +126,14 @@ export async function POST(
 // DELETE: Desinscribirse
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: sesionId } = await params
     const url = new URL(request.url)
     const userId = url.searchParams.get("userId")
 
-    if (!userId || !params.id) {
+    if (!userId || !sesionId) {
       return NextResponse.json({ error: "Parámetros faltantes" }, { status: 400 })
     }
 
@@ -137,14 +141,14 @@ export async function DELETE(
     const result = await pool.query(
       `DELETE FROM user_sesiones 
        WHERE user_id = ? AND sesion_id = ?`,
-      [userId, params.id]
+      [userId, sesionId]
     )
 
     // Reducir cupos
     await pool.query(
       `UPDATE sesiones SET cupos_ocupados = GREATEST(0, cupos_ocupados - 1) 
        WHERE id = ?`,
-      [params.id]
+      [sesionId]
     )
 
     return NextResponse.json({
