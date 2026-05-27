@@ -626,6 +626,26 @@ export default function AdminPage() {
     reader.readAsDataURL(file)
   }
 
+  async function handleLimpiarSesionesUsuarios() {
+    try {
+      const res = await fetch("/api/admin/limpiar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "limpiar-sesiones-usuarios" }),
+      })
+      if (res.ok) {
+        toast.success("Todos los registros de sesiones de usuarios han sido eliminados")
+        await fetchSesiones()
+      } else {
+        const err = await res.json().catch(() => ({}))
+        toast.error(err.error ?? "Error al limpiar datos")
+      }
+    } catch (error) {
+      console.error("Error:", error)
+      toast.error("Error al limpiar datos")
+    }
+  }
+
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" })
     router.push("/auth/login")
@@ -1441,12 +1461,20 @@ export default function AdminPage() {
                 <p className="text-[11px] text-red-600 dark:text-red-500 mb-4">
                   Las acciones en esta sección son irreversibles. Por favor, procede con cuidado.
                 </p>
-                <button
-                  onClick={() => setShowDeleteAccountConfirm(true)}
-                  className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-lg"
-                >
-                  Eliminar mi cuenta
-                </button>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => handleLimpiarSesionesUsuarios()}
+                    className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-4 py-2 rounded-lg w-fit"
+                  >
+                    Limpiar Sesiones de Usuarios
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteAccountConfirm(true)}
+                    className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-lg w-fit"
+                  >
+                    Eliminar mi cuenta
+                  </button>
+                </div>
               </div>
             </div>
           )}
