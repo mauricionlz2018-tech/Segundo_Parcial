@@ -27,7 +27,7 @@ export default function Hero() {
     >
       {/* Background texture: building louvre grid image */}
       <div
-        className="absolute inset-0 z-0"
+        className="absolute inset-0 z-0 animate-fade-in"
         style={{
           backgroundImage:
             "url('images/UMB_SAN_JOSE.png')",
@@ -44,7 +44,7 @@ export default function Hero() {
           <div className="flex-1 flex flex-col">
             {/* Badge */}
             <div
-              className="self-start text-xs font-semibold px-3 py-1 rounded-full mb-6"
+              className="self-start text-xs font-semibold px-3 py-1 rounded-full mb-6 animate-fade-in-up"
               style={{
                 backgroundColor: isDark ? "#1F3A4C" : "#FDDC98",
                 color: isDark ? "#7DD3FC" : "#735B24"
@@ -54,17 +54,17 @@ export default function Hero() {
             </div>
 
             {/* Title */}
-            <h1 className="font-sans text-5xl sm:text-6xl font-bold text-white leading-tight text-balance mb-8">
+            <h1 className="font-sans text-5xl sm:text-6xl font-bold text-white leading-tight text-balance mb-8 animate-fade-in-up delay-200">
               12va Jornada<br />
               Académica y<br />
               Cultural
             </h1>
 
             {/* CTA + Date row */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 animate-fade-in-up delay-300">
               <Link
                 href="#registro"
-                className="inline-flex items-center justify-center px-6 py-3 rounded-md text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+                className="inline-flex items-center justify-center px-6 py-3 rounded-md text-white text-sm font-semibold hover:opacity-90 transition-all hover:scale-105 hover:shadow-lg"
                 style={{
                   backgroundColor: isDark ? "#10B981" : "#3F4942"
                 }}
@@ -83,8 +83,8 @@ export default function Hero() {
           </div>
 
           {/* Right image */}
-          <div className="flex-shrink-0 w-full md:w-[420px]">
-            <div className="rounded-2xl overflow-hidden shadow-2xl aspect-[4/3]">
+          <div className="flex-shrink-0 w-full md:w-[420px] animate-fade-in delay-400">
+            <div className="rounded-2xl overflow-hidden shadow-2xl aspect-[4/3] hover:scale-105 transition-transform duration-500">
               <Image
                 src="images/Colibri_umb.png"
                 alt="Pasillo interior de la Universidad Mexiquense del Bicentenario"

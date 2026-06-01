@@ -72,13 +72,13 @@ export default function Footer() {
               Síguenos
             </h3>
             <div className="flex items-center gap-4 mt-1">
-              <Link href="#" aria-label="Compartir" className="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors">
+              <Link href="#" aria-label="Compartir" className="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors hover:scale-110 transition-transform">
                 <Share2 size={18} />
               </Link>
-              <Link href="#" aria-label="Estadísticas" className="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors">
+              <Link href="#" aria-label="Estadísticas" className="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors hover:scale-110 transition-transform">
                 <BarChart2 size={18} />
               </Link>
-              <Link href="#" aria-label="Feed RSS" className="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors">
+              <Link href="#" aria-label="Feed RSS" className="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors hover:scale-110 transition-transform">
                 <Rss size={18} />
               </Link>
             </div>

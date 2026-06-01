@@ -116,13 +116,13 @@ export default function Navbar() {
               <>
                 <Link
                   href="/auth/register"
-                  className="text-sm text-black dark:text-gray-300 hover:text-[#065F46] dark:hover:text-[#10B981] transition-colors"
+                  className="text-sm text-black dark:text-gray-300 hover:text-[#065F46] dark:hover:text-[#10B981] transition-colors hover:underline"
                 >
                   Registro
                 </Link>
                 <Link
                   href="/auth/login"
-                  className="text-sm font-semibold px-4 py-1.5 rounded-md text-black dark:text-gray-900 transition-opacity hover:opacity-80"
+                  className="text-sm font-semibold px-4 py-1.5 rounded-md text-black dark:text-gray-900 transition-all hover:opacity-80 hover:scale-105"
                   style={{ backgroundColor: "#64FC05" }}
                 >
                   Iniciar sesión
@@ -134,7 +134,7 @@ export default function Navbar() {
           {/* Mobile menu button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 text-black dark:text-white"
+            className="md:hidden p-2 text-black dark:text-white transition-transform duration-300 hover:scale-110"
             aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
           >
             {isOpen ? <X size={20} /> : <Menu size={20} />}
@@ -144,7 +144,7 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {isOpen && (
-        <div className="md:hidden bg-white dark:bg-[#1A1F2E] border-t border-gray-100 dark:border-gray-800">
+        <div className="md:hidden bg-white dark:bg-[#1A1F2E] border-t border-gray-100 dark:border-gray-800 animate-fade-in">
           <nav className="flex flex-col px-6 py-4 gap-3">
             {navLinks.map((link) => (
               <Link

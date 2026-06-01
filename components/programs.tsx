@@ -32,16 +32,17 @@ export default function Programs() {
     <section className="py-12 px-6 lg:px-10 bg-[#FBF8FF] dark:bg-[#0F172A]">
       <div className="max-w-7xl mx-auto">
         {/* Section title */}
-        <h2 className="text-2xl font-bold text-center mb-8 text-[#064E3B] dark:text-[#10B981]">
+        <h2 className="text-2xl font-bold text-center mb-8 text-[#064E3B] dark:text-[#10B981] animate-fade-in-up">
           Nuestros enfoques
         </h2>
 
         {/* Cards grid */}
         <div className="grid md:grid-cols-3 gap-6">
-          {programs.map((program) => (
+          {programs.map((program, index) => (
             <article
               key={program.title}
-              className="bg-white dark:bg-[#1E293B] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-lg flex flex-col"
+              className={`bg-white dark:bg-[#1E293B] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-lg flex flex-col hover-lift animate-fade-in-up`}
+              style={{ animationDelay: `${(index + 1) * 100}ms` }}
             >
               {/* Image */}
               <div className="relative h-44 overflow-hidden">
@@ -49,7 +50,7 @@ export default function Programs() {
                   src={program.image}
                   alt={program.alt}
                   fill
-                  className="object-cover"
+                  className="object-cover transition-transform duration-500 hover:scale-110"
                 />
               </div>
 
