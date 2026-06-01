@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { Clock, MapPin, User, CheckCircle2, Circle, Bell, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
 import type { Sesion } from "@/types"
+import { formatTime12Hour, formatDate } from "@/lib/utils"
 
 export default function CronogramaInteractivo() {
   const [sesiones, setSesiones] = useState<Sesion[]>([])
@@ -206,7 +207,7 @@ export default function CronogramaInteractivo() {
                     day: "numeric",
                   })}
                 </div>
-                <h3 className="text-xl font-bold text-[#1A1B22] dark:text-white">{dia}</h3>
+                <h3 className="text-xl font-bold text-[#1A1B22] dark:text-white">{formatDate(dia, true)}</h3>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
@@ -249,7 +250,7 @@ export default function CronogramaInteractivo() {
                           <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                             <Clock className="w-4 h-4" />
                             <span className="text-sm">
-                              {sesion.hora_inicio} - {sesion.hora_fin}
+                              {formatTime12Hour(sesion.hora_inicio)} - {formatTime12Hour(sesion.hora_fin)}
                             </span>
                           </div>
                           <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">

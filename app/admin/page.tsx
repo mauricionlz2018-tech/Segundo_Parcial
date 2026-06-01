@@ -11,6 +11,7 @@ import NuevaSesion from '@/components/NuevaSesion'
 import Image from "next/image"
 import { useIsMobile } from '@/components/ui/use-mobile'
 import { toast } from "sonner"
+import { formatTime12Hour } from "@/lib/utils"
 
 type View = "panel" | "sesiones" | "ponentes" | "configuracion" | "usuarios" | "espacios"
 
@@ -952,7 +953,7 @@ export default function AdminPage() {
                           sesiones.slice(0, 5).map((s, index) => (
                             <div key={s.id} className={`flex items-center gap-4 px-5 py-4 ${index !== Math.min(sesiones.length, 5) - 1 ? "border-b border-gray-100 dark:border-gray-700" : ""}`}>
                               <div className="flex flex-col items-center w-12">
-                                <span className="text-xs text-gray-400">{s.hora_inicio}</span>
+                                <span className="text-xs text-gray-400">{formatTime12Hour(s.hora_inicio)}</span>
                                 <Clock size={12} className="text-gray-300" />
                               </div>
                               <div className="flex-1">
@@ -1065,7 +1066,7 @@ export default function AdminPage() {
                           <tr key={row.id} className="border-b border-gray-50 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#0F172A]">
                             <td className="px-5 py-3 font-semibold text-[#1A1B22] dark:text-white">{row.titulo}</td>
                             <td className="px-5 py-3 dark:text-white">{getNombreDia(row.dia)}</td>
-                            <td className="px-5 py-3">{row.hora_inicio}</td>
+                            <td className="px-5 py-3">{formatTime12Hour(row.hora_inicio)}</td>
                             <td className="px-5 py-3">
                               <span className="bg-[#EEF2F7] text-[#475569] px-2 py-1 rounded-full text-[10px] whitespace-nowrap inline-block">
                                 {row.lugar}
@@ -2217,11 +2218,11 @@ export default function AdminPage() {
                     </div>
                     <div>
                       <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">Hora Inicio</p>
-                      <p className="text-sm text-[#1A1B22] dark:text-white">{sesion.hora_inicio}</p>
+                      <p className="text-sm text-[#1A1B22] dark:text-white">{formatTime12Hour(sesion.hora_inicio)}</p>
                     </div>
                     <div>
                       <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">Hora Fin</p>
-                      <p className="text-sm text-[#1A1B22] dark:text-white">{sesion.hora_fin}</p>
+                      <p className="text-sm text-[#1A1B22] dark:text-white">{formatTime12Hour(sesion.hora_fin)}</p>
                     </div>
                   </div>
 

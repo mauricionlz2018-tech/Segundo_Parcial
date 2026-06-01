@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import { BookOpen } from "lucide-react"
+import { formatTime12Hour, formatDate } from "@/lib/utils"
 
 type Sesion = {
   id: string
@@ -347,7 +348,7 @@ export default function CronogramaPage() {
                 >
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{getNombreDia(evento.dia)}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{formatDate(evento.dia)}</p>
                       <h3 className="text-sm font-bold text-[#1A1B22] dark:text-white leading-snug">
                         {evento.titulo}
                       </h3>
@@ -365,7 +366,7 @@ export default function CronogramaPage() {
 
                   <div className="space-y-1.5 mb-3">
                     <p className="text-xs text-gray-600 dark:text-gray-400">
-                      <span className="font-semibold"></span> {evento.hora_inicio} - {evento.hora_fin}
+                      <span className="font-semibold"></span> {formatTime12Hour(evento.hora_inicio)} - {formatTime12Hour(evento.hora_fin)}
                     </p>
                     <p className="text-xs text-gray-600 dark:text-gray-400">
                       <span className="font-semibold"></span> {evento.ponente}
@@ -407,7 +408,7 @@ export default function CronogramaPage() {
                 >
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{getNombreDia(evento.dia)}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{formatDate(evento.dia)}</p>
                       <h3 className="text-sm font-bold text-[#1A1B22] dark:text-white leading-snug">
                         {evento.titulo}
                       </h3>
@@ -425,7 +426,7 @@ export default function CronogramaPage() {
 
                   <div className="space-y-1.5 mb-3">
                     <p className="text-xs text-gray-600 dark:text-gray-400">
-                      <span className="font-semibold"></span> {evento.hora_inicio} - {evento.hora_fin}
+                      <span className="font-semibold"></span> {formatTime12Hour(evento.hora_inicio)} - {formatTime12Hour(evento.hora_fin)}
                     </p>
                     <p className="text-xs text-gray-600 dark:text-gray-400">
                       <span className="font-semibold"></span> {evento.ponente}

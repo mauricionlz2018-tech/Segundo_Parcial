@@ -8,6 +8,7 @@ import { ArrowLeft, Mail, User, BookOpen, Trash2, Save, LogOut, Clock, MapPin, C
 import Link from "next/link"
 import { toast } from "sonner"
 import type { Sesion } from "@/types"
+import { formatTime12Hour, formatDate } from "@/lib/utils"
 
 interface Usuario {
   id: string
@@ -373,11 +374,11 @@ export default function PerfilPage() {
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-gray-600 dark:text-gray-400">
                           <div className="flex items-center gap-1">
                             <CalendarDays size={14} />
-                            {sesion.dia}
+                            {formatDate(sesion.dia)}
                           </div>
                           <div className="flex items-center gap-1">
                             <Clock size={14} />
-                            {sesion.hora_inicio} - {sesion.hora_fin}
+                            {formatTime12Hour(sesion.hora_inicio)} - {formatTime12Hour(sesion.hora_fin)}
                           </div>
                           <div className="flex items-center gap-1">
                             <MapPin size={14} />

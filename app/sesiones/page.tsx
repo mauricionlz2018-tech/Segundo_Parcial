@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Spinner } from "@/components/ui/spinner"
 import { Clock, MapPin, User, Trash2, RotateCw } from "lucide-react"
+import { formatTime12Hour, formatDate } from "@/lib/utils"
 
 interface Sesion {
   id: string
@@ -314,7 +315,7 @@ export default function SesionesPage() {
                           <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                               <Clock size={16} />
-                              {sesion.hora_inicio} - {sesion.hora_fin}
+                              {formatTime12Hour(sesion.hora_inicio)} - {formatTime12Hour(sesion.hora_fin)}
                             </div>
                             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                               <MapPin size={16} />
@@ -403,7 +404,7 @@ export default function SesionesPage() {
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                               <Clock size={16} />
-                              {sesion.dia} - {sesion.hora_inicio}
+                              {formatDate(sesion.dia)} - {formatTime12Hour(sesion.hora_inicio)}
                             </div>
                             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                               <MapPin size={16} />

@@ -5,6 +5,7 @@ import {
   isEmailTaken,
   isUsernameTaken,
 } from "@/lib/auth"
+import { sendWelcomeEmail } from "@/lib/email"
 
 export const runtime = "nodejs"
 
@@ -65,6 +66,15 @@ export async function POST(request: Request) {
 
   if (!user) {
     return NextResponse.json({ error: "No se pudo crear la cuenta." }, { status: 500 })
+  }
+
+  // Enviar email de bienvenida
+  try {
+    await sendWelcomeEmail(email, fullName, username)
+    console.log(`✅ Email de bienvenida enviado a: ${email}`)
+  } catch (error) {
+    console.error("⚠️ Error enviando email de bienvenida:", error)
+    // No fallar la creación de usuario si el email falla
   }
 
   return NextResponse.json({ user })
