@@ -4,8 +4,9 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Menu, X, LogOut, User, AlertCircle } from "lucide-react"
+import { Menu, X, LogOut, User, AlertCircle, Volume2 } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
+import VoiceAssistant from "./VoiceAssistant"
 
 const navLinks = [
   { label: "Inicio", href: "/" },
@@ -194,6 +195,8 @@ export default function Navbar() {
           </nav>
         </div>
       )}
+
+      <VoiceAssistant />
 
       {/* Logout confirmation modal */}
       {showLogoutConfirm && (

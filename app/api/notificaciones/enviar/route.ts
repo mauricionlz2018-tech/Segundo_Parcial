@@ -48,7 +48,7 @@ export async function POST(request: Request) {
           <h3>${registro.titulo}</h3>
           <p><strong>Ponente:</strong> ${registro.ponente}</p>
           <p><strong>Lugar:</strong> ${registro.lugar}</p>
-          <p>No olvides asistir! 😊</p>
+          <p>No olvides asistir!</p>
         `
 
         await sendEmail(registro.email, "Recordatorio: Sesión Mañana", mensaje)
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
           <p><strong>Ponente:</strong> ${registro.ponente}</p>
           <p><strong>Lugar:</strong> ${registro.lugar}</p>
           <p><strong>Hora:</strong> ${registro.hora_inicio}</p>
-          <p>¡Corre a reunirte con nosotros! 🏃</p>
+          <p>¡Corre a reunirte con nosotros!</p>
         `
 
         await sendEmail(registro.email, "¡Sesión en 15 minutos!", mensaje)

@@ -264,7 +264,7 @@ export default function RequestResetPage() {
       {/* Footer */}
       <footer className="bg-white dark:bg-[#1E293B] border-t border-gray-200 dark:border-gray-700 py-6 px-4">
         <div className="max-w-7xl mx-auto text-center text-gray-600 dark:text-gray-400 text-sm">
-          <p>&copy; 2026 Universidad Mexiquense del Bicentenario. Todos los derechos reservados.</p>
+          <p>&copy; 2026 UES San José del Rincón. Todos los derechos reservados.</p>
         </div>
       </footer>
     </div>

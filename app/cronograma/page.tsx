@@ -238,7 +238,7 @@ export default function CronogramaPage() {
                 className="px-5 py-2.5 rounded-lg text-sm font-bold text-white border border-white/40 hover:bg-white/10 transition"
                 style={{ backgroundColor: "#006341" }}
               >
-                ↓ Descargar Programa PDF
+                Descargar Programa PDF
               </button>
             </div>
           </div>

@@ -21,18 +21,18 @@ export async function POST(request: Request) {
   try {
     console.log("📧 Iniciando proceso de reset para:", identifier)
     const token = await createPasswordReset(user.id)
-    console.log("🔑 Token creado:", token.substring(0, 10) + "...")
+    console.log("Token creado:", token.substring(0, 10) + "...")
     
     // Enviar email con el token
     try {
-      console.log("📨 Enviando email a:", user.email)
-      console.log("🔧 RESEND_API_KEY configurada:", !!process.env.RESEND_API_KEY)
-      console.log("🔧 RESEND_FROM_EMAIL:", process.env.RESEND_FROM_EMAIL)
+      console.log("Enviando email a:", user.email)
+      console.log("RESEND_API_KEY configurada:", !!process.env.RESEND_API_KEY)
+      console.log("RESEND_FROM_EMAIL:", process.env.RESEND_FROM_EMAIL)
       
       const result = await sendPasswordResetEmail(user.email, token, user.full_name || user.username)
-      console.log(`✅ Email de reset enviado a: ${user.email}`, { result })
+      console.log(`Email de reset enviado a: ${user.email}`, { result })
     } catch (error) {
-      console.error("⚠️ Error enviando email de recuperación:", error)
+      console.error("Error enviando email de recuperación:", error)
       // Continuar incluso si el email falla
     }
     

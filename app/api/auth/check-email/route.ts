@@ -14,7 +14,7 @@ export async function POST(request: Request) {
 
     const user = await findUserByEmailOrUsername(identifier)
     
-    console.log(`🔍 Verificando existencia de: ${identifier} - ${user ? "✅ Existe" : "❌ No existe"}`)
+    console.log(`Verificando existencia de: ${identifier} - ${user ? "Existe" : "No existe"}`)
     
     return NextResponse.json({ 
       exists: !!user

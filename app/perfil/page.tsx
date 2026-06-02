@@ -404,7 +404,7 @@ export default function PerfilPage() {
           {/* Danger Zone */}
           {!editMode && (
             <div className="bg-red-50 dark:bg-red-950/20 rounded-2xl border border-red-200 dark:border-red-900/50 p-8">
-              <h3 className="text-lg font-bold text-red-700 dark:text-red-400 mb-2">Zona de Peligro</h3>
+              <h3 className="text-lg font-bold text-red-700 dark:text-red-400 mb-2">Eliminar Cuenta</h3>
               <p className="text-sm text-red-600 dark:text-red-300 mb-4">
                 Una vez que elimines tu cuenta, no hay forma de recuperarla. Por favor sé cuidadoso.
               </p>

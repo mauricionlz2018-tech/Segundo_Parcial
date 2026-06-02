@@ -71,10 +71,9 @@ export async function POST(request: Request) {
   // Enviar email de bienvenida
   try {
     await sendWelcomeEmail(email, fullName, username)
-    console.log(`✅ Email de bienvenida enviado a: ${email}`)
+    console.log(`Email de bienvenida enviado a: ${email}`)
   } catch (error) {
-    console.error("⚠️ Error enviando email de bienvenida:", error)
-    // No fallar la creación de usuario si el email falla
+    console.error("Error enviando email de bienvenida:", error)
   }
 
   return NextResponse.json({ user })

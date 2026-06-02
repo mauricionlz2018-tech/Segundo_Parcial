@@ -12,7 +12,7 @@ export async function sendPasswordResetEmail(email: string, resetToken: string, 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
   const resetPageUrl = `${appUrl}/auth/reset`
 
-  console.log("🚀 [sendPasswordResetEmail] Iniciando...")
+  console.log(" [sendPasswordResetEmail] Iniciando...")
   console.log(`   Email destino: ${email}`)
   console.log(`   Usuario Gmail: ${process.env.GMAIL_USER}`)
 
@@ -89,7 +89,7 @@ export async function sendPasswordResetEmail(email: string, resetToken: string, 
       <body>
         <div class="container">
           <div class="header">
-            <h1>🔐 Recuperación de Contraseña</h1>
+            <h1> Recuperación de Contraseña</h1>
           </div>
           
           <div class="content">
@@ -114,7 +114,7 @@ export async function sendPasswordResetEmail(email: string, resetToken: string, 
             </div>
             
             <div class="warning">
-              <strong>⚠️ Este token expira en 1 hora.</strong> Si necesitas recuperar tu contraseña después de este tiempo, deberás solicitar un nuevo token.
+              <strong> Este token expira en 1 hora.</strong> Si necesitas recuperar tu contraseña después de este tiempo, deberás solicitar un nuevo token.
             </div>
             
             <p style="color: #666; font-size: 14px;">
@@ -132,22 +132,22 @@ export async function sendPasswordResetEmail(email: string, resetToken: string, 
   `
 
   try {
-    console.log("🔄 Intentando enviar email con Gmail SMTP...")
+    console.log(" Intentando enviar email con Gmail SMTP...")
     console.log(`   FROM: ${process.env.GMAIL_USER}`)
     console.log(`   TO: ${email}`)
     
     const result = await transporter.sendMail({
       from: process.env.GMAIL_USER,
       to: email,
-      subject: "🔐 Recuperación de Contraseña - UES",
+      subject: " Recuperación de Contraseña - UES",
       html: htmlContent,
     })
 
-    console.log(`✅ Email enviado exitosamente: ${result.messageId}`)
+    console.log(` Email enviado exitosamente: ${result.messageId}`)
     return true
   } catch (error) {
-    console.error("❌ Error enviando email:", error)
-    console.error("📋 Detalles del error:", JSON.stringify(error, null, 2))
+    console.error(" Error enviando email:", error)
+    console.error(" Detalles del error:", JSON.stringify(error, null, 2))
     return false
   }
 }
@@ -242,7 +242,7 @@ export async function sendWelcomeEmail(email: string, userName: string, username
       <body>
         <div class="container">
           <div class="header">
-            <h1>🎓 ¡Bienvenido a UES!</h1>
+            <h1>¡Bienvenido a UES!</h1>
           </div>
           
           <div class="content">
@@ -254,17 +254,17 @@ export async function sendWelcomeEmail(email: string, userName: string, username
             
             <div class="credentials">
               <div class="credential-item">
-                <div class="credential-label">👤 Usuario</div>
+                <div class="credential-label"> Usuario</div>
                 <div class="credential-value">${username}</div>
               </div>
               <div class="credential-item">
-                <div class="credential-label">🔐 Contraseña</div>
+                <div class="credential-label"> Correo</div>
                 <div class="credential-value">${email}</div>
               </div>
             </div>
             
             <div class="warning">
-              <strong>⚠️ IMPORTANTE:</strong> Guarda estos datos en un lugar seguro. Por tu seguridad, te recomendamos cambiar tu contraseña después del primer inicio de sesión.
+              <strong> IMPORTANTE:</strong> Guarda estos datos en un lugar seguro. Por tu seguridad, te recomendamos cambiar tu contraseña después del primer inicio de sesión.
             </div>
             
             <p>Ahora puedes acceder a tu cuenta para consultar información sobre eventos, conferencias y sesiones académicas:</p>
@@ -294,8 +294,8 @@ Hola ${userName},
 
 Tus datos de acceso son:
 
-👤 Usuario: ${username}
-🔐 Contraseña: ${email}
+Usuario: ${username}
+Correo: ${email}
 
 IMPORTANTE: Guarda estos datos en un lugar seguro. Por tu seguridad, te recomendamos cambiar tu contraseña después del primer inicio de sesión.
 
@@ -306,22 +306,22 @@ Si no creaste esta cuenta, contáctanos inmediatamente.
   `
 
   try {
-    console.log("🔄 Enviando email de bienvenida con Gmail SMTP...")
+    console.log("Enviando email de bienvenida con Gmail SMTP...")
     console.log(`   FROM: ${process.env.GMAIL_USER}`)
     console.log(`   TO: ${email}`)
     
     const result = await transporter.sendMail({
       from: process.env.GMAIL_USER,
       to: email,
-      subject: "🎓 Bienvenido a UES - Tus credenciales de acceso",
+      subject: "Bienvenido a UES - Tus credenciales de acceso",
       html: htmlContent,
       text: textContent,
     })
     
-    console.log(`✅ Email de bienvenida enviado: ${result.messageId}`)
+    console.log(`Email de bienvenida enviado: ${result.messageId}`)
     return true
   } catch (error) {
-    console.error("❌ Error enviando email de bienvenida:", error)
+    console.error("Error enviando email de bienvenida:", error)
     if (process.env.NODE_ENV === "production") {
       throw error
     }
@@ -409,7 +409,7 @@ export async function sendUpcomingSessionAlert(
       <body>
         <div class="container">
           <div class="header">
-            <h1>🎓 ¡Recordatorio de Sesión Próxima!</h1>
+            <h1>¡Recordatorio de Sesión Próxima!</h1>
           </div>
           
           <div class="content">
@@ -418,9 +418,9 @@ export async function sendUpcomingSessionAlert(
             <p>Te recordamos que tienes una sesión próxima en tu agenda:</p>
             
             <div class="session-details">
-              <p><strong>📚 Sesión:</strong> ${sessionName}</p>
-              <p><strong>📅 Fecha:</strong> ${formatDate(sessionDate)}</p>
-              <p class="session-time">🕐 <strong>Hora:</strong> ${sessionTime}</p>
+              <p><strong>Sesión:</strong> ${sessionName}</p>
+              <p><strong>Fecha:</strong> ${formatDate(sessionDate)}</p>
+              <p class="session-time"><strong>Hora:</strong> ${sessionTime}</p>
             </div>
             
             <p>Asegúrate de estar preparado para la sesión. Si tienes preguntas o problemas para acceder, no dudes en contactar al soporte.</p>
@@ -440,7 +440,7 @@ export async function sendUpcomingSessionAlert(
   `
 
   try {
-    console.log("🔄 Enviando alerta de sesión próxima...")
+    console.log(" Enviando alerta de sesión próxima...")
     console.log(`   FROM: ${process.env.GMAIL_USER}`)
     console.log(`   TO: ${email}`)
     console.log(`   Sesión: ${sessionName} - ${formatDate(sessionDate)} ${sessionTime}`)
@@ -448,14 +448,14 @@ export async function sendUpcomingSessionAlert(
     const result = await transporter.sendMail({
       from: process.env.GMAIL_USER,
       to: email,
-      subject: `🎓 Recordatorio: Sesión próxima - ${sessionName}`,
+      subject: `Recordatorio: Sesión próxima - ${sessionName}`,
       html: htmlContent,
     })
     
-    console.log(`✅ Alerta de sesión enviada: ${result.messageId}`)
+    console.log(` Alerta de sesión enviada: ${result.messageId}`)
     return true
   } catch (error) {
-    console.error("❌ Error enviando alerta de sesión:", error)
+    console.error(" Error enviando alerta de sesión:", error)
     throw error
   }
 }
