@@ -100,24 +100,29 @@ export default function VoiceAssistant() {
   useEffect(() => {
     async function cargarDatos() {
       try {
-        const resUser = await fetch("/api/auth/me")
+        const resUser = await fetch("/api/auth/me", { cache: "no-store" })
         const dataUser = await resUser.json()
-        if (dataUser.user?.id) {
-          setUserId(dataUser.user.id)
-        }
+        const uid = dataUser.user?.id || null
+        setUserId(uid)
 
-        const resSesiones = await fetch("/api/sesiones")
-        const dataSesiones = await resSesiones.json()
-        setTodasSesiones(dataSesiones.data || [])
+        const [resAll, resInscritas] = await Promise.all([
+          fetch("/api/sesiones", { cache: "no-store" }),
+          uid ? fetch(`/api/usuarios/mis-sesiones?userId=${uid}`, { cache: "no-store" }) : null,
+        ])
+
+        const dataAll = await resAll.json()
+        const todas: Sesion[] = Array.isArray((dataAll as any).data) ? ((dataAll as any).data as Sesion[]) : []
+        console.log("[VoiceAssistant] /api/sesiones total:", todas.length)
+        setTodasSesiones(todas)
 
         const hoy = new Date().toISOString().split("T")[0]
-        const sesionesDelDia = (dataSesiones.data || []).filter((s: Sesion) => s.dia === hoy)
-        setSesionesHoy(sesionesDelDia)
+        setSesionesHoy(todas.filter((s) => s.dia === hoy))
 
-        if (dataUser.user?.id) {
-          const resInscritas = await fetch(`/api/usuarios/mis-sesiones?userId=${dataUser.user.id}`)
+        if (resInscritas) {
           const dataInscritas = await resInscritas.json()
-          setSesionesInscritas(new Set((dataInscritas.data || []).map((s: Sesion) => s.id)))
+          const inscritas: Sesion[] = Array.isArray((dataInscritas as any).data) ? ((dataInscritas as any).data as Sesion[]) : []
+          console.log("[VoiceAssistant] /api/usuarios/mis-sesiones total:", inscritas.length, inscritas.map((s) => s.titulo))
+          setSesionesInscritas(new Set(inscritas.map((s) => s.id)))
         }
       } catch (error) {
         console.error("Error cargando datos del asistente:", error)
@@ -165,14 +170,33 @@ export default function VoiceAssistant() {
     return null
   }
 
+  function getDiaSemanaNum(fecha: string): number {
+    const d = new Date(fecha)
+    const year = d.getUTCFullYear()
+    const month = d.getUTCMonth()
+    const day = d.getUTCDate()
+    const local = new Date(year, month, day)
+    return local.getDay()
+  }
+
   function obtenerSesionesPorDia(dia: string | null): Sesion[] {
     if (!dia) return sesionesHoy
-    if (dia === "Lunes" || dia === "Martes" || dia === "Miércoles" || dia === "Jueves" || dia === "Viernes") {
-      return todasSesiones.filter((s) => {
-        const nombreDia = new Date(s.dia).toLocaleDateString("es-MX", { weekday: "long" })
-        return normalizar(nombreDia) === normalizar(dia)
-      })
+
+    const mapaDiaNum: Record<string, number> = {
+      Lunes: 1,
+      Martes: 2,
+      Miércoles: 3,
+      Jueves: 4,
+      Viernes: 5,
+      Sábado: 6,
+      Domingo: 0,
     }
+
+    if (mapaDiaNum[dia]) {
+      const numDia = mapaDiaNum[dia]
+      return todasSesiones.filter((s) => getDiaSemanaNum(s.dia) === numDia)
+    }
+
     return todasSesiones.filter((s) => s.dia === dia)
   }
 
@@ -180,30 +204,13 @@ export default function VoiceAssistant() {
     setEstado("procesando")
     const normalizado = normalizar(texto)
 
-    // Comando: ¿Qué sesiones hay hoy/mañana/[día]?
-    if (normalizado.includes("que sesiones") || normalizado.includes("qué sesiones") || normalizado.includes("cuales sesiones") || normalizado.includes("cuáles sesiones") || normalizado.includes("sesiones hay")) {
-      const dia = detectarDia(texto)
-      const sesiones = obtenerSesionesPorDia(dia)
+    console.log("[VoiceAssistant] Texto normalizado:", normalizado)
+    console.log("[VoiceAssistant] Sesiones cargadas:", todasSesiones.length)
 
-      if (sesiones.length === 0) {
-        const respuestaTexto = dia ? `No encontré sesiones para ${dia}.` : "No encontré sesiones para hoy."
-        setRespuesta(respuestaTexto)
-        setEstado("respondiendo")
-        hablar(respuestaTexto)
-      } else {
-        const nombreDia = dia ? `para ${dia}` : "para hoy"
-        const respuestaTexto = `Hay ${sesiones.length} sesiones ${nombreDia}. ${sesiones.slice(0, 3).map((s, i) => `La ${i + 1}: ${s.titulo}, de ${s.hora_inicio} a ${s.hora_fin}.`).join(" ")}${sesiones.length > 3 ? ` Y ${sesiones.length - 3} más.` : ""} ¿Quieres agregar alguna a tu agenda?`
-        setRespuesta(respuestaTexto)
-        setSesionSugerida(sesiones[0])
-        setEstado("respondiendo")
-        hablar(respuestaTexto)
-      }
-      return
-    }
-
-    // Comando: Mi agenda / mis sesiones
-    if (normalizado.includes("mi agenda") || normalizado.includes("mis sesiones") || normalizado.includes("que tengo agendado") || normalizado.includes("qué tengo agendado")) {
+    // Comando: Mi agenda / mis sesiones (chequeo PRIMERO para no confundir con consulta general)
+    if (normalizado.includes("mi agenda") || normalizado.includes("mis sesiones") || normalizado.includes("que tengo agendado") || normalizado.includes("qué tengo agendado") || normalizado.includes("sesiones agendadas") || normalizado.includes("sesiones registradas")) {
       const misSesiones = todasSesiones.filter((s) => sesionesInscritas.has(s.id))
+      console.log("[VoiceAssistant] Mis sesiones inscritas:", misSesiones.length)
       if (misSesiones.length === 0) {
         const respuestaTexto = "No tienes sesiones agendadas en tu agenda."
         setRespuesta(respuestaTexto)
@@ -212,6 +219,43 @@ export default function VoiceAssistant() {
       } else {
         const respuestaTexto = `Tienes ${misSesiones.length} sesiones agendadas. ${misSesiones.map((s, i) => `La ${i + 1}: ${s.titulo}, el día ${s.dia}.`).join(" ")}`
         setRespuesta(respuestaTexto)
+        setEstado("respondiendo")
+        hablar(respuestaTexto)
+      }
+      return
+    }
+
+    const esConsultaSesiones =
+      /\b(que|qué|cuales|cuáles)\b/.test(normalizado) ||
+      /\b(sesiones|eventos|actividades)\b/.test(normalizado) ||
+      /\b(hoy|mañana|pasado mañana)\b/.test(normalizado) ||
+      /\b(lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo)\b/.test(normalizado)
+
+    if (esConsultaSesiones) {
+      const dia = detectarDia(texto)
+      console.log("[VoiceAssistant] Día detectado:", dia)
+      const sesiones = obtenerSesionesPorDia(dia)
+      console.log("[VoiceAssistant] Sesiones encontradas:", sesiones.length)
+
+      if (sesiones.length === 0) {
+        const respuestaTexto = dia ? `No encontré sesiones para ${dia}.` : "No encontré sesiones para hoy."
+        setRespuesta(respuestaTexto)
+        setEstado("respondiendo")
+        hablar(respuestaTexto)
+      } else {
+        const nombreDia = dia ? `para ${dia}` : "para hoy"
+        const detalle = sesiones
+          .slice(0, 3)
+          .map((s, i) => {
+            const textoFecha = s.dia
+              ? ` el día ${new Date(s.dia).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })}`
+              : ""
+            return `La ${i + 1}: ${s.titulo}${textoFecha}, de ${s.hora_inicio} a ${s.hora_fin}.`
+          })
+          .join(" ")
+        const respuestaTexto = `Hay ${sesiones.length} sesiones ${nombreDia}. ${detalle}${sesiones.length > 3 ? ` Y ${sesiones.length - 3} más.` : ""} ¿Quieres agregar alguna a tu agenda?`
+        setRespuesta(respuestaTexto)
+        setSesionSugerida(sesiones[0])
         setEstado("respondiendo")
         hablar(respuestaTexto)
       }
@@ -472,6 +516,9 @@ export default function VoiceAssistant() {
               <p className="font-semibold mb-1">Comandos de voz:</p>
               <ul className="list-disc list-inside space-y-0.5">
                 <li>"Qué sesiones hay hoy"</li>
+                <li>"Sesiones del lunes"</li>
+                <li>"Sesiones del martes"</li>
+                <li>"Qué hay el miércoles"</li>
                 <li>"Agregar [título] a mi agenda"</li>
                 <li>"Mis sesiones agendadas"</li>
               </ul>
