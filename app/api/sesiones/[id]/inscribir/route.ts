@@ -69,13 +69,13 @@ export async function POST(
     }
 
     // Verificar que la sesión existe y tiene cupos
-    const sesion = await pool.query<any>(
+    const [sesion] = await pool.query<any>(
       `SELECT id, titulo, cupos_total, cupos_ocupados, dia, hora_inicio 
        FROM sesiones WHERE id = ?`,
       [sesionId]
     )
 
-    console.log("📊 Sesión encontrada:", sesion[0] ? "Sí" : "No")
+    console.log("📊 Sesión encontrada:", sesion.length > 0 ? "Sí" : "No")
 
     if (sesion.length === 0) {
       console.log("❌ Sesión no encontrada")

@@ -12,8 +12,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "userId requerido" }, { status: 400 })
     }
 
-    // Obtener sesiones inscritas del usuario
-    const sesiones = await pool.query(
+    const [sesiones] = await pool.query<any>(
       `SELECT 
         s.id, s.titulo, s.ponente, s.dia, s.hora_inicio, s.hora_fin,
         s.tipo, s.lugar, s.cupos_total, s.cupos_ocupados, s.descripcion,

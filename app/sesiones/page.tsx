@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Spinner } from "@/components/ui/spinner"
 import { Clock, MapPin, User, Trash2, RotateCw } from "lucide-react"
 import { formatTime12Hour, formatDate } from "@/lib/utils"
+import { toast } from "sonner"
 
 interface Sesion {
   id: string
@@ -119,14 +120,14 @@ export default function SesionesPage() {
         const dataInscritas = await resInscritas.json()
         setSesionesInscritas(dataInscritas.data || [])
         
-        alert("¡Inscripción exitosa!")
+        toast.success("¡Inscripción exitosa!")
       } else {
         const error = await res.json()
-        alert(`Error: ${error.error}`)
+        toast.error(`Error: ${error.error}`)
       }
     } catch (error) {
       console.error("Error al inscribirse:", error)
-      alert("Error al inscribirse")
+      toast.error("Error al inscribirse")
     } finally {
       setProcesando(false)
     }
@@ -154,13 +155,13 @@ export default function SesionesPage() {
         setSesionesInscritas(dataInscritas.data || [])
 
         setConfirmDelete(null)
-        alert("¡Desinscripción exitosa!")
+        toast.success("¡Desinscripción exitosa!")
       } else {
-        alert("Error al desinscribirse")
+        toast.error("Error al desinscribirse")
       }
     } catch (error) {
       console.error("Error al desinscribirse:", error)
-      alert("Error al desinscribirse")
+      toast.error("Error al desinscribirse")
     } finally {
       setProcesando(false)
     }

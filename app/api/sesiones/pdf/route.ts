@@ -1,280 +1,177 @@
-import { NextResponse } from 'next/server'
-import { PDFDocument, rgb } from 'pdf-lib'
-import mysql from 'mysql2/promise'
+import { NextResponse } from "next/server";
+import { PDFDocument, rgb, PageSizes } from "pdf-lib";
+import pool from "@/lib/db";
+import fs from "fs/promises";
+import path from "path";
 
-function getDayNameFromDate(dateString: string): string {
-  const date = new Date(dateString)
-  const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
-  return days[date.getUTCDay()]
+const SECTION_BG = rgb(245 / 255, 245 / 255, 245 / 255);
+const DARK_GREEN = rgb(6 / 255, 79 / 255, 68 / 255);
+const LIGHT_GREEN = rgb(100 / 255, 252 / 255, 5 / 255);
+const BLACK = rgb(0.1, 0.1, 0.1);
+const GRAY = rgb(0.45, 0.45, 0.45);
+
+function formatDate(dateString: string) {
+  try {
+    const d = new Date(dateString);
+    return `${d.getDate()} ${d.toLocaleString("es-MX", { month: "long" })} ${d.getFullYear()}`;
+  } catch {
+    return dateString;
+  }
 }
 
-function formatDate(dateString: string): string {
-  const date = new Date(dateString)
-  const day = date.getUTCDate()
-  const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-  const month = monthNames[date.getUTCMonth()]
-  const year = date.getUTCFullYear()
-  return `${day} de ${month} de ${year}`
+function formatTime(time: string) {
+  if (!time || !time.includes(":")) return time;
+  try {
+    const [h, m] = time.split(":").map(Number);
+    const ampm = h >= 12 ? "PM" : "AM";
+    const hour = h % 12 || 12;
+    return `${hour}:${m.toString().padStart(2, "0")} ${ampm}`;
+  } catch {
+    return time;
+  }
+}
+
+function buildRows(sessions: any[]) {
+  return sessions.map((s) => ({
+    dia: formatDate(s.dia),
+    bloque: `${formatTime(s.hora_inicio)} - ${formatTime(s.hora_fin)}`,
+    titulo: s.titulo,
+    ponente: s.ponente,
+    lugar: s.lugar,
+    tipo: s.tipo,
+  }));
 }
 
 export async function GET() {
-  let connection: mysql.Connection | null = null
   try {
-    // Conectar directamente a la BD
-    connection = await mysql.createConnection({
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME,
-      port: Number(process.env.DB_PORT ?? 3306),
-    })
+    const [rows] = (await pool.query(
+      `SELECT dia, hora_inicio, hora_fin, titulo, ponente, lugar, tipo, cupos_total, cupos_ocupados FROM sesiones ORDER BY dia ASC, hora_inicio ASC`
+    )) as any[];
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage(PageSizes.A4);
+    const { width } = page.getSize();
+    const margin = 48;
+    const usableWidth = width - margin * 2;
+    let cursor = page.getHeight() - 52;
 
-    // Ejecutar query
-    const [sessions] = await connection.execute('SELECT * FROM sesiones ORDER BY dia ASC, hora_inicio ASC')
-    const sessionsList = Array.isArray(sessions) ? sessions : []
+    const bold = await pdfDoc.embedFont("Helvetica-Bold");
+    const regular = await pdfDoc.embedFont("Helvetica");
 
-    console.log('Sesiones obtenidas:', sessionsList.length)
-    
-    if (!sessionsList || sessionsList.length === 0) {
-      console.error('No hay sesiones en la BD')
-      return new NextResponse('No hay sesiones disponibles', { status: 404 })
-    }
+    // ==== Encabezado con logos ====
+    const logoUmbPath = path.join(process.cwd(), "public", "images", "Umb_logo.png");
+    const logoSanJosePath = path.join(process.cwd(), "public", "images", "sanjose.png");
+    const logoColibriPath = path.join(process.cwd(), "public", "images", "Colibri_umb.png");
 
-    // Agrupar por día
-    const grouped: Record<string, any[]> = {}
-    sessionsList.forEach((session: any) => {
-      const dayName = getDayNameFromDate(session.dia)
-      if (!grouped[dayName]) {
-        grouped[dayName] = []
+    let logoX = margin;
+    const headerTop = cursor - 2;
+    const headerBottom = cursor - 58;
+
+    const logoSize = 28;
+    const logoSpacing = 10;
+
+    let loadedUmb: Uint8Array | null = null;
+    let loadedSanJose: Uint8Array | null = null;
+    let loadedColibri: Uint8Array | null = null;
+
+    try { loadedUmb = await fs.readFile(logoUmbPath); } catch { /* continue */ }
+    try { loadedSanJose = await fs.readFile(logoSanJosePath); } catch { /* continue */ }
+    try { loadedColibri = await fs.readFile(logoColibriPath); } catch { /* continue */ }
+
+    const drawLogo = async (imgBytes: Uint8Array | null, fallbackColor: string) => {
+      if (!imgBytes) return 0;
+      try {
+        const img = await pdfDoc.embedPng(imgBytes);
+        const imgWidth = Math.min(logoSize, img.width);
+        const imgHeight = Math.min(logoSize, img.height);
+        const ox = logoX;
+        const oy = headerBottom + (58 - imgHeight) / 2;
+        page.drawImage(img, { x: ox, y: oy, width: imgWidth, height: imgHeight });
+        const advance = imgWidth + logoSpacing;
+        logoX += advance;
+        return advance;
+      } catch {
+        return 0;
       }
-      grouped[dayName].push(session)
-    })
+    };
 
-    console.log('Sesiones agrupadas:', Object.keys(grouped))
+    const fallbackW = 28;
+    const fallbackH = 28;
+    const drawFallback = (color: string) => {
+      const ox = logoX;
+      const oy = headerBottom + (58 - fallbackH) / 2;
+      page.drawRectangle({ x: ox, y: oy, width: fallbackW, height: fallbackH, color: rgb(parseInt(color.slice(1, 3), 16) / 255, parseInt(color.slice(3, 5), 16) / 255, parseInt(color.slice(5, 7), 16) / 255) });
+      page.drawText("", { x: ox + 4, y: oy + 8, size: 6, color: BLACK, font: regular });
+      logoX += fallbackW + logoSpacing;
+      return fallbackW + logoSpacing;
+    };
 
-    // Crear PDF
-    const pdfDoc = await PDFDocument.create()
+    await drawLogo(loadedUmb, "#3F4942");
+    await drawLogo(loadedSanJose, "#006341");
+    await drawLogo(loadedColibri, "#0F4C3C");
 
-    // Colores
-    const lightGreen = rgb(100 / 255, 252 / 255, 5 / 255) // #64FC05
-    const darkGreen = rgb(6 / 255, 79 / 255, 68 / 255) // #064E3B
-    const darkText = rgb(26 / 255, 27 / 255, 34 / 255) // #1A1B22
-    const lightText = rgb(120 / 255, 120 / 255, 120 / 255)
-    const white = rgb(255 / 255, 255 / 255, 255 / 255)
-    const veryLightGray = rgb(245 / 255, 245 / 255, 245 / 255)
+    const rightContentX = logoX + 12;
+    page.drawText("12va Jornada Académica y Cultural", { x: rightContentX, y: cursor - 26, size: 18, color: BLACK, font: bold });
+    page.drawText("Universidad Mexiquense del Bicentenario", { x: rightContentX, y: cursor - 42, size: 9, color: DARK_GREEN, font: regular });
+    page.drawText("Programa de Actividades", { x: rightContentX, y: cursor - 54, size: 8, color: GRAY, font: regular });
+    cursor -= 72;
 
-    const boldFont = await pdfDoc.embedFont('Helvetica-Bold')
-    const regularFont = await pdfDoc.embedFont('Helvetica')
+    // ==== Cuerpo por día ====
+    const grouped: Record<string, any[]> = {};
+    (rows || []).forEach((s) => {
+      const key = formatDate(s.dia);
+      grouped[key] = grouped[key] || [];
+      grouped[key].push(s);
+    });
 
-    let page = pdfDoc.addPage([595, 842]) // A4
-    let yPosition = 800
+    Object.keys(grouped).forEach((day, dayIdx) => {
+      const list = grouped[day];
+      const headerHeight = 32;
 
-    // ===== ENCABEZADO =====
-    page.drawRectangle({
-      x: 0,
-      y: yPosition - 70,
-      width: 595,
-      height: 70,
-      color: lightGreen,
-    })
-
-    page.drawText('12va JORNADA ACADÉMICA Y CULTURAL', {
-      x: 40,
-      y: yPosition - 30,
-      size: 26,
-      color: darkText,
-      font: boldFont,
-    })
-
-    page.drawText('Universidad Mexiquense del Bicentenario', {
-      x: 40,
-      y: yPosition - 55,
-      size: 10,
-      color: darkText,
-      font: regularFont,
-    })
-
-    yPosition -= 85
-
-    // Fecha del evento
-    if (sessionsList.length > 0) {
-      const firstDate = formatDate(sessionsList[0].dia)
-      page.drawText(`Cronograma de Actividades - ${firstDate}`, {
-        x: 40,
-        y: yPosition,
-        size: 11,
-        color: darkGreen,
-        font: boldFont,
-      })
-    }
-
-    yPosition -= 25
-
-    // ===== PROCESAMIENTO DE DÍAS Y SESIONES =====
-    const dayOrder = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
-    
-    for (const dayName of dayOrder) {
-      const daySessions = grouped[dayName]
-      if (!daySessions) continue
-
-      // Verificar si necesitamos nueva página
-      if (yPosition < 180) {
-        page = pdfDoc.addPage([595, 842])
-        yPosition = 800
+      if (cursor - headerHeight < 60 && dayIdx > 0) {
+        const nextPage = pdfDoc.addPage(PageSizes.A4);
+        cursor = nextPage.getHeight() - 52;
       }
 
-      // ===== ENCABEZADO DEL DÍA =====
-      page.drawRectangle({
-        x: 40,
-        y: yPosition - 30,
-        width: 515,
-        height: 30,
-        color: darkGreen,
-      })
+      page.drawRectangle({ x: margin, y: cursor - headerHeight, width: usableWidth, height: headerHeight, color: DARK_GREEN });
+      page.drawText(day, { x: margin + 12, y: cursor - 22, size: 14, color: LIGHT_GREEN, font: bold });
+      cursor -= headerHeight + 8;
 
-      page.drawText(dayName.toUpperCase(), {
-        x: 50,
-        y: yPosition - 18,
-        size: 14,
-        color: white,
-        font: boldFont,
-      })
-
-      yPosition -= 45
-
-      // ===== SESIONES DEL DÍA =====
-      for (const session of daySessions) {
-        // Verificar espacio
-        if (yPosition < 100) {
-          page = pdfDoc.addPage([595, 842])
-          yPosition = 800
+      list.forEach((sesion) => {
+        const rowHeight = 58;
+        if (cursor - rowHeight < 60) {
+          const nextPage = pdfDoc.addPage(PageSizes.A4);
+          cursor = nextPage.getHeight() - 52;
+          page.drawRectangle({ x: margin, y: cursor - headerHeight, width: usableWidth, height: headerHeight, color: DARK_GREEN });
+          page.drawText(day, { x: margin + 12, y: cursor - 22, size: 14, color: LIGHT_GREEN, font: bold });
+          cursor -= headerHeight + 8;
         }
 
-        const sessionHeight = 80
-        const timeBoxWidth = 90
-        const contentBoxWidth = 425
+        page.drawRectangle({ x: margin, y: cursor - rowHeight, width: usableWidth, height: 1, color: GRAY });
 
-        // ===== CAJA DE HORA (izquierda) =====
-        page.drawRectangle({
-          x: 40,
-          y: yPosition - sessionHeight,
-          width: timeBoxWidth,
-          height: sessionHeight,
-          color: darkGreen,
-        })
+        const timeWidth = 140;
+        page.drawText(`${formatTime(sesion.hora_inicio)} - ${formatTime(sesion.hora_fin)}`, { x: margin + 6, y: cursor - 18, size: 10, color: DARK_GREEN, font: bold });
+        page.drawText(sesion.tipo, { x: margin + 6, y: cursor - 30, size: 9, color: BLACK, font: regular });
 
-        // Hora de inicio
-        page.drawText(session.hora_inicio, {
-          x: 50,
-          y: yPosition - 25,
-          size: 12,
-          color: lightGreen,
-          font: boldFont,
-        })
+        const contentX = margin + timeWidth + 18;
+        page.drawText(sesion.titulo, { x: contentX, y: cursor - 18, size: 11, color: BLACK, font: bold, maxWidth: usableWidth - timeWidth - 30 });
+        page.drawText(`${sesion.ponente}  |  ${sesion.lugar}`, { x: contentX, y: cursor - 30, size: 9, color: GRAY, font: regular, maxWidth: usableWidth - timeWidth - 30 });
 
-        // Guión
-        page.drawText('a', {
-          x: 50,
-          y: yPosition - 40,
-          size: 9,
-          color: white,
-          font: regularFont,
-        })
+        cursor -= rowHeight;
+      });
 
-        // Hora de fin
-        page.drawText(session.hora_fin, {
-          x: 50,
-          y: yPosition - 55,
-          size: 12,
-          color: lightGreen,
-          font: boldFont,
-        })
+      cursor -= 14;
+    });
 
-        // ===== CAJA DE CONTENIDO (derecha) =====
-        page.drawRectangle({
-          x: 40 + timeBoxWidth,
-          y: yPosition - sessionHeight,
-          width: contentBoxWidth,
-          height: sessionHeight,
-          color: veryLightGray,
-          borderColor: darkGreen,
-          borderWidth: 1.5,
-        })
-
-        // Título de la sesión (centrado dentro del cuadro)
-        const titleX = 40 + timeBoxWidth + 15
-        const titleMaxWidth = contentBoxWidth - 30
-        page.drawText(session.titulo, {
-          x: titleX,
-          y: yPosition - 20,
-          size: 12,
-          color: darkText,
-          font: boldFont,
-          maxWidth: titleMaxWidth,
-        })
-
-        // Ponente
-        page.drawText(`Ponente: ${session.ponente}`, {
-          x: titleX,
-          y: yPosition - 38,
-          size: 9,
-          color: lightText,
-          font: regularFont,
-        })
-
-        // Lugar
-        page.drawText(`Lugar: ${session.lugar}`, {
-          x: titleX,
-          y: yPosition - 50,
-          size: 9,
-          color: lightText,
-          font: regularFont,
-        })
-
-        // Tipo (badge)
-        const badgeX = titleX
-        const badgeWidth = 70
-        page.drawRectangle({
-          x: badgeX,
-          y: yPosition - 66,
-          width: badgeWidth,
-          height: 12,
-          color: rgb(220 / 255, 220 / 255, 220 / 255),
-        })
-
-        page.drawText(session.tipo, {
-          x: badgeX + 5,
-          y: yPosition - 64,
-          size: 7,
-          color: darkText,
-          font: boldFont,
-        })
-
-        yPosition -= (sessionHeight + 15)
-      }
-
-      yPosition -= 10
-    }
-
-    // ===== GENERAR PDF =====
-    const pdfBytes = await pdfDoc.save()
-
-    return new NextResponse(pdfBytes, {
+    const bytes = await pdfDoc.save();
+    return new NextResponse(bytes, {
       headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="cronograma-jornada-2025.pdf"',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "attachment; filename=programa-jornada.pdf",
+        "Cache-Control": "no-store",
       },
-    })
+    });
   } catch (error) {
-    console.error('Error generando PDF:', error)
-    return NextResponse.json(
-      { error: 'Error al generar el PDF', details: String(error) },
-      { status: 500 }
-    )
-  } finally {
-    if (connection) {
-      await connection.end()
-    }
+    console.error("Error generando PDF:", error);
+    return NextResponse.json({ error: "No se pudo generar el PDF." }, { status: 500 });
   }
 }

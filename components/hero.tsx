@@ -8,12 +8,37 @@ import { useEffect, useState } from "react"
 export default function Hero() {
   const { theme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const [loggedIn, setLoggedIn] = useState(false)
+  const [loadingAuth, setLoadingAuth] = useState(true)
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
+  useEffect(() => {
+    let cancelled = false
+
+    async function checkAuth() {
+      try {
+        const res = await fetch("/api/auth/me", { cache: "no-store" })
+        if (cancelled) return
+        setLoggedIn(res.ok)
+      } catch {
+        if (cancelled) return
+        setLoggedIn(false)
+      } finally {
+        if (!cancelled) setLoadingAuth(false)
+      }
+    }
+
+    checkAuth()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const isDark = mounted && theme === "dark"
+  const showCta = !loadingAuth && !loggedIn
 
   return (
     <section
@@ -62,15 +87,17 @@ export default function Hero() {
 
             {/* CTA + Date row */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 animate-fade-in-up delay-300">
-              <Link
-                href="#registro"
-                className="inline-flex items-center justify-center px-6 py-3 rounded-md text-white text-sm font-semibold hover:opacity-90 transition-all hover:scale-105 hover:shadow-lg"
-                style={{
-                  backgroundColor: isDark ? "#10B981" : "#3F4942"
-                }}
-              >
-                Registrarse Ahora
-              </Link>
+              {showCta && (
+                <Link
+                  href="#registro"
+                  className="inline-flex items-center justify-center px-6 py-3 rounded-md text-white text-sm font-semibold hover:opacity-90 transition-all hover:scale-105 hover:shadow-lg"
+                  style={{
+                    backgroundColor: isDark ? "#10B981" : "#3F4942"
+                  }}
+                >
+                  Registrarse Ahora
+                </Link>
+              )}
               <div>
                 <p className="text-xs text-white/80 uppercase tracking-wider mb-0.5">
                   Fecha del Evento

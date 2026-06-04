@@ -3,16 +3,17 @@ import { query } from '@/lib/db'
 
 export async function GET() {
   try {
-    const sesiones = await query(
-      'SELECT * FROM sesiones ORDER BY dia ASC, hora_inicio ASC'
+    const sesiones = await query<any[]>(
+      `SELECT id, titulo, ponente, dia, hora_inicio, hora_fin,
+              tipo, lugar, cupos_total, cupos_ocupados,
+              descripcion, perfil_profesional, afiliacion, biografia
+       FROM sesiones
+       ORDER BY dia ASC, hora_inicio ASC`
     )
 
-    // Agrupar por día
     const grouped: Record<string, any[]> = {}
-    sesiones.forEach((sesion: any) => {
-      if (!grouped[sesion.dia]) {
-        grouped[sesion.dia] = []
-      }
+    sesiones.forEach((sesion) => {
+      if (!grouped[sesion.dia]) grouped[sesion.dia] = []
       grouped[sesion.dia].push(sesion)
     })
 

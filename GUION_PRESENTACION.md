@@ -10,47 +10,47 @@ Let me explain the details of our project in Spanish.
 
 ---
 
-Our project started by identifying a real problem at our institution, UES San Jose del Rincon, part of the Universidad Mexiquense del Bicentenario. Every year, the Academic and Cultural Day is organized. It is a multi-day event with conferences, workshops, panels, seminars, and roundtable discussions. The problem is that all the information about this event is scattered. Schedules are shared through WhatsApp, registrations are done on paper, there is no digital record of who attends which sessions, and the speakers and their biographies are not easily accessible. A student cannot quickly know which activities are available, at what times, in which places, or how many spots are still available.
+Nuestro proyecto comenzó identificando un problema real en nuestra institución, la UES San José del Rincón, parte de la Universidad Mexiquense del Bicentenario. Cada año se organiza la Jornada Académica y Cultural. Es un evento de varios días con conferencias, talleres, paneles, seminarios y mesas redondas. El problema es que toda la información sobre este evento está dispersa. Los horarios se comparten por WhatsApp, los registros se hacen en papel, no existe un registro digital de quién asiste a qué sesiones, y los ponentes y sus biografías no son fácilmente accesibles. Un estudiante no puede saber rápidamente qué actividades están disponibles, a qué horas, en qué lugares, o cuántos cupos siguen disponibles.
 
-The main problem is the lack of centralization. There is no single place to view the entire event program. There is no online registration system. There are no automatic notifications to remind students of their sessions. The administrators do not have a tool to create and manage sessions quickly.
+El problema principal es la falta de centralización. No existe un único lugar para ver todo el programa del evento. No hay un sistema de registro en línea. No hay notificaciones automáticas para recordar a los estudiantes sus sesiones. Los administradores no tienen una herramienta para crear y gestionar sesiones rápidamente.
 
-What is our solution? It is a complete web platform that centralizes all the management of the Academic and Cultural Day. From the moment a student enters the platform, they can see all the information they need.
+¿Cuál es nuestra solución? Es una plataforma web completa que centraliza toda la gestión de la Jornada Académica y Cultural. Desde el momento en que un estudiante ingresa a la plataforma, puede ver toda la información que necesita.
 
-The first feature is the homepage, where anyone can see general information about the event, learn about the academic programs of the institution, which are Agricultural Innovation Engineering, Computer Systems Engineering, and Accounting, and register as a user on the platform.
+La primera funcionalidad es la página de inicio, donde cualquier persona puede ver información general sobre el evento, conocer los programas académicos de la institución, que son Ingeniería en Innovación Agrícola Sustentable, Ingeniería en Sistemas Computacionales y Contaduría, y registrarse como usuario en la plataforma.
 
-The second feature is the schedule. Students can see all the sessions organized by day. Each session shows the title, the speaker, the time, the place, the type of activity, the available spots, and a full description. Also, they can download the complete program in PDF format directly from the platform.
+La segunda funcionalidad es el cronograma. Los estudiantes pueden ver todas las sesiones organizadas por día. Cada sesión muestra el título, el ponente, la hora, el lugar, el tipo de actividad, los cupos disponibles y una descripción completa. Además, pueden descargar el programa completo en formato PDF directamente desde la plataforma.
 
-The third feature is session management. Sessions are the individual activities of the event: conferences, workshops, panels, seminars, and roundtable discussions. Each session has its speaker with a professional profile, institutional affiliation, biography, and photo. Students can sign up for the sessions they want and see at any time which sessions they are registered for. They can also cancel their registration if they can no longer attend. When a student signs up, the system automatically reduces the available spots.
+La tercera funcionalidad es la gestión de sesiones. Las sesiones son las actividades individuales del evento: conferencias, talleres, paneles, seminarios y mesas redondas. Cada sesión cuenta con su ponente, con perfil profesional, afiliación institucional, biografía y foto. Los estudiantes pueden inscribirse en las sesiones que deseen y ver en cualquier momento en cuáles están registrados. También pueden cancelar su inscripción si ya no pueden asistir. Cuando un estudiante se inscribe, el sistema reduce automáticamente los cupos disponibles.
 
-The fourth feature is venue management. The platform shows the three places where the event takes place, with their images, descriptions, and addresses, so that attendees know exactly where they need to go.
+La cuarta funcionalidad es la gestión de sedes o espacios. La plataforma muestra los tres lugares donde se realiza el evento, con sus imágenes, descripciones y direcciones, para que los asistentes sepan exactamente a dónde deben ir.
 
-The fifth feature is the email notification system. The platform automatically sends welcome emails when a user registers, password recovery emails when someone forgets their password, and automatic reminders a few days and fifteen minutes before each session, so that no student misses their activity.
+La quinta funcionalidad es el sistema de notificaciones por correo electrónico. La plataforma envía automáticamente correos de bienvenida cuando un usuario se registra, correos de recuperación de contraseña cuando alguien olvida su contraseña, y recordatorios automáticos unos días y quince minutos antes de cada sesión, para que ningún estudiante se pierda su actividad.
 
-The sixth feature is the user profile. Each student can view and edit their name, their major, see the sessions they are registered for, and if they want, delete their account completely from the platform.
+La sexta funcionalidad es el perfil de usuario. Cada estudiante puede ver y editar su nombre, su carrera, ver las sesiones en las que está registrado y, si lo desea, eliminar su cuenta completamente de la plataforma.
 
-The seventh feature is the administration panel. Administrators have a complete panel from which they can create, edit, and delete sessions. They can see all users, create new student or admin accounts, delete users. They can manage the event spaces or venues. They can view real-time event statistics, such as the total number of sessions, speakers, occupied spots, and the occupancy percentage per venue.
+La séptima funcionalidad es el panel de administración. Los administradores cuentan con un panel completo desde el cual pueden crear, editar y eliminar sesiones. Pueden ver todos los usuarios, crear nuevas cuentas de estudiante o administrador, eliminar usuarios. Pueden gestionar los espacios o sedes del evento. Pueden consultar estadísticas del evento en tiempo real, como el total de sesiones, ponentes, cupos ocupados y el porcentaje de ocupación por sede.
 
-In summary, the advantages of this platform are: first, it centralizes all the event information in one place. Second, it allows online registration without the need for paper forms. Third, it sends automatic reminders so that no one misses a session. Fourth, it offers a complete administrative panel for the organizers. Fifth, everything is available twenty-four hours a day, seven days a week, from any device with internet access.
-
----
-
-CONCLUSION
-
-In conclusion, this platform is not just another web page. It is a complete solution that changes how academic and cultural events are organized at our institution. By centralizing the program, registrations, notifications, and venue management into a single digital system, we improve the experience for both students and administrators.
-
-Let me ask you a simple question: how much more efficient would our event be if every student could sign up from their phone, receive automatic reminders, and have the entire program in the palm of their hand? That is exactly what this platform offers.
-
-We believe this system is the future of academic event organization. And today, that future is here, in our hands. Thank you for listening to our presentation.
+En resumen, las ventajas de esta plataforma son: primera, centraliza toda la información del evento en un solo lugar. Segunda, permite el registro en línea sin necesidad de formatos impresos. Tercera, envía recordatorios automáticos para que nadie falte a una sesión. Cuarta, ofrece un panel administrativo completo para los organizadores. Quinta, todo está disponible veinticuatro horas al día, siete días a la semana, desde cualquier dispositivo con acceso a internet.
 
 ---
 
-BRIEF RECOMMENDATIONS
+CONCLUSIÓN
 
-- Practice out loud at least 10 times before the presentation
-- Maintain eye contact with the audience, do not only look at the teachers
-- Smile naturally and move with purpose in the space
-- Speak with confidence, without doubts or filler words like "um" or "uh"
-- Pause for two seconds after important ideas so the audience can absorb the message
-- Use good volume and intonation: raise your voice for questions, lower it for statements
-- Dress formally: shirt/blouse, pants/skirt, closed shoes
-- Arrive 15 minutes early to get used to the space
+En conclusión, esta plataforma no es solo otra página web. Es una solución completa que cambia la forma en que se organizan los eventos académicos y culturales en nuestra institución. Al centralizar el programa, los registros, las notificaciones y la gestión de sedes en un solo sistema digital, mejoramos la experiencia tanto para estudiantes como para administradores.
+
+Permítanme hacerles una pregunta sencilla: ¿cuánto más eficiente sería nuestro evento si cada estudiante pudiera inscribirse desde su teléfono, recibir recordatorios automáticos y tener todo el programa en la palma de su mano? Eso es exactamente lo que ofrece esta plataforma.
+
+Creemos que este sistema es el futuro de la organización de eventos académicos. Y hoy, ese futuro está aquí, en nuestras manos. Gracias por escuchar nuestra presentación.
+
+---
+
+RECOMENDACIONES BREVES
+
+- practicar en voz alta al menos 10 veces antes de la presentación
+- mantener contacto visual con el público, no solo mirar a los maestros
+- sonreír de forma natural y moverse con propósito en el espacio
+- hablar con confianza, sin dudas ni palabras de relleno como "eh" o "umm"
+- hacer una pausa de dos segundos después de ideas importantes para que el público pueda absorber el mensaje
+- usar buen volumen y entonación: levantar la voz para preguntas, bajarla para afirmaciones
+- vestirse formalmente: camisa/blusa, pantalón/falda, zapatos cerrados
+- llegar 15 minutos antes para familiarizarse con el espacio

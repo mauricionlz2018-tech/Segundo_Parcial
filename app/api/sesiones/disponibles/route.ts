@@ -51,7 +51,7 @@ export async function GET(request: Request) {
 
     query += ` ORDER BY s.dia ASC, s.hora_inicio ASC`
 
-    const sesiones = await pool.query(query, params)
+    const [sesiones] = await pool.query(query, params)
 
     return NextResponse.json({
       data: sesiones,

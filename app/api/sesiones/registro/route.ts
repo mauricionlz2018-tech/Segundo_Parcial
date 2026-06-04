@@ -49,13 +49,15 @@ export async function POST(request: Request) {
 
   try {
     // Verificar que la sesión existe
-    const sesionResult = await pool.query("SELECT id FROM sesiones WHERE id = ?", [sesionId])
-    if (!sesionResult[0] || sesionResult[0].length === 0) {
+    const [sesionResult] = await pool.query(
+      "SELECT id FROM sesiones WHERE id = ?",
+      [sesionId]
+    )
+    if (!sesionResult || sesionResult.length === 0) {
       return NextResponse.json({ error: "Sesión no encontrada." }, { status: 404 })
     }
 
-    // Verificar que no esté ya registrado
-    const registroResult = await pool.query(
+    const [registroResult] = await pool.query(
       "SELECT id FROM user_sesiones WHERE user_id = ? AND sesion_id = ?",
       [user.id, sesionId]
     )
