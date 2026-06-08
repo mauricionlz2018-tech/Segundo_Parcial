@@ -101,8 +101,8 @@ export default function VoiceAssistant() {
     async function cargarDatos() {
       try {
         const resUser = await fetch("/api/auth/me", { cache: "no-store" })
-        const dataUser = await resUser.json()
-        const uid = dataUser.user?.id || null
+        const dataUser = resUser.ok ? await resUser.json().catch(() => null) : null
+        const uid = dataUser?.user?.id || null
         setUserId(uid)
 
         const [resAll, resInscritas] = await Promise.all([
@@ -110,7 +110,7 @@ export default function VoiceAssistant() {
           uid ? fetch(`/api/usuarios/mis-sesiones?userId=${uid}`, { cache: "no-store" }) : null,
         ])
 
-        const dataAll = await resAll.json()
+        const dataAll = resAll.ok ? await resAll.json() : { data: [] }
         const todas: Sesion[] = Array.isArray((dataAll as any).data) ? ((dataAll as any).data as Sesion[]) : []
         console.log("[VoiceAssistant] /api/sesiones total:", todas.length)
         setTodasSesiones(todas)
@@ -119,7 +119,7 @@ export default function VoiceAssistant() {
         setSesionesHoy(todas.filter((s) => s.dia === hoy))
 
         if (resInscritas) {
-          const dataInscritas = await resInscritas.json()
+          const dataInscritas = resInscritas.ok ? await resInscritas.json() : { data: [] }
           const inscritas: Sesion[] = Array.isArray((dataInscritas as any).data) ? ((dataInscritas as any).data as Sesion[]) : []
           console.log("[VoiceAssistant] /api/usuarios/mis-sesiones total:", inscritas.length, inscritas.map((s) => s.titulo))
           setSesionesInscritas(new Set(inscritas.map((s) => s.id)))
@@ -406,7 +406,7 @@ export default function VoiceAssistant() {
       {/* Botón flotante del asistente */}
       <button
         onClick={mostrarPanel ? cerrarPanel : () => setMostrarPanel(true)}
-        className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
+        className="fixed bottom-6 right-6 z-30 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
         style={{ backgroundColor: "#065F46" }}
         aria-label="Asistente de voz"
       >

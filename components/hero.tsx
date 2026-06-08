@@ -5,40 +5,21 @@ import Image from "next/image"
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
 
-export default function Hero() {
+interface HeroProps {
+  usuario: any
+  loadingAuth: boolean
+}
+
+export default function Hero({ usuario, loadingAuth }: HeroProps) {
   const { theme } = useTheme()
   const [mounted, setMounted] = useState(false)
-  const [loggedIn, setLoggedIn] = useState(false)
-  const [loadingAuth, setLoadingAuth] = useState(true)
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  useEffect(() => {
-    let cancelled = false
-
-    async function checkAuth() {
-      try {
-        const res = await fetch("/api/auth/me", { cache: "no-store" })
-        if (cancelled) return
-        setLoggedIn(res.ok)
-      } catch {
-        if (cancelled) return
-        setLoggedIn(false)
-      } finally {
-        if (!cancelled) setLoadingAuth(false)
-      }
-    }
-
-    checkAuth()
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
   const isDark = mounted && theme === "dark"
-  const showCta = !loadingAuth && !loggedIn
+  const showCta = !loadingAuth && !usuario
 
   return (
     <section
@@ -50,19 +31,6 @@ export default function Hero() {
           : "linear-gradient(135deg, #64FC05 0%, #006341 100%)",
       }}
     >
-      {/* Background texture: building louvre grid image */}
-      <div
-        className="absolute inset-0 z-0 animate-fade-in"
-        style={{
-          backgroundImage:
-            "url('images/UMB_SAN_JOSE.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          opacity: isDark ? 0.08 : 0.15,
-          mixBlendMode: "overlay",
-        }}
-        aria-hidden="true"
-      />
       <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10 py-14 w-full">
         <div className="flex flex-col md:flex-row items-center gap-10">
           {/* Left content */}

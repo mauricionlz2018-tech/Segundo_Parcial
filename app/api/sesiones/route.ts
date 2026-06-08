@@ -20,13 +20,18 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const id = uuidv4();
     
-    console.log('Creando sesión:', body);
-    
+    const fotoPonente = body?.foto_ponente ?? null;
+    const perfilProfesional = (body?.perfil_profesional ?? "").trim() || null;
+    const afiliacion = (body?.afiliacion ?? "").trim() || null;
+    const biografia = (body?.biografia ?? "").trim() || null;
+    const logoInstitucion = body?.logo_institucion ?? null;
+
     await query(
       `INSERT INTO sesiones (
-        id, titulo, ponente, dia, hora_inicio, hora_fin,
-        tipo, lugar, cupos_total, descripcion
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         id, titulo, ponente, dia, hora_inicio, hora_fin,
+         tipo, lugar, cupos_total, descripcion,
+         foto_ponente, perfil_profesional, afiliacion, biografia, logo_institucion
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         body.titulo ?? null,
@@ -37,7 +42,12 @@ export async function POST(request: NextRequest) {
         body.tipo ?? 'Conferencia',
         body.lugar ?? null,
         body.cupos_total ?? 50,
-        body.descripcion ?? null
+        body.descripcion ?? null,
+        fotoPonente,
+        perfilProfesional,
+        afiliacion,
+        biografia,
+        logoInstitucion,
       ]
     );
     

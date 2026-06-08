@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Spinner } from "@/components/ui/spinner"
-import { Clock, MapPin, User, Trash2, RotateCw } from "lucide-react"
+import { Clock, MapPin, User, Trash2, RotateCw, X } from "lucide-react"
 import { formatTime12Hour, formatDate } from "@/lib/utils"
 import { toast } from "sonner"
 
@@ -48,6 +48,7 @@ export default function SesionesPage() {
   const [confirmDelete, setConfirmDelete] = useState<Sesion | null>(null)
   const [procesando, setProcesando] = useState(false)
   const [filtroTipo, setFiltroTipo] = useState<string>("")
+  const [viewingPonente, setViewingPonente] = useState<{ nombre: string; perfil: string | null; afiliacion: string | null; biografia: string | null; foto: string | null } | null>(null)
 
   // Obtener usuario actual
   useEffect(() => {
@@ -303,7 +304,19 @@ export default function SesionesPage() {
                           <div className="mb-3">
                             <p className="text-sm text-gray-600 dark:text-gray-400">
                               <User className="inline mr-1" size={16} />
-                              <strong>{sesion.ponente}</strong>
+                              <button
+                                onClick={() => setViewingPonente({
+                                  nombre: sesion.ponente,
+                                  perfil: sesion.perfil_profesional,
+                                  afiliacion: sesion.afiliacion,
+                                  biografia: sesion.descripcion,
+                                  foto: sesion.perfil_profesional ? null : null,
+                                })}
+                                className="font-semibold text-[#0F6B44] dark:text-[#10B981] hover:underline"
+                                type="button"
+                              >
+                                {sesion.ponente}
+                              </button>
                             </p>
                             {sesion.perfil_profesional && (
                               <p className="text-xs text-gray-500 dark:text-gray-500 ml-5">
@@ -398,7 +411,19 @@ export default function SesionesPage() {
                           <div className="mb-3">
                             <p className="text-sm text-gray-600 dark:text-gray-400">
                               <User className="inline mr-1" size={16} />
-                              <strong>{sesion.ponente}</strong>
+                              <button
+                                onClick={() => setViewingPonente({
+                                  nombre: sesion.ponente,
+                                  perfil: sesion.perfil_profesional,
+                                  afiliacion: sesion.afiliacion,
+                                  biografia: sesion.descripcion,
+                                  foto: null,
+                                })}
+                                className="font-semibold text-[#0F6B44] dark:text-[#10B981] hover:underline"
+                                type="button"
+                              >
+                                {sesion.ponente}
+                              </button>
                             </p>
                           </div>
 
@@ -454,6 +479,107 @@ export default function SesionesPage() {
       )}
 
       <Footer />
+
+      {viewingPonente && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+          onClick={() => setViewingPonente(null)}
+        >
+          <div
+            className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl w-[440px] max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-white dark:bg-[#1E293B] border-b border-gray-100 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
+              <h2 className="text-lg font-bold text-[#1A1B22] dark:text-white">
+                Perfil del Conferencista
+              </h2>
+              <button
+                onClick={() => setViewingPonente(null)}
+                className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 rounded-full bg-[#EAFBE2] dark:bg-[#10B981]/20 flex items-center justify-center shrink-0">
+                  <User size={28} className="text-[#0F6B44] dark:text-[#10B981]" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-[#1A1B22] dark:text-white leading-snug">
+                    {viewingPonente.nombre}
+                  </p>
+                  {viewingPonente.perfil && (
+                    <p className="text-xs text-[#0F6B44] dark:text-[#10B981] mt-1">
+                      {viewingPonente.perfil}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {viewingPonente.afiliacion && (
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                    Afiliación Institucional
+                  </p>
+                  <p className="text-xs text-[#1A1B22] dark:text-white mt-1">
+                    {viewingPonente.afiliacion}
+                  </p>
+                </div>
+              )}
+
+              {viewingPonente.biografia && (
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                    Biografía
+                  </p>
+                  <p className="text-xs text-gray-700 dark:text-gray-300 mt-1 leading-relaxed whitespace-pre-line">
+                    {viewingPonente.biografia}
+                  </p>
+                </div>
+              )}
+
+              {sesionesDisponibles.filter(
+                (s) =>
+                  s.ponente === viewingPonente.nombre &&
+                  (s.perfil_profesional || s.afiliacion)
+              ).length > 0 && (
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+                    Sesiones en esta jornada
+                  </p>
+                  <div className="space-y-2">
+                    {sesionesDisponibles
+                      .filter((s) => s.ponente === viewingPonente.nombre)
+                      .map((s) => (
+                        <div
+                          key={s.id}
+                          className="bg-gray-50 dark:bg-[#0F172A] rounded-lg px-3 py-2 text-xs text-gray-700 dark:text-gray-300"
+                        >
+                          <p className="font-semibold">{s.titulo}</p>
+                          <p className="text-[10px] text-gray-500 dark:text-gray-500 mt-0.5">
+                            {formatDate(s.dia)} · {formatTime12Hour(s.hora_inicio)} - {formatTime12Hour(s.hora_fin)} · {s.lugar}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-2">
+                <button
+                  onClick={() => setViewingPonente(null)}
+                  className="w-full bg-[#0F6B44] text-white text-xs font-semibold py-2 rounded-lg hover:bg-[#0A4A2F] transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

@@ -43,7 +43,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "ID de usuario requerido." }, { status: 400 })
   }
 
-  // No permitir eliminar al admin actual
   if (userId === admin.id) {
     return NextResponse.json(
       { error: "No puedes eliminar tu propia cuenta." },
@@ -51,10 +50,8 @@ export async function DELETE(request: Request) {
     )
   }
 
-  // Eliminar sesiones del usuario
   await pool.execute<ResultSetHeader>("DELETE FROM sessions WHERE user_id = ?", [userId])
 
-  // Eliminar usuario
   await pool.execute<ResultSetHeader>("DELETE FROM users WHERE id = ?", [userId])
 
   return NextResponse.json({
@@ -72,7 +69,6 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null)
   const { email, username, full_name, carrera, password, role } = body
 
-  // Validaciones
   if (!email || !username || !full_name || !password || !role) {
     return NextResponse.json(
       { error: "Email, usuario, nombre, contraseña y rol son requeridos." },
@@ -94,7 +90,6 @@ export async function POST(request: Request) {
     )
   }
 
-  // Verificar si el email ya existe
   const [existingEmail] = await pool.execute(
     "SELECT id FROM users WHERE email = ? LIMIT 1",
     [email]
@@ -106,7 +101,6 @@ export async function POST(request: Request) {
     )
   }
 
-  // Verificar si el username ya existe
   const [existingUsername] = await pool.execute(
     "SELECT id FROM users WHERE username = ? LIMIT 1",
     [username]
@@ -119,13 +113,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Hashear la contraseña
     const passwordHash = await hashPassword(password)
-
-    // Generar ID único
     const userId = randomUUID()
 
-    // Crear el usuario
     const [result] = await pool.execute<ResultSetHeader>(
       "INSERT INTO users (id, email, username, full_name, carrera, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
       [userId, email, username, full_name, carrera || null, passwordHash, role]

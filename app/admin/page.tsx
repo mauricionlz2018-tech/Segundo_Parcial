@@ -100,6 +100,24 @@ export default function AdminPage() {
   const [userFormLoading, setUserFormLoading] = useState(false)
   const [userFormError, setUserFormError] = useState<string | null>(null)
 
+  // View user details
+  const [viewingUserId, setViewingUserId] = useState<string | null>(null)
+
+  // Edit user state
+  const [editingUserId, setEditingUserId] = useState<string | null>(null)
+  const [showEditUserForm, setShowEditUserForm] = useState(false)
+  const [editUserForm, setEditUserForm] = useState({
+    username: "",
+    email: "",
+    full_name: "",
+    carrera: "",
+    role: "alumno",
+    password: "",
+    confirmPassword: "",
+  })
+  const [editUserFormLoading, setEditUserFormLoading] = useState(false)
+  const [editUserFormError, setEditUserFormError] = useState<string | null>(null)
+
   // Espacios state
   const [espacios, setEspacios] = useState<Array<any>>([])
   const [espaciosLoading, setEspaciosLoading] = useState(false)
@@ -138,6 +156,7 @@ export default function AdminPage() {
 
   // Search
   const [searchQuery, setSearchQuery] = useState("")
+  const [viewingPonenteNombre, setViewingPonenteNombre] = useState<string | null>(null)
 
 
   useEffect(() => {
@@ -472,6 +491,57 @@ export default function AdminPage() {
       toast.error("Error al eliminar usuario")
     }
     setUsuarioDeleteId(null)
+  }
+
+  async function handleUpdateUsuario() {
+    if (!editingUserId) return
+    setEditUserFormLoading(true)
+    setEditUserFormError(null)
+    try {
+      const body: any = {
+        username: editUserForm.username,
+        email: editUserForm.email,
+        full_name: editUserForm.full_name,
+        carrera: editUserForm.carrera || null,
+        role: editUserForm.role,
+      }
+      if (editUserForm.password.trim()) {
+        if (editUserForm.password.length < 6) {
+          setEditUserFormError("La contraseña debe tener al menos 6 caracteres")
+          setEditUserFormLoading(false)
+          return
+        }
+        if (editUserForm.password !== editUserForm.confirmPassword) {
+          setEditUserFormError("Las contraseñas no coinciden")
+          setEditUserFormLoading(false)
+          return
+        }
+        body.password = editUserForm.password
+      }
+
+      const res = await fetch(`/api/admin/usuarios/${editingUserId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+
+      const data = await res.json().catch(() => null)
+      if (res.ok) {
+        toast.success("Usuario actualizado exitosamente")
+        setShowEditUserForm(false)
+        setEditingUserId(null)
+        setEditUserForm({ username: "", email: "", full_name: "", carrera: "", role: "alumno", password: "", confirmPassword: "" })
+        await fetchUsuarios()
+      } else {
+        setEditUserFormError(data?.error ?? "Error al actualizar usuario")
+        toast.error(data?.error ?? "Error al actualizar usuario")
+      }
+    } catch {
+      setEditUserFormError("Error de red al actualizar usuario")
+      toast.error("Error de red al actualizar usuario")
+    } finally {
+      setEditUserFormLoading(false)
+    }
   }
 
   async function handleDeleteOwnAccount() {
@@ -1582,6 +1652,33 @@ export default function AdminPage() {
                             </td>
                             <td className="px-5 py-3">
                               <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => setViewingUserId(user.id)}
+                                  className="text-gray-400 hover:text-blue-500"
+                                  title="Ver detalles"
+                                >
+                                  <Eye size={14} />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingUserId(user.id)
+                                    setEditUserForm({
+                                      username: user.username,
+                                      email: user.email,
+                                      full_name: user.full_name || "",
+                                      carrera: user.carrera || "",
+                                      role: user.role,
+                                      password: "",
+                                      confirmPassword: "",
+                                    })
+                                    setEditUserFormError(null)
+                                    setShowEditUserForm(true)
+                                  }}
+                                  className="text-gray-400 hover:text-[#0F6B44]"
+                                  title="Editar"
+                                >
+                                  <Pencil size={14} />
+                                </button>
                                 {user.id !== currentUser?.id && (
                                   <button
                                     onClick={() => setUsuarioDeleteId(user.id)}
@@ -2265,6 +2362,232 @@ export default function AdminPage() {
                 </div>
               )
             })()}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL VER DETALLES USUARIO */}
+      {viewingUserId && usuarios.find(u => u.id === viewingUserId) && (() => {
+        const usuario = usuarios.find(u => u.id === viewingUserId)!
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
+            <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl w-[420px] max-h-[80vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white dark:bg-[#1E293B] border-b border-gray-100 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-[#1A1B22] dark:text-white">Detalles del Usuario</h2>
+                </div>
+                <button
+                  onClick={() => setViewingUserId(null)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-[#EAFBE2] dark:bg-[#10B981]/20 flex items-center justify-center">
+                    <span className="text-sm font-bold text-[#0F6B44] dark:text-[#10B981]">
+                      {(usuario.full_name || usuario.username).split(" ").slice(0, 2).map((p) => p[0]).join("").toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-[#1A1B22] dark:text-white">{usuario.full_name || "—"}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">@{usuario.username}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold uppercase">Correo</p>
+                    <p className="text-xs text-[#1A1B22] dark:text-white">{usuario.email}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold uppercase">Rol</p>
+                      <span className={`inline-block mt-1 px-2 py-1 rounded-full text-[10px] font-semibold ${
+                        usuario.role === "admin"
+                          ? "bg-[#EAFBE2] text-[#0F6B44]"
+                          : "bg-[#F3F4F6] text-[#6B7280]"
+                      }`}>
+                        {usuario.role === "admin" ? "Admin" : "Alumno"}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold uppercase">Registrado</p>
+                      <p className="text-xs text-[#1A1B22] dark:text-white mt-1">
+                        {new Date(usuario.created_at).toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" })}
+                      </p>
+                    </div>
+                  </div>
+                  {usuario.carrera && (
+                    <div>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold uppercase">Carrera</p>
+                      <p className="text-xs text-[#1A1B22] dark:text-white">{usuario.carrera}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={() => {
+                      setViewingUserId(null)
+                      setEditingUserId(usuario.id)
+                      setEditUserForm({
+                        username: usuario.username,
+                        email: usuario.email,
+                        full_name: usuario.full_name || "",
+                        carrera: usuario.carrera || "",
+                        role: usuario.role,
+                        password: "",
+                        confirmPassword: "",
+                      })
+                      setEditUserFormError(null)
+                      setShowEditUserForm(true)
+                    }}
+                    className="flex-1 bg-[#0F6B44] text-white text-xs font-semibold py-2 rounded-lg hover:bg-[#0d5a38]"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => setViewingUserId(null)}
+                    className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* MODAL EDITAR USUARIO */}
+      {showEditUserForm && editingUserId && (
+        <div className="fixed inset-0 z-50 bg-black/35 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl w-[450px] px-6 py-5">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Editar Usuario</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Modifica los datos del usuario seleccionado</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowEditUserForm(false)
+                  setEditingUserId(null)
+                  setEditUserForm({ username: "", email: "", full_name: "", carrera: "", role: "alumno", password: "", confirmPassword: "" })
+                  setEditUserFormError(null)
+                }}
+                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {editUserFormError && (
+              <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-xs rounded-lg px-4 py-3">
+                {editUserFormError}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Usuario</label>
+                <input
+                  type="text"
+                  value={editUserForm.username}
+                  onChange={(e) => setEditUserForm({ ...editUserForm, username: e.target.value })}
+                  className="w-full text-xs border border-gray-300 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Email</label>
+                <input
+                  type="email"
+                  value={editUserForm.email}
+                  onChange={(e) => setEditUserForm({ ...editUserForm, email: e.target.value })}
+                  className="w-full text-xs border border-gray-300 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Nombre Completo</label>
+                <input
+                  type="text"
+                  value={editUserForm.full_name}
+                  onChange={(e) => setEditUserForm({ ...editUserForm, full_name: e.target.value })}
+                  className="w-full text-xs border border-gray-300 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Carrera (Opcional)</label>
+                <input
+                  type="text"
+                  value={editUserForm.carrera}
+                  onChange={(e) => setEditUserForm({ ...editUserForm, carrera: e.target.value })}
+                  className="w-full text-xs border border-gray-300 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Rol</label>
+                <select
+                  value={editUserForm.role}
+                  onChange={(e) => setEditUserForm({ ...editUserForm, role: e.target.value })}
+                  className="w-full text-xs border border-gray-300 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
+                >
+                  <option value="alumno">Alumno</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Nueva Contraseña (opcional)</label>
+                <input
+                  type="password"
+                  value={editUserForm.password}
+                  onChange={(e) => setEditUserForm({ ...editUserForm, password: e.target.value })}
+                  placeholder="Dejar vacío para mantener la actual"
+                  className="w-full text-xs border border-gray-300 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
+                />
+              </div>
+
+              {editUserForm.password && (
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Confirmar Contraseña</label>
+                  <input
+                    type="password"
+                    value={editUserForm.confirmPassword}
+                    onChange={(e) => setEditUserForm({ ...editUserForm, confirmPassword: e.target.value })}
+                    placeholder="Confirmar contraseña"
+                    className="w-full text-xs border border-gray-300 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-lg px-3 py-2 mt-1 bg-gray-50 focus:outline-none focus:border-[#0F6B44]"
+                  />
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={handleUpdateUsuario}
+                  disabled={editUserFormLoading}
+                  className="flex-1 bg-[#0F6B44] text-white text-xs font-semibold py-2 rounded-lg disabled:opacity-50 hover:bg-[#0d5a38]"
+                >
+                  {editUserFormLoading ? "Guardando..." : "Guardar Cambios"}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowEditUserForm(false)
+                    setEditingUserId(null)
+                    setEditUserForm({ username: "", email: "", full_name: "", carrera: "", role: "alumno", password: "", confirmPassword: "" })
+                    setEditUserFormError(null)
+                  }}
+                  className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

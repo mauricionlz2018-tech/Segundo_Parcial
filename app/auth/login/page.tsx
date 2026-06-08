@@ -20,25 +20,39 @@ export default function LoginPage() {
     setError("")
     setLoading(true)
 
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identifier: email, password }),
-    })
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: email, password }),
+      })
 
-    const payload = await response.json().catch(() => null)
-    if (!response.ok) {
-      setError(payload?.error ?? "Usuario o contraseña incorrectos. Intenta de nuevo.")
+      const text = await response.text()
+      let payload: any = null
+      try {
+        payload = JSON.parse(text)
+      } catch {
+        payload = null
+      }
+
+      if (!response.ok) {
+        const mensaje = payload?.error || "Error en el servidor. Intenta de nuevo."
+        setError(mensaje)
+        setLoading(false)
+        return
+      }
+
       setLoading(false)
-      return
-    }
 
-    setLoading(false)
-
-    if (payload?.user?.role === "admin") {
-      router.push("/admin")
-    } else {
-      router.push("/")
+      const role = payload?.user?.role
+      if (role === "admin") {
+        window.location.href = "/admin"
+      } else {
+        window.location.href = "/"
+      }
+    } catch {
+      setError("Error de conexión. Intenta de nuevo.")
+      setLoading(false)
     }
   }
 

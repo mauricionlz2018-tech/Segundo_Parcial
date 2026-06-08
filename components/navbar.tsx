@@ -4,9 +4,8 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Menu, X, LogOut, User, AlertCircle, Volume2 } from "lucide-react"
+import { Menu, X, LogOut, User, AlertCircle } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
-import VoiceAssistant from "./VoiceAssistant"
 
 const navLinks = [
   { label: "Inicio", href: "/" },
@@ -24,16 +23,21 @@ export default function Navbar() {
 
   useEffect(() => {
     async function loadUser() {
-      const response = await fetch("/api/auth/me")
-      if (!response.ok) {
+      try {
+        const response = await fetch("/api/auth/me")
+        if (!response.ok) {
+          setUser(null)
+          setRole(null)
+          return
+        }
+
+        const payload = await response.json().catch(() => null)
+        setUser(payload?.user ?? null)
+        setRole(payload?.user?.role ?? null)
+      } catch {
         setUser(null)
         setRole(null)
-        return
       }
-
-      const payload = await response.json().catch(() => null)
-      setUser(payload?.user ?? null)
-      setRole(payload?.user?.role ?? null)
     }
 
     loadUser()
@@ -44,8 +48,7 @@ export default function Navbar() {
     setUser(null)
     setRole(null)
     setShowLogoutConfirm(false)
-    router.push("/")
-    router.refresh()
+    window.location.href = "/"
   }
 
   function handleSignOut() {
@@ -53,7 +56,7 @@ export default function Navbar() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-[#1A1F2E] border-b border-gray-100 dark:border-gray-800 shadow-sm dark:shadow-lg">
+    <header className="fixed top-0 left-0 right-0 z-[9999] bg-white dark:bg-[#1A1F2E] border-b border-gray-100 dark:border-gray-800 shadow-sm dark:shadow-lg">
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
         <div className="flex items-center justify-between h-14">
           {/* Brand */}
@@ -133,26 +136,32 @@ export default function Navbar() {
           </div>
 
           {/* Mobile menu button */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 text-black dark:text-white transition-transform duration-300 hover:scale-110"
-            aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
+          <div
+            className="md:hidden"
+            onClick={() => setIsOpen((prev) => !prev)}
+            style={{ WebkitTapHighlightColor: "transparent" }}
           >
-            {isOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+            <button
+              type="button"
+              className="p-4 min-w-[48px] min-h-[48px] flex items-center justify-center text-black dark:text-white"
+              aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
+            >
+              {isOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Mobile menu */}
       {isOpen && (
-        <div className="md:hidden bg-white dark:bg-[#1A1F2E] border-t border-gray-100 dark:border-gray-800 animate-fade-in">
+        <div className="md:hidden bg-white dark:bg-[#1A1F2E] border-t border-gray-100 dark:border-gray-800">
           <nav className="flex flex-col px-6 py-4 gap-3">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setIsOpen(false)}
-                className={`text-sm py-1 ${
+                className={`text-sm py-2 ${
                   pathname === link.href ? "text-[#065F46] dark:text-[#10B981] font-semibold" : "text-black dark:text-gray-300"
                 }`}
               >
@@ -162,13 +171,14 @@ export default function Navbar() {
             {user ? (
               <>
                 {role === "admin" && (
-                  <Link href="/admin" onClick={() => setIsOpen(false)} className="text-sm text-[#065F46] font-semibold py-1">
+                  <Link href="/admin" onClick={() => setIsOpen(false)} className="text-sm text-[#065F46] font-semibold py-2">
                     Panel Admin
                   </Link>
                 )}
                 <button
                   onClick={() => { setIsOpen(false); handleSignOut() }}
-                  className="text-sm text-red-600 dark:text-red-400 py-1 text-left hover:font-semibold transition-colors"
+                  className="text-sm text-red-600 dark:text-red-400 py-2 text-left hover:font-semibold transition-colors"
+                  type="button"
                 >
                   Cerrar sesión
                 </button>
@@ -178,7 +188,7 @@ export default function Navbar() {
                 <Link
                   href="/auth/register"
                   onClick={() => setIsOpen(false)}
-                  className="text-sm text-black py-1"
+                  className="text-sm text-black py-2"
                 >
                   Registro
                 </Link>
@@ -196,11 +206,9 @@ export default function Navbar() {
         </div>
       )}
 
-      <VoiceAssistant />
-
       {/* Logout confirmation modal */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white dark:bg-[#1E293B] rounded-lg shadow-xl p-6 max-w-sm mx-4 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-3 mb-4">
               <AlertCircle className="w-6 h-6 text-yellow-600 dark:text-yellow-500" />

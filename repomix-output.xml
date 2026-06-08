@@ -189,6 +189,7 @@ public/images/Sistemas.png
 public/images/Umb_logo.png
 public/images/UMB_SAN_JOSE.png
 public/placeholder-user.jpg
+public/Programa 12va Jornada Académica y Cultural 2025 UESSJR 3 (1).pdf
 README_PRESENTACION.md
 scripts/seed_admin.mjs
 scripts/ues_db1 (3).sql
@@ -201,45 +202,6 @@ types/index.ts
 
 <files>
 This section contains the contents of the repository's files.
-
-<file path="app/api/cronograma/sesiones/route.ts">
-import { NextResponse } from "next/server"
-import pool from "@/lib/db"
-
-export const runtime = "nodejs"
-
-export async function GET() {
-  try {
-    const sesiones = (await pool.query(
-      `SELECT 
-        s.id, s.titulo, s.ponente, s.dia, s.hora_inicio, s.hora_fin,
-        s.tipo, s.lugar, s.cupos_total, s.cupos_ocupados, s.descripcion,
-        s.perfil_profesional, s.afiliacion, s.biografia,
-        GROUP_CONCAT(us.user_id) AS inscritos_user_ids
-      FROM sesiones s
-      LEFT JOIN user_sesiones us ON s.id = us.sesion_id
-      GROUP BY s.id
-      ORDER BY s.dia ASC, s.hora_inicio ASC`
-    )) as any[]
-
-    const grouped: Record<string, any[]> = {}
-    sesiones.forEach((sesion) => {
-      if (!grouped[sesion.dia]) {
-        grouped[sesion.dia] = []
-      }
-      grouped[sesion.dia].push(sesion)
-    })
-
-    return NextResponse.json({ grouped })
-  } catch (error) {
-    console.error("Error obteniendo cronograma:", error)
-    return NextResponse.json(
-      { error: "Error al obtener cronograma" },
-      { status: 500 }
-    )
-  }
-}
-</file>
 
 <file path=".gitattributes">
 # Auto detect text files and perform LF normalization
@@ -510,6 +472,45 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ ok: true })
+}
+</file>
+
+<file path="app/api/cronograma/sesiones/route.ts">
+import { NextResponse } from "next/server"
+import pool from "@/lib/db"
+
+export const runtime = "nodejs"
+
+export async function GET() {
+  try {
+    const sesiones = (await pool.query(
+      `SELECT 
+        s.id, s.titulo, s.ponente, s.dia, s.hora_inicio, s.hora_fin,
+        s.tipo, s.lugar, s.cupos_total, s.cupos_ocupados, s.descripcion,
+        s.perfil_profesional, s.afiliacion, s.biografia,
+        GROUP_CONCAT(us.user_id) AS inscritos_user_ids
+      FROM sesiones s
+      LEFT JOIN user_sesiones us ON s.id = us.sesion_id
+      GROUP BY s.id
+      ORDER BY s.dia ASC, s.hora_inicio ASC`
+    )) as any[]
+
+    const grouped: Record<string, any[]> = {}
+    sesiones.forEach((sesion) => {
+      if (!grouped[sesion.dia]) {
+        grouped[sesion.dia] = []
+      }
+      grouped[sesion.dia].push(sesion)
+    })
+
+    return NextResponse.json({ grouped })
+  } catch (error) {
+    console.error("Error obteniendo cronograma:", error)
+    return NextResponse.json(
+      { error: "Error al obtener cronograma" },
+      { status: 500 }
+    )
+  }
 }
 </file>
 
@@ -827,7 +828,12 @@ export async function PUT(
            tipo = ?,
            lugar = ?,
            cupos_total = ?,
-           descripcion = ?
+           descripcion = ?,
+           foto_ponente = ?,
+           perfil_profesional = ?,
+           afiliacion = ?,
+           biografia = ?,
+           logo_institucion = ?
        WHERE id = ?`,
       [
         body.titulo ?? null,
@@ -839,6 +845,11 @@ export async function PUT(
         body.lugar ?? null,
         body.cupos_total ?? 50,
         body.descripcion ?? null,
+        body.foto_ponente ?? null,
+        (body.perfil_profesional ?? "").trim() || null,
+        (body.afiliacion ?? "").trim() || null,
+        (body.biografia ?? "").trim() || null,
+        body.logo_institucion ?? null,
         id
       ]
     );
@@ -883,126 +894,6 @@ export async function DELETE(
 }
 </file>
 
-<file path="app/api/sesiones/grouped/route.ts">
-import { NextResponse } from 'next/server'
-import { query } from '@/lib/db'
-
-export async function GET() {
-  try {
-    const sesiones = await query<any[]>(
-      `SELECT id, titulo, ponente, dia, hora_inicio, hora_fin,
-              tipo, lugar, cupos_total, cupos_ocupados,
-              descripcion, perfil_profesional, afiliacion, biografia
-       FROM sesiones
-       ORDER BY dia ASC, hora_inicio ASC`
-    )
-
-    const grouped: Record<string, any[]> = {}
-    sesiones.forEach((sesion) => {
-      if (!grouped[sesion.dia]) grouped[sesion.dia] = []
-      grouped[sesion.dia].push(sesion)
-    })
-
-    return NextResponse.json({ data: grouped })
-  } catch (error) {
-    console.error('Error al obtener sesiones:', error)
-    return NextResponse.json(
-      { error: 'Error al obtener sesiones' },
-      { status: 500 }
-    )
-  }
-}
-</file>
-
-<file path="app/api/sesiones/registro/route.ts">
-import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import crypto from "crypto"
-import { getUserBySessionToken, SESSION_COOKIE } from "@/lib/auth"
-import pool from "@/lib/db"
-import type { ResultSetHeader } from "mysql2/promise"
-
-export const runtime = "nodejs"
-
-async function getAuthUser() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get(SESSION_COOKIE)?.value
-  if (!token) return null
-  return await getUserBySessionToken(token)
-}
-
-// GET - obtener sesiones registradas del usuario
-export async function GET() {
-  const user = await getAuthUser()
-  if (!user) {
-    return NextResponse.json({ error: "No autenticado." }, { status: 401 })
-  }
-
-  const result = await pool.query(
-    `SELECT s.*, us.registered_at 
-     FROM sesiones s
-     INNER JOIN user_sesiones us ON s.id = us.sesion_id
-     WHERE us.user_id = ?
-     ORDER BY s.dia, s.hora_inicio`,
-    [user.id]
-  )
-
-  return NextResponse.json({ data: result[0] || [] })
-}
-
-// POST - registrarse en una sesión
-export async function POST(request: Request) {
-  const user = await getAuthUser()
-  if (!user) {
-    return NextResponse.json({ error: "No autenticado." }, { status: 401 })
-  }
-
-  const body = await request.json().catch(() => null)
-  const sesionId = String(body?.sesionId ?? "").trim()
-
-  if (!sesionId) {
-    return NextResponse.json({ error: "ID de sesión requerido." }, { status: 400 })
-  }
-
-  try {
-    // Verificar que la sesión existe
-    const [sesionResult] = await pool.query(
-      "SELECT id FROM sesiones WHERE id = ?",
-      [sesionId]
-    )
-    if (!sesionResult || sesionResult.length === 0) {
-      return NextResponse.json({ error: "Sesión no encontrada." }, { status: 404 })
-    }
-
-    const [registroResult] = await pool.query(
-      "SELECT id FROM user_sesiones WHERE user_id = ? AND sesion_id = ?",
-      [user.id, sesionId]
-    )
-    if (registroResult[0] && registroResult[0].length > 0) {
-      return NextResponse.json({ error: "Ya estás registrado en esta sesión." }, { status: 409 })
-    }
-
-    // Registrar usuario en sesión
-    const id = crypto.randomUUID()
-    await pool.execute<ResultSetHeader>(
-      "INSERT INTO user_sesiones (id, user_id, sesion_id) VALUES (?, ?, ?)",
-      [id, user.id, sesionId]
-    )
-
-    // Incrementar cupos ocupados
-    await pool.execute(
-      "UPDATE sesiones SET cupos_ocupados = cupos_ocupados + 1 WHERE id = ?",
-      [sesionId]
-    )
-
-    return NextResponse.json({ ok: true, id })
-  } catch (error) {
-    console.error("Error registrando sesión:", error)
-    return NextResponse.json({ error: "Error al registrar sesión." }, { status: 500 })
-  }
-}
-</file>
-
 <file path="app/api/sesiones/route.ts">
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
@@ -1026,13 +917,18 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const id = uuidv4();
     
-    console.log('Creando sesión:', body);
-    
+    const fotoPonente = body?.foto_ponente ?? null;
+    const perfilProfesional = (body?.perfil_profesional ?? "").trim() || null;
+    const afiliacion = (body?.afiliacion ?? "").trim() || null;
+    const biografia = (body?.biografia ?? "").trim() || null;
+    const logoInstitucion = body?.logo_institucion ?? null;
+
     await query(
       `INSERT INTO sesiones (
-        id, titulo, ponente, dia, hora_inicio, hora_fin,
-        tipo, lugar, cupos_total, descripcion
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         id, titulo, ponente, dia, hora_inicio, hora_fin,
+         tipo, lugar, cupos_total, descripcion,
+         foto_ponente, perfil_profesional, afiliacion, biografia, logo_institucion
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         body.titulo ?? null,
@@ -1043,7 +939,12 @@ export async function POST(request: NextRequest) {
         body.tipo ?? 'Conferencia',
         body.lugar ?? null,
         body.cupos_total ?? 50,
-        body.descripcion ?? null
+        body.descripcion ?? null,
+        fotoPonente,
+        perfilProfesional,
+        afiliacion,
+        biografia,
+        logoInstitucion,
       ]
     );
     
@@ -1191,48 +1092,6 @@ export async function DELETE(request: Request) {
 }
 </file>
 
-<file path="app/api/usuarios/mis-sesiones/route.ts">
-import { NextResponse } from "next/server"
-import pool from "@/lib/db"
-
-export const runtime = "nodejs"
-
-export async function GET(request: Request) {
-  try {
-    const url = new URL(request.url)
-    const userId = url.searchParams.get("userId")
-
-    if (!userId) {
-      return NextResponse.json({ error: "userId requerido" }, { status: 400 })
-    }
-
-    const [sesiones] = await pool.query<any>(
-      `SELECT 
-        s.id, s.titulo, s.ponente, s.dia, s.hora_inicio, s.hora_fin,
-        s.tipo, s.lugar, s.cupos_total, s.cupos_ocupados, s.descripcion,
-        s.perfil_profesional, s.afiliacion, s.biografia,
-        us.registered_at
-      FROM sesiones s
-      INNER JOIN user_sesiones us ON s.id = us.sesion_id
-      WHERE us.user_id = ?
-      ORDER BY s.dia ASC, s.hora_inicio ASC`,
-      [userId]
-    )
-
-    return NextResponse.json({
-      data: sesiones,
-      total: sesiones.length,
-    })
-  } catch (error) {
-    console.error("Error al obtener sesiones inscritas:", error)
-    return NextResponse.json(
-      { error: "Error al obtener sesiones inscritas" },
-      { status: 500 }
-    )
-  }
-}
-</file>
-
 <file path="app/auth/callback/route.ts">
 import { NextResponse } from "next/server"
 
@@ -1244,17 +1103,113 @@ export async function GET(request: Request) {
 </file>
 
 <file path="app/page.tsx">
+"use client"
+
+import { useEffect, useState } from "react"
+import Link from "next/link"
 import Navbar from "@/components/navbar"
 import Hero from "@/components/hero"
 import About from "@/components/about"
 import Programs from "@/components/programs"
 import Footer from "@/components/footer"
+import { CalendarDays, BookOpen, User } from "lucide-react"
 
 export default function Home() {
+  const [user, setUser] = useState<any>(null)
+  const [loadingAuth, setLoadingAuth] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadUser() {
+      try {
+        const res = await fetch("/api/auth/me", { cache: "no-store" })
+        if (!cancelled) {
+          const data = res.ok ? await res.json().catch(() => null) : null
+          setUser(data?.user || null)
+        }
+      } catch {
+        if (!cancelled) setUser(null)
+      } finally {
+        if (!cancelled) setLoadingAuth(false)
+      }
+    }
+    loadUser()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   return (
     <main>
-      <Navbar />
-      <Hero />
+      <Navbar usuario={user} />
+      <Hero usuario={user} loadingAuth={loadingAuth} />
+      {!loadingAuth && user && (
+        <section className="py-10">
+          <div className="max-w-7xl mx-auto px-6 lg:px-10">
+            <div className="bg-white dark:bg-gray-900 shadow-lg dark:shadow-xl rounded-2xl border border-gray-200 dark:border-gray-800 p-8 mb-10">
+              <p className="text-black dark:text-white text-3xl font-bold mb-2">
+                Hola, {user?.full_name || user?.username}
+              </p>
+              <p className="text-gray-600 dark:text-gray-300 text-lg">
+                ¿Qué quieres hacer hoy?
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
+                <Link
+                  href="/perfil"
+                  className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:border-[#64FC05] dark:hover:border-[#10B981] dark:hover:bg-gray-800 transition-colors group"
+                >
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-[#64FC05] dark:bg-[#10B981] text-black dark:text-white">
+                    <User size={18} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#1A1B22] dark:text-white group-hover:text-[#065F46] dark:group-hover:text-[#10B981]">
+                      Personalizar mi perfil
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Edita nombre, carrera y más
+                    </p>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/cronograma"
+                  className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:border-[#64FC05] dark:hover:border-[#10B981] dark:hover:bg-gray-800 transition-colors group"
+                >
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-[#64FC05] dark:bg-[#10B981] text-black dark:text-white">
+                    <CalendarDays size={18} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#1A1B22] dark:text-white group-hover:text-[#065F46] dark:group-hover:text-[#10B981]">
+                      Ver cronograma de la Jornada
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Consulta todas las actividades y horarios
+                    </p>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/sesiones"
+                  className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:border-[#64FC05] dark:hover:border-[#10B981] dark:hover:bg-gray-800 transition-colors group"
+                >
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-[#64FC05] dark:bg-[#10B981] text-black dark:text-white">
+                    <BookOpen size={18} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#1A1B22] dark:text-white group-hover:text-[#065F46] dark:group-hover:text-[#10B981]">
+                      Explorar sesiones académicas
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Revisa las charlas y talleres disponibles
+                    </p>
+                  </div>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
       <About />
       <Programs />
       <Footer />
@@ -9597,7 +9552,127 @@ export async function POST(request: Request) {
 }
 </file>
 
-<file path="app/api/sesiones/disponibles/route.ts">
+<file path="app/api/sesiones/grouped/route.ts">
+import { NextResponse } from 'next/server'
+import { query } from '@/lib/db'
+
+export async function GET() {
+  try {
+    const sesiones = await query<any[]>(
+      `SELECT id, titulo, ponente, dia, hora_inicio, hora_fin,
+              tipo, lugar, cupos_total, cupos_ocupados,
+              descripcion, perfil_profesional, afiliacion, biografia, foto_ponente
+       FROM sesiones
+       ORDER BY dia ASC, hora_inicio ASC`
+    )
+
+    const grouped: Record<string, any[]> = {}
+    sesiones.forEach((sesion) => {
+      if (!grouped[sesion.dia]) grouped[sesion.dia] = []
+      grouped[sesion.dia].push(sesion)
+    })
+
+    return NextResponse.json({ data: grouped })
+  } catch (error) {
+    console.error('Error al obtener sesiones:', error)
+    return NextResponse.json(
+      { error: 'Error al obtener sesiones' },
+      { status: 500 }
+    )
+  }
+}
+</file>
+
+<file path="app/api/sesiones/registro/route.ts">
+import { NextResponse } from "next/server"
+import { cookies } from "next/headers"
+import crypto from "crypto"
+import { getUserBySessionToken, SESSION_COOKIE } from "@/lib/auth"
+import pool from "@/lib/db"
+import type { ResultSetHeader } from "mysql2/promise"
+
+export const runtime = "nodejs"
+
+async function getAuthUser() {
+  const cookieStore = await cookies()
+  const token = cookieStore.get(SESSION_COOKIE)?.value
+  if (!token) return null
+  return await getUserBySessionToken(token)
+}
+
+// GET - obtener sesiones registradas del usuario
+export async function GET() {
+  const user = await getAuthUser()
+  if (!user) {
+    return NextResponse.json({ error: "No autenticado." }, { status: 401 })
+  }
+
+  const result = await pool.query(
+    `SELECT s.*, us.registered_at 
+     FROM sesiones s
+     INNER JOIN user_sesiones us ON s.id = us.sesion_id
+     WHERE us.user_id = ?
+     ORDER BY s.dia, s.hora_inicio`,
+    [user.id]
+  )
+
+  return NextResponse.json({ data: result[0] || [] })
+}
+
+// POST - registrarse en una sesión
+export async function POST(request: Request) {
+  const user = await getAuthUser()
+  if (!user) {
+    return NextResponse.json({ error: "No autenticado." }, { status: 401 })
+  }
+
+  const body = await request.json().catch(() => null)
+  const sesionId = String(body?.sesionId ?? "").trim()
+
+  if (!sesionId) {
+    return NextResponse.json({ error: "ID de sesión requerido." }, { status: 400 })
+  }
+
+  try {
+    // Verificar que la sesión existe
+    const [sesionResult] = await pool.query(
+      "SELECT id FROM sesiones WHERE id = ?",
+      [sesionId]
+    )
+    if (!sesionResult || sesionResult.length === 0) {
+      return NextResponse.json({ error: "Sesión no encontrada." }, { status: 404 })
+    }
+
+    const [registroResult] = await pool.query(
+      "SELECT id FROM user_sesiones WHERE user_id = ? AND sesion_id = ?",
+      [user.id, sesionId]
+    )
+    if (registroResult[0] && registroResult[0].length > 0) {
+      return NextResponse.json({ error: "Ya estás registrado en esta sesión." }, { status: 409 })
+    }
+
+    // Registrar usuario en sesión
+    const id = crypto.randomUUID()
+    await pool.execute<ResultSetHeader>(
+      "INSERT INTO user_sesiones (id, user_id, sesion_id) VALUES (?, ?, ?)",
+      [id, user.id, sesionId]
+    )
+
+    // Incrementar cupos ocupados
+    await pool.execute(
+      "UPDATE sesiones SET cupos_ocupados = cupos_ocupados + 1 WHERE id = ?",
+      [sesionId]
+    )
+
+    return NextResponse.json({ ok: true, id })
+  } catch (error) {
+    console.error("Error registrando sesión:", error)
+    return NextResponse.json({ error: "Error al registrar sesión." }, { status: 500 })
+  }
+}
+</file>
+
+<file path="app/api/usuarios/mis-sesiones/route.ts">
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 
@@ -9606,61 +9681,33 @@ export const runtime = "nodejs"
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
-    const tipo = url.searchParams.get("tipo")
-    const dia = url.searchParams.get("dia")
-    const userId = url.searchParams.get("userId") // Para saber cuáles ya está inscrito
+    const userId = url.searchParams.get("userId")
 
-    let query = `
-      SELECT 
+    if (!userId) {
+      return NextResponse.json({ error: "userId requerido" }, { status: 400 })
+    }
+
+    const [sesiones] = await pool.query<any>(
+      `SELECT 
         s.id, s.titulo, s.ponente, s.dia, s.hora_inicio, s.hora_fin,
         s.tipo, s.lugar, s.cupos_total, s.cupos_ocupados, s.descripcion,
-        s.perfil_profesional, s.afiliacion, s.biografia
-    `
-    
-    // Si hay userId, agrega el campo inscrito
-    if (userId) {
-      query += `, (CASE 
-        WHEN EXISTS(
-          SELECT 1 FROM user_sesiones us 
-          WHERE us.sesion_id = s.id AND us.user_id = ?
-        ) THEN 1 
-        ELSE 0 
-      END) as inscrito`
-    } else {
-      query += `, 0 as inscrito`
-    }
-    
-    query += ` FROM sesiones s WHERE 1=1`
-    
-    const params: any[] = []
-    
-    // Agregar userId al inicio de params si existe
-    if (userId) {
-      params.push(userId)
-    }
-
-    if (tipo) {
-      query += ` AND s.tipo = ?`
-      params.push(tipo)
-    }
-
-    if (dia) {
-      query += ` AND s.dia = ?`
-      params.push(dia)
-    }
-
-    query += ` ORDER BY s.dia ASC, s.hora_inicio ASC`
-
-    const [sesiones] = await pool.query(query, params)
+        s.perfil_profesional, s.afiliacion, s.biografia,
+        us.registered_at
+      FROM sesiones s
+      INNER JOIN user_sesiones us ON s.id = us.sesion_id
+      WHERE us.user_id = ?
+      ORDER BY s.dia ASC, s.hora_inicio ASC`,
+      [userId]
+    )
 
     return NextResponse.json({
       data: sesiones,
       total: sesiones.length,
     })
   } catch (error) {
-    console.error("Error al obtener sesiones disponibles:", error)
+    console.error("Error al obtener sesiones inscritas:", error)
     return NextResponse.json(
-      { error: "Error al obtener sesiones disponibles" },
+      { error: "Error al obtener sesiones inscritas" },
       { status: 500 }
     )
   }
@@ -10852,65 +10899,6 @@ export default function VoiceAssistant() {
 }
 </file>
 
-<file path="GUION_PRESENTACION.md">
-Good morning everyone. My name is Mauricio Nolazco Lonjino. Today I want to talk to you about an exciting project: Agenda Digital.
-
-Imagine this: every year, our university organizes academic and cultural events. Students have to find out about the program through WhatsApp, see which conferences are available on loose pieces of paper, sign up by filling out paper forms, and ask their classmates which workshops are available. It is confusing, inefficient, and many people miss important activities.
-
-Our platform is the solution. It is a web system where students can see the full program of the event, check the schedules, sign up for sessions from their phone or computer, and receive automatic notifications before each activity. All in one place.
-
-Why is this important? Because organization is the key for students to make the most of these events. With this platform, we avoid losing information, we reduce disorganized attendance, and both students and administrators have full control of the event.
-
-Let me explain the details of our project in Spanish.
-
----
-
-Nuestro proyecto comenzó identificando un problema real en nuestra institución, la UES San José del Rincón, parte de la Universidad Mexiquense del Bicentenario. Cada año se organiza la Jornada Académica y Cultural. Es un evento de varios días con conferencias, talleres, paneles, seminarios y mesas redondas. El problema es que toda la información sobre este evento está dispersa. Los horarios se comparten por WhatsApp, los registros se hacen en papel, no existe un registro digital de quién asiste a qué sesiones, y los ponentes y sus biografías no son fácilmente accesibles. Un estudiante no puede saber rápidamente qué actividades están disponibles, a qué horas, en qué lugares, o cuántos cupos siguen disponibles.
-
-El problema principal es la falta de centralización. No existe un único lugar para ver todo el programa del evento. No hay un sistema de registro en línea. No hay notificaciones automáticas para recordar a los estudiantes sus sesiones. Los administradores no tienen una herramienta para crear y gestionar sesiones rápidamente.
-
-¿Cuál es nuestra solución? Es una plataforma web completa que centraliza toda la gestión de la Jornada Académica y Cultural. Desde el momento en que un estudiante ingresa a la plataforma, puede ver toda la información que necesita.
-
-La primera funcionalidad es la página de inicio, donde cualquier persona puede ver información general sobre el evento, conocer los programas académicos de la institución, que son Ingeniería en Innovación Agrícola Sustentable, Ingeniería en Sistemas Computacionales y Contaduría, y registrarse como usuario en la plataforma.
-
-La segunda funcionalidad es el cronograma. Los estudiantes pueden ver todas las sesiones organizadas por día. Cada sesión muestra el título, el ponente, la hora, el lugar, el tipo de actividad, los cupos disponibles y una descripción completa. Además, pueden descargar el programa completo en formato PDF directamente desde la plataforma.
-
-La tercera funcionalidad es la gestión de sesiones. Las sesiones son las actividades individuales del evento: conferencias, talleres, paneles, seminarios y mesas redondas. Cada sesión cuenta con su ponente, con perfil profesional, afiliación institucional, biografía y foto. Los estudiantes pueden inscribirse en las sesiones que deseen y ver en cualquier momento en cuáles están registrados. También pueden cancelar su inscripción si ya no pueden asistir. Cuando un estudiante se inscribe, el sistema reduce automáticamente los cupos disponibles.
-
-La cuarta funcionalidad es la gestión de sedes o espacios. La plataforma muestra los tres lugares donde se realiza el evento, con sus imágenes, descripciones y direcciones, para que los asistentes sepan exactamente a dónde deben ir.
-
-La quinta funcionalidad es el sistema de notificaciones por correo electrónico. La plataforma envía automáticamente correos de bienvenida cuando un usuario se registra, correos de recuperación de contraseña cuando alguien olvida su contraseña, y recordatorios automáticos unos días y quince minutos antes de cada sesión, para que ningún estudiante se pierda su actividad.
-
-La sexta funcionalidad es el perfil de usuario. Cada estudiante puede ver y editar su nombre, su carrera, ver las sesiones en las que está registrado y, si lo desea, eliminar su cuenta completamente de la plataforma.
-
-La séptima funcionalidad es el panel de administración. Los administradores cuentan con un panel completo desde el cual pueden crear, editar y eliminar sesiones. Pueden ver todos los usuarios, crear nuevas cuentas de estudiante o administrador, eliminar usuarios. Pueden gestionar los espacios o sedes del evento. Pueden consultar estadísticas del evento en tiempo real, como el total de sesiones, ponentes, cupos ocupados y el porcentaje de ocupación por sede.
-
-En resumen, las ventajas de esta plataforma son: primera, centraliza toda la información del evento en un solo lugar. Segunda, permite el registro en línea sin necesidad de formatos impresos. Tercera, envía recordatorios automáticos para que nadie falte a una sesión. Cuarta, ofrece un panel administrativo completo para los organizadores. Quinta, todo está disponible veinticuatro horas al día, siete días a la semana, desde cualquier dispositivo con acceso a internet.
-
----
-
-CONCLUSIÓN
-
-En conclusión, esta plataforma no es solo otra página web. Es una solución completa que cambia la forma en que se organizan los eventos académicos y culturales en nuestra institución. Al centralizar el programa, los registros, las notificaciones y la gestión de sedes en un solo sistema digital, mejoramos la experiencia tanto para estudiantes como para administradores.
-
-Permítanme hacerles una pregunta sencilla: ¿cuánto más eficiente sería nuestro evento si cada estudiante pudiera inscribirse desde su teléfono, recibir recordatorios automáticos y tener todo el programa en la palma de su mano? Eso es exactamente lo que ofrece esta plataforma.
-
-Creemos que este sistema es el futuro de la organización de eventos académicos. Y hoy, ese futuro está aquí, en nuestras manos. Gracias por escuchar nuestra presentación.
-
----
-
-RECOMENDACIONES BREVES
-
-- practicar en voz alta al menos 10 veces antes de la presentación
-- mantener contacto visual con el público, no solo mirar a los maestros
-- sonreír de forma natural y moverse con propósito en el espacio
-- hablar con confianza, sin dudas ni palabras de relleno como "eh" o "umm"
-- hacer una pausa de dos segundos después de ideas importantes para que el público pueda absorber el mensaje
-- usar buen volumen y entonación: levantar la voz para preguntas, bajarla para afirmaciones
-- vestirse formalmente: camisa/blusa, pantalón/falda, zapatos cerrados
-- llegar 15 minutos antes para familiarizarse con el espacio
-</file>
-
 <file path="lib/utils.ts">
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
@@ -11342,450 +11330,72 @@ export async function POST(request: Request) {
 }
 </file>
 
-<file path="app/api/sesiones/[id]/inscribir/route.ts">
+<file path="app/api/sesiones/disponibles/route.ts">
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
-import { v4 as uuid } from "uuid"
 
 export const runtime = "nodejs"
 
-// GET: Verificar si el usuario está inscrito
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: Request) {
   try {
-    const { id: sesionId } = await params
     const url = new URL(request.url)
-    const userId = url.searchParams.get("userId")
+    const tipo = url.searchParams.get("tipo")
+    const dia = url.searchParams.get("dia")
+    const userId = url.searchParams.get("userId") // Para saber cuáles ya está inscrito
 
-    if (!userId || !sesionId) {
-      return NextResponse.json({ error: "Parámetros faltantes" }, { status: 400 })
+    let query = `
+      SELECT 
+        s.id, s.titulo, s.ponente, s.dia, s.hora_inicio, s.hora_fin,
+        s.tipo, s.lugar, s.cupos_total, s.cupos_ocupados, s.descripcion,
+        s.perfil_profesional, s.afiliacion, s.biografia
+    `
+    
+    // Si hay userId, agrega el campo inscrito
+    if (userId) {
+      query += `, (CASE 
+        WHEN EXISTS(
+          SELECT 1 FROM user_sesiones us 
+          WHERE us.sesion_id = s.id AND us.user_id = ?
+        ) THEN 1 
+        ELSE 0 
+      END) as inscrito`
+    } else {
+      query += `, 0 as inscrito`
+    }
+    
+    query += ` FROM sesiones s WHERE 1=1`
+    
+    const params: any[] = []
+    
+    // Agregar userId al inicio de params si existe
+    if (userId) {
+      params.push(userId)
     }
 
-    const [result] = await pool.query<any>(
-      `SELECT COUNT(*) as inscrito FROM user_sesiones 
-       WHERE user_id = ? AND sesion_id = ?`,
-      [userId, sesionId]
-    )
+    if (tipo) {
+      query += ` AND s.tipo = ?`
+      params.push(tipo)
+    }
 
-    const inscrito = (result as any[])[0]?.inscrito === 1
+    if (dia) {
+      query += ` AND s.dia = ?`
+      params.push(dia)
+    }
+
+    query += ` ORDER BY s.dia ASC, s.hora_inicio ASC`
+
+    const [sesiones] = await pool.query(query, params)
 
     return NextResponse.json({
-      inscrito,
+      data: sesiones,
+      total: sesiones.length,
     })
   } catch (error) {
-    console.error("Error verificando inscripción:", error)
-    return NextResponse.json({ error: "Error al verificar inscripción" }, { status: 500 })
-  }
-}
-
-// POST: Inscribirse en sesión
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id: sesionId } = await params
-    const body = await request.json().catch(() => ({}))
-    const userId = body.userId
-
-    console.log("📋 POST /inscribir:", { userId, sesionId })
-
-    if (!userId || !sesionId) {
-      console.log("❌ Parámetros faltantes:", { userId, sesionId })
-      return NextResponse.json({ error: "Parámetros faltantes" }, { status: 400 })
-    }
-
-    // Verificar si ya está inscrito
-    const [existing] = await pool.query(
-      `SELECT id FROM user_sesiones 
-       WHERE user_id = ? AND sesion_id = ?`,
-      [userId, sesionId]
-    )
-
-    console.log("🔍 Ya inscrito?:", (existing as any[]).length > 0)
-
-    if ((existing as any[]).length > 0) {
-      return NextResponse.json(
-        { error: "Ya estás inscrito en esta sesión" },
-        { status: 409 }
-      )
-    }
-
-    // Verificar que la sesión existe y tiene cupos
-    const [sesion] = await pool.query<any>(
-      `SELECT id, titulo, cupos_total, cupos_ocupados, dia, hora_inicio 
-       FROM sesiones WHERE id = ?`,
-      [sesionId]
-    )
-
-    console.log("📊 Sesión encontrada:", sesion.length > 0 ? "Sí" : "No")
-
-    if (sesion.length === 0) {
-      console.log("❌ Sesión no encontrada")
-      return NextResponse.json({ error: "Sesión no encontrada" }, { status: 404 })
-    }
-
-    const { cupos_total, cupos_ocupados } = sesion[0]
-    if (cupos_ocupados >= cupos_total) {
-      console.log("❌ Sin cupos disponibles")
-      return NextResponse.json(
-        { error: "No hay cupos disponibles en esta sesión" },
-        { status: 409 }
-      )
-    }
-
-    // Inscribir usuario
-    const inscripcionId = uuid()
-    console.log("📝 Insertando inscripción:", { inscripcionId, userId, sesionId })
-    
-    await pool.query(
-      `INSERT INTO user_sesiones (id, user_id, sesion_id) 
-       VALUES (?, ?, ?)`,
-      [inscripcionId, userId, sesionId]
-    )
-
-    console.log("✅ Inscripción insertada")
-
-    // Actualizar cupos
-    await pool.query(
-      `UPDATE sesiones SET cupos_ocupados = cupos_ocupados + 1 
-       WHERE id = ?`,
-      [sesionId]
-    )
-
-    console.log("✅ Cupos actualizados")
-
-    return NextResponse.json({
-      success: true,
-      message: "Inscripción exitosa",
-      inscripcionId,
-    })
-  } catch (error) {
-    console.error("❌ ERROR EN POST /inscribir:", error)
-    return NextResponse.json({ error: "Error al inscribirse", details: String(error) }, { status: 500 })
-  }
-}
-
-// DELETE: Desinscribirse
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id: sesionId } = await params
-    const url = new URL(request.url)
-    const userId = url.searchParams.get("userId")
-
-    if (!userId || !sesionId) {
-      return NextResponse.json({ error: "Parámetros faltantes" }, { status: 400 })
-    }
-
-    // Eliminar inscripción
-    const result = await pool.query(
-      `DELETE FROM user_sesiones 
-       WHERE user_id = ? AND sesion_id = ?`,
-      [userId, sesionId]
-    )
-
-    // Reducir cupos
-    await pool.query(
-      `UPDATE sesiones SET cupos_ocupados = GREATEST(0, cupos_ocupados - 1) 
-       WHERE id = ?`,
-      [sesionId]
-    )
-
-    return NextResponse.json({
-      success: true,
-      message: "Desinscripción exitosa",
-    })
-  } catch (error) {
-    console.error("Error al desinscribirse:", error)
-    return NextResponse.json({ error: "Error al desinscribirse" }, { status: 500 })
-  }
-}
-</file>
-
-<file path="app/api/sesiones/pdf/route.ts">
-import { NextResponse } from 'next/server'
-import { PDFDocument, rgb } from 'pdf-lib'
-import mysql from 'mysql2/promise'
-
-function getDayNameFromDate(dateString: string): string {
-  const date = new Date(dateString)
-  const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
-  return days[date.getUTCDay()]
-}
-
-function formatDate(dateString: string): string {
-  const date = new Date(dateString)
-  const day = date.getUTCDate()
-  const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-  const month = monthNames[date.getUTCMonth()]
-  const year = date.getUTCFullYear()
-  return `${day} de ${month} de ${year}`
-}
-
-export async function GET() {
-  let connection: mysql.Connection | null = null
-  try {
-    // Conectar directamente a la BD
-    connection = await mysql.createConnection({
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME,
-      port: Number(process.env.DB_PORT ?? 3306),
-    })
-
-    // Ejecutar query
-    const [sessions] = await connection.execute('SELECT * FROM sesiones ORDER BY dia ASC, hora_inicio ASC')
-    const sessionsList = Array.isArray(sessions) ? sessions : []
-
-    console.log('Sesiones obtenidas:', sessionsList.length)
-    
-    if (!sessionsList || sessionsList.length === 0) {
-      console.error('No hay sesiones en la BD')
-      return new NextResponse('No hay sesiones disponibles', { status: 404 })
-    }
-
-    // Agrupar por día
-    const grouped: Record<string, any[]> = {}
-    sessionsList.forEach((session: any) => {
-      const dayName = getDayNameFromDate(session.dia)
-      if (!grouped[dayName]) {
-        grouped[dayName] = []
-      }
-      grouped[dayName].push(session)
-    })
-
-    console.log('Sesiones agrupadas:', Object.keys(grouped))
-
-    // Crear PDF
-    const pdfDoc = await PDFDocument.create()
-
-    // Colores
-    const lightGreen = rgb(100 / 255, 252 / 255, 5 / 255) // #64FC05
-    const darkGreen = rgb(6 / 255, 79 / 255, 68 / 255) // #064E3B
-    const darkText = rgb(26 / 255, 27 / 255, 34 / 255) // #1A1B22
-    const lightText = rgb(120 / 255, 120 / 255, 120 / 255)
-    const white = rgb(255 / 255, 255 / 255, 255 / 255)
-    const veryLightGray = rgb(245 / 255, 245 / 255, 245 / 255)
-
-    const boldFont = await pdfDoc.embedFont('Helvetica-Bold')
-    const regularFont = await pdfDoc.embedFont('Helvetica')
-
-    let page = pdfDoc.addPage([595, 842]) // A4
-    let yPosition = 800
-
-    // ===== ENCABEZADO =====
-    page.drawRectangle({
-      x: 0,
-      y: yPosition - 70,
-      width: 595,
-      height: 70,
-      color: lightGreen,
-    })
-
-    page.drawText('12va JORNADA ACADÉMICA Y CULTURAL', {
-      x: 40,
-      y: yPosition - 30,
-      size: 26,
-      color: darkText,
-      font: boldFont,
-    })
-
-    page.drawText('Universidad Mexiquense del Bicentenario', {
-      x: 40,
-      y: yPosition - 55,
-      size: 10,
-      color: darkText,
-      font: regularFont,
-    })
-
-    yPosition -= 85
-
-    // Fecha del evento
-    if (sessionsList.length > 0) {
-      const firstDate = formatDate(sessionsList[0].dia)
-      page.drawText(`Cronograma de Actividades - ${firstDate}`, {
-        x: 40,
-        y: yPosition,
-        size: 11,
-        color: darkGreen,
-        font: boldFont,
-      })
-    }
-
-    yPosition -= 25
-
-    // ===== PROCESAMIENTO DE DÍAS Y SESIONES =====
-    const dayOrder = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
-    
-    for (const dayName of dayOrder) {
-      const daySessions = grouped[dayName]
-      if (!daySessions) continue
-
-      // Verificar si necesitamos nueva página
-      if (yPosition < 180) {
-        page = pdfDoc.addPage([595, 842])
-        yPosition = 800
-      }
-
-      // ===== ENCABEZADO DEL DÍA =====
-      page.drawRectangle({
-        x: 40,
-        y: yPosition - 30,
-        width: 515,
-        height: 30,
-        color: darkGreen,
-      })
-
-      page.drawText(dayName.toUpperCase(), {
-        x: 50,
-        y: yPosition - 18,
-        size: 14,
-        color: white,
-        font: boldFont,
-      })
-
-      yPosition -= 45
-
-      // ===== SESIONES DEL DÍA =====
-      for (const session of daySessions) {
-        // Verificar espacio
-        if (yPosition < 100) {
-          page = pdfDoc.addPage([595, 842])
-          yPosition = 800
-        }
-
-        const sessionHeight = 80
-        const timeBoxWidth = 90
-        const contentBoxWidth = 425
-
-        // ===== CAJA DE HORA (izquierda) =====
-        page.drawRectangle({
-          x: 40,
-          y: yPosition - sessionHeight,
-          width: timeBoxWidth,
-          height: sessionHeight,
-          color: darkGreen,
-        })
-
-        // Hora de inicio
-        page.drawText(session.hora_inicio, {
-          x: 50,
-          y: yPosition - 25,
-          size: 12,
-          color: lightGreen,
-          font: boldFont,
-        })
-
-        // Guión
-        page.drawText('a', {
-          x: 50,
-          y: yPosition - 40,
-          size: 9,
-          color: white,
-          font: regularFont,
-        })
-
-        // Hora de fin
-        page.drawText(session.hora_fin, {
-          x: 50,
-          y: yPosition - 55,
-          size: 12,
-          color: lightGreen,
-          font: boldFont,
-        })
-
-        // ===== CAJA DE CONTENIDO (derecha) =====
-        page.drawRectangle({
-          x: 40 + timeBoxWidth,
-          y: yPosition - sessionHeight,
-          width: contentBoxWidth,
-          height: sessionHeight,
-          color: veryLightGray,
-          borderColor: darkGreen,
-          borderWidth: 1.5,
-        })
-
-        // Título de la sesión (centrado dentro del cuadro)
-        const titleX = 40 + timeBoxWidth + 15
-        const titleMaxWidth = contentBoxWidth - 30
-        page.drawText(session.titulo, {
-          x: titleX,
-          y: yPosition - 20,
-          size: 12,
-          color: darkText,
-          font: boldFont,
-          maxWidth: titleMaxWidth,
-        })
-
-        // Ponente
-        page.drawText(`Ponente: ${session.ponente}`, {
-          x: titleX,
-          y: yPosition - 38,
-          size: 9,
-          color: lightText,
-          font: regularFont,
-        })
-
-        // Lugar
-        page.drawText(`Lugar: ${session.lugar}`, {
-          x: titleX,
-          y: yPosition - 50,
-          size: 9,
-          color: lightText,
-          font: regularFont,
-        })
-
-        // Tipo (badge)
-        const badgeX = titleX
-        const badgeWidth = 70
-        page.drawRectangle({
-          x: badgeX,
-          y: yPosition - 66,
-          width: badgeWidth,
-          height: 12,
-          color: rgb(220 / 255, 220 / 255, 220 / 255),
-        })
-
-        page.drawText(session.tipo, {
-          x: badgeX + 5,
-          y: yPosition - 64,
-          size: 7,
-          color: darkText,
-          font: boldFont,
-        })
-
-        yPosition -= (sessionHeight + 15)
-      }
-
-      yPosition -= 10
-    }
-
-    // ===== GENERAR PDF =====
-    const pdfBytes = await pdfDoc.save()
-
-    return new NextResponse(pdfBytes, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="cronograma-jornada-2025.pdf"',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-      },
-    })
-  } catch (error) {
-    console.error('Error generando PDF:', error)
+    console.error("Error al obtener sesiones disponibles:", error)
     return NextResponse.json(
-      { error: 'Error al generar el PDF', details: String(error) },
+      { error: "Error al obtener sesiones disponibles" },
       { status: 500 }
     )
-  } finally {
-    if (connection) {
-      await connection.end()
-    }
   }
 }
 </file>
@@ -12239,467 +11849,6 @@ export default function SedesPage() {
 }
 </file>
 
-<file path="app/sesiones/page.tsx">
-"use client"
-
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import Navbar from "@/components/navbar"
-import Footer from "@/components/footer"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { Spinner } from "@/components/ui/spinner"
-import { Clock, MapPin, User, Trash2, RotateCw } from "lucide-react"
-import { formatTime12Hour, formatDate } from "@/lib/utils"
-
-interface Sesion {
-  id: string
-  titulo: string
-  ponente: string
-  perfil_profesional: string
-  afiliacion: string
-  dia: string
-  hora_inicio: string
-  hora_fin: string
-  tipo: string
-  lugar: string
-  cupos_total: number
-  cupos_ocupados: number
-  descripcion: string | null
-  inscrito?: boolean
-}
-
-const tipoBadge: Record<string, { bg: string; text: string }> = {
-  Conferencia: { bg: "bg-blue-600", text: "text-white" },
-  Taller: { bg: "bg-purple-600", text: "text-white" },
-  Panel: { bg: "bg-green-600", text: "text-white" },
-  Seminario: { bg: "bg-orange-600", text: "text-white" },
-  "Mesa redonda": { bg: "bg-red-600", text: "text-white" },
-}
-
-export default function SesionesPage() {
-  const router = useRouter()
-  const [sesionesDisponibles, setSesionesDisponibles] = useState<Sesion[]>([])
-  const [sesionesInscritas, setSesionesInscritas] = useState<Sesion[]>([])
-  const [loading, setLoading] = useState(true)
-  const [userId, setUserId] = useState<string | null>(null)
-  const [confirmDelete, setConfirmDelete] = useState<Sesion | null>(null)
-  const [procesando, setProcesando] = useState(false)
-  const [filtroTipo, setFiltroTipo] = useState<string>("")
-
-  // Obtener usuario actual
-  useEffect(() => {
-    async function getUser() {
-      try {
-        const res = await fetch("/api/auth/me")
-        const data = await res.json()
-        if (data.user && data.user.id) {
-          console.log("✅ Usuario obtenido:", data.user.id)
-          setUserId(data.user.id)
-        } else {
-          console.log("❌ No hay usuario:", data)
-          router.push("/auth/login")
-        }
-      } catch (err) {
-        console.error("❌ Error obteniendo usuario:", err)
-        router.push("/auth/login")
-      }
-    }
-    getUser()
-  }, [router])
-
-  // Cargar sesiones cuando se obtiene el userId
-  useEffect(() => {
-    if (!userId) return
-
-    async function cargarSesiones() {
-      setLoading(true)
-      try {
-        // Sesiones disponibles
-        const resDisponibles = await fetch(
-          `/api/sesiones/disponibles?userId=${userId}${filtroTipo ? `&tipo=${filtroTipo}` : ""}`
-        )
-        const dataDisponibles = await resDisponibles.json()
-        setSesionesDisponibles(dataDisponibles.data || [])
-
-        // Sesiones inscritas
-        const resInscritas = await fetch(`/api/usuarios/mis-sesiones?userId=${userId}`)
-        const dataInscritas = await resInscritas.json()
-        setSesionesInscritas(dataInscritas.data || [])
-      } catch (error) {
-        console.error("Error cargando sesiones:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    cargarSesiones()
-  }, [userId, filtroTipo])
-
-  const handleInscribir = async (sesion: Sesion) => {
-    if (!userId) return
-    setProcesando(true)
-    try {
-      const res = await fetch(`/api/sesiones/${sesion.id}/inscribir`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      })
-
-      if (res.ok) {
-        // Recargar sesiones desde BD
-        const resDisponibles = await fetch(
-          `/api/sesiones/disponibles?userId=${userId}${filtroTipo ? `&tipo=${filtroTipo}` : ""}`
-        )
-        const dataDisponibles = await resDisponibles.json()
-        setSesionesDisponibles(dataDisponibles.data || [])
-
-        const resInscritas = await fetch(`/api/usuarios/mis-sesiones?userId=${userId}`)
-        const dataInscritas = await resInscritas.json()
-        setSesionesInscritas(dataInscritas.data || [])
-        
-        alert("¡Inscripción exitosa!")
-      } else {
-        const error = await res.json()
-        alert(`Error: ${error.error}`)
-      }
-    } catch (error) {
-      console.error("Error al inscribirse:", error)
-      alert("Error al inscribirse")
-    } finally {
-      setProcesando(false)
-    }
-  }
-
-  const handleDesinscribir = async (sesion: Sesion) => {
-    if (!userId) return
-    setProcesando(true)
-    try {
-      const res = await fetch(
-        `/api/sesiones/${sesion.id}/inscribir?userId=${userId}`,
-        { method: "DELETE" }
-      )
-
-      if (res.ok) {
-        // Recargar sesiones desde BD
-        const resDisponibles = await fetch(
-          `/api/sesiones/disponibles?userId=${userId}${filtroTipo ? `&tipo=${filtroTipo}` : ""}`
-        )
-        const dataDisponibles = await resDisponibles.json()
-        setSesionesDisponibles(dataDisponibles.data || [])
-
-        const resInscritas = await fetch(`/api/usuarios/mis-sesiones?userId=${userId}`)
-        const dataInscritas = await resInscritas.json()
-        setSesionesInscritas(dataInscritas.data || [])
-
-        setConfirmDelete(null)
-        alert("¡Desinscripción exitosa!")
-      } else {
-        alert("Error al desinscribirse")
-      }
-    } catch (error) {
-      console.error("Error al desinscribirse:", error)
-      alert("Error al desinscribirse")
-    } finally {
-      setProcesando(false)
-    }
-  }
-
-  const porcentajeCupos = (sesion: Sesion) =>
-    Math.round((sesion.cupos_ocupados / sesion.cupos_total) * 100)
-
-  const recargarSesiones = async () => {
-    if (!userId) return
-    setLoading(true)
-    try {
-      const resDisponibles = await fetch(
-        `/api/sesiones/disponibles?userId=${userId}${filtroTipo ? `&tipo=${filtroTipo}` : ""}`,
-        { cache: "no-store" }
-      )
-      const dataDisponibles = await resDisponibles.json()
-      setSesionesDisponibles(dataDisponibles.data || [])
-
-      const resInscritas = await fetch(
-        `/api/usuarios/mis-sesiones?userId=${userId}`,
-        { cache: "no-store" }
-      )
-      const dataInscritas = await resInscritas.json()
-      setSesionesInscritas(dataInscritas.data || [])
-    } catch (error) {
-      console.error("Error recargando sesiones:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (loading) {
-    return (
-      <>
-        <Navbar />
-        <div className="min-h-screen bg-gray-50 dark:bg-[#0F172A] flex items-center justify-center">
-          <Spinner />
-        </div>
-        <Footer />
-      </>
-    )
-  }
-
-  return (
-    <>
-      <Navbar />
-      <div className="min-h-screen bg-gray-50 dark:bg-[#0F172A] py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-12 flex justify-between items-start">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                Sesiones Académicas
-              </h1>
-              <p className="text-lg text-gray-600 dark:text-gray-400">
-                Explora y únete a las sesiones que te interesen
-              </p>
-            </div>
-            <Button
-              onClick={recargarSesiones}
-              disabled={loading}
-              variant="outline"
-              className="whitespace-nowrap"
-            >
-              <RotateCw size={18} className="mr-2" />
-              Recargar
-            </Button>
-          </div>
-
-          {/* Tabs */}
-          <Tabs defaultValue="disponibles" className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-2">
-              <TabsTrigger value="disponibles">
-                Disponibles ({sesionesDisponibles.length})
-              </TabsTrigger>
-              <TabsTrigger value="inscritas">
-                Mis Sesiones ({sesionesInscritas.length})
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Sesiones Disponibles */}
-            <TabsContent value="disponibles" className="mt-8">
-              {/* Filtro */}
-              <div className="mb-6 flex gap-2 flex-wrap">
-                <Button
-                  variant={filtroTipo === "" ? "default" : "outline"}
-                  onClick={() => setFiltroTipo("")}
-                >
-                  Todas
-                </Button>
-                {["Conferencia", "Taller", "Panel", "Seminario", "Mesa redonda"].map(
-                  tipo => (
-                    <Button
-                      key={tipo}
-                      variant={filtroTipo === tipo ? "default" : "outline"}
-                      onClick={() => setFiltroTipo(tipo)}
-                    >
-                      {tipo}
-                    </Button>
-                  )
-                )}
-              </div>
-
-              {/* Lista de sesiones */}
-              <div className="grid gap-6">
-                {sesionesDisponibles.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-gray-600 dark:text-gray-400">
-                      No hay sesiones disponibles con ese filtro
-                    </p>
-                  </div>
-                ) : (
-                  sesionesDisponibles.map(sesion => (
-                    <Card
-                      key={sesion.id}
-                      className="p-6 hover:shadow-lg transition dark:bg-[#1E293B] border-gray-200 dark:border-gray-700"
-                    >
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="flex-1">
-                          {/* Tipo y Cupos */}
-                          <div className="flex gap-2 items-center mb-3">
-                            <Badge
-                              className={`${tipoBadge[sesion.tipo]?.bg || "bg-gray-500"} ${tipoBadge[sesion.tipo]?.text || "text-white"}`}
-                            >
-                              {sesion.tipo}
-                            </Badge>
-                            <span className="text-sm text-gray-600 dark:text-gray-400">
-                              {sesion.cupos_total - sesion.cupos_ocupados} cupos libres
-                            </span>
-                          </div>
-
-                          {/* Título */}
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
-                            {sesion.titulo}
-                          </h3>
-
-                          {/* Ponente */}
-                          <div className="mb-3">
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              <User className="inline mr-1" size={16} />
-                              <strong>{sesion.ponente}</strong>
-                            </p>
-                            {sesion.perfil_profesional && (
-                              <p className="text-xs text-gray-500 dark:text-gray-500 ml-5">
-                                {sesion.perfil_profesional}
-                              </p>
-                            )}
-                          </div>
-
-                          {/* Detalles */}
-                          <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                              <Clock size={16} />
-                              {formatTime12Hour(sesion.hora_inicio)} - {formatTime12Hour(sesion.hora_fin)}
-                            </div>
-                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                              <MapPin size={16} />
-                              {sesion.lugar}
-                            </div>
-                          </div>
-
-                          {/* Descripción */}
-                          {sesion.descripcion && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                              {sesion.descripcion}
-                            </p>
-                          )}
-
-                          {/* Barra de cupos */}
-                          <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-                            <div
-                              className="bg-green-500 h-full"
-                              style={{ width: `${porcentajeCupos(sesion)}%` }}
-                            />
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {sesion.cupos_ocupados}/{sesion.cupos_total} inscritos
-                          </p>
-                        </div>
-
-                        {/* Botón */}
-                        <Button
-                          onClick={() => handleInscribir(sesion)}
-                          disabled={
-                            procesando ||
-                            sesion.cupos_ocupados >= sesion.cupos_total ||
-                            sesion.inscrito
-                          }
-                          className="whitespace-nowrap"
-                        >
-                          {sesion.inscrito ? "Inscrito" : "Inscribirse"}
-                        </Button>
-                      </div>
-                    </Card>
-                  ))
-                )}
-              </div>
-            </TabsContent>
-
-            {/* Mis Sesiones Inscritas */}
-            <TabsContent value="inscritas" className="mt-8">
-              <div className="grid gap-6">
-                {sesionesInscritas.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-gray-600 dark:text-gray-400 mb-4">
-                      Aún no estás inscrito en ninguna sesión
-                    </p>
-                    <Button onClick={() => document.querySelector('[value="disponibles"]')?.click?.()}>
-                      Explorar sesiones
-                    </Button>
-                  </div>
-                ) : (
-                  sesionesInscritas.map(sesion => (
-                    <Card
-                      key={sesion.id}
-                      className="p-6 hover:shadow-lg transition dark:bg-[#1E293B] border-l-4 border-l-green-500 dark:border-gray-700"
-                    >
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="flex-1">
-                          <div className="flex gap-2 items-center mb-3">
-                            <Badge className="bg-green-600 text-white">✓ Inscrito</Badge>
-                            <Badge
-                              className={`${tipoBadge[sesion.tipo]?.bg || "bg-gray-500"} ${tipoBadge[sesion.tipo]?.text || "text-white"}`}
-                            >
-                              {sesion.tipo}
-                            </Badge>
-                          </div>
-
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
-                            {sesion.titulo}
-                          </h3>
-
-                          <div className="mb-3">
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              <User className="inline mr-1" size={16} />
-                              <strong>{sesion.ponente}</strong>
-                            </p>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                              <Clock size={16} />
-                              {formatDate(sesion.dia)} - {formatTime12Hour(sesion.hora_inicio)}
-                            </div>
-                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                              <MapPin size={16} />
-                              {sesion.lugar}
-                            </div>
-                          </div>
-                        </div>
-
-                        <Button
-                          variant="destructive"
-                          onClick={() => setConfirmDelete(sesion)}
-                          disabled={procesando}
-                        >
-                          <Trash2 size={18} />
-                        </Button>
-                      </div>
-                    </Card>
-                  ))
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>
-
-      {/* Dialog de confirmación */}
-      {confirmDelete && (
-        <AlertDialog open={!!confirmDelete} onOpenChange={() => setConfirmDelete(null)}>
-          <AlertDialogContent>
-            <AlertDialogTitle>Desinscribirse</AlertDialogTitle>
-            <AlertDialogDescription>
-              ¿Estás seguro de que quieres desinscribirte de{" "}
-              <strong>{confirmDelete.titulo}</strong>?
-            </AlertDialogDescription>
-            <div className="flex gap-2 justify-end">
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => handleDesinscribir(confirmDelete)}
-                className="bg-red-600 text-white"
-              >
-                Desinscribir
-              </AlertDialogAction>
-            </div>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
-
-      <Footer />
-    </>
-  )
-}
-</file>
-
 <file path="components/about.tsx">
 export default function About() {
   return (
@@ -12734,138 +11883,6 @@ export default function About() {
         </div>
 
         {/* Divider */}
-      </div>
-    </section>
-  )
-}
-</file>
-
-<file path="components/hero.tsx">
-"use client"
-
-import Link from "next/link"
-import Image from "next/image"
-import { useTheme } from "next-themes"
-import { useEffect, useState } from "react"
-
-export default function Hero() {
-  const { theme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  const [loggedIn, setLoggedIn] = useState(false)
-  const [loadingAuth, setLoadingAuth] = useState(true)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function checkAuth() {
-      try {
-        const res = await fetch("/api/auth/me", { cache: "no-store" })
-        if (cancelled) return
-        setLoggedIn(res.ok)
-      } catch {
-        if (cancelled) return
-        setLoggedIn(false)
-      } finally {
-        if (!cancelled) setLoadingAuth(false)
-      }
-    }
-
-    checkAuth()
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  const isDark = mounted && theme === "dark"
-  const showCta = !loadingAuth && !loggedIn
-
-  return (
-    <section
-      id="inicio"
-      className="pt-14 min-h-[520px] flex items-center relative overflow-hidden"
-      style={{
-        background: isDark
-          ? "linear-gradient(135deg, #1A2634 0%, #0F4C3C 100%)"
-          : "linear-gradient(135deg, #64FC05 0%, #006341 100%)",
-      }}
-    >
-      {/* Background texture: building louvre grid image */}
-      <div
-        className="absolute inset-0 z-0 animate-fade-in"
-        style={{
-          backgroundImage:
-            "url('images/UMB_SAN_JOSE.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          opacity: isDark ? 0.08 : 0.15,
-          mixBlendMode: "overlay",
-        }}
-        aria-hidden="true"
-      />
-      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10 py-14 w-full">
-        <div className="flex flex-col md:flex-row items-center gap-10">
-          {/* Left content */}
-          <div className="flex-1 flex flex-col">
-            {/* Badge */}
-            <div
-              className="self-start text-xs font-semibold px-3 py-1 rounded-full mb-6 animate-fade-in-up"
-              style={{
-                backgroundColor: isDark ? "#1F3A4C" : "#FDDC98",
-                color: isDark ? "#7DD3FC" : "#735B24"
-              }}
-            >
-              San José del Rincón, 2025
-            </div>
-
-            {/* Title */}
-            <h1 className="font-sans text-5xl sm:text-6xl font-bold text-white leading-tight text-balance mb-8 animate-fade-in-up delay-200">
-              12va Jornada<br />
-              Académica y<br />
-              Cultural
-            </h1>
-
-            {/* CTA + Date row */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 animate-fade-in-up delay-300">
-              {showCta && (
-                <Link
-                  href="#registro"
-                  className="inline-flex items-center justify-center px-6 py-3 rounded-md text-white text-sm font-semibold hover:opacity-90 transition-all hover:scale-105 hover:shadow-lg"
-                  style={{
-                    backgroundColor: isDark ? "#10B981" : "#3F4942"
-                  }}
-                >
-                  Registrarse Ahora
-                </Link>
-              )}
-              <div>
-                <p className="text-xs text-white/80 uppercase tracking-wider mb-0.5">
-                  Fecha del Evento
-                </p>
-                <p className="text-white font-semibold text-base">
-                  1-5 de Diciembre, 2025
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Right image */}
-          <div className="flex-shrink-0 w-full md:w-[420px] animate-fade-in delay-400">
-            <div className="rounded-2xl overflow-hidden shadow-2xl aspect-[4/3] hover:scale-105 transition-transform duration-500">
-              <Image
-                src="images/Colibri_umb.png"
-                alt="Pasillo interior de la Universidad Mexiquense del Bicentenario"
-                width={840}
-                height={630}
-                className="w-full h-full object-cover"
-                priority
-              />
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   )
@@ -12945,6 +11962,65 @@ export default function Programs() {
     </section>
   )
 }
+</file>
+
+<file path="GUION_PRESENTACION.md">
+Good morning everyone. My name is Mauricio Nolazco Lonjino. Today I want to talk to you about an exciting project: Agenda Digital.
+
+Imagine this: every year, our university organizes academic and cultural events. Students have to find out about the program through WhatsApp, see which conferences are available on loose pieces of paper, sign up by filling out paper forms, and ask their classmates which workshops are available. It is confusing, inefficient, and many people miss important activities.
+
+Our platform is the solution. It is a web system where students can see the full program of the event, check the schedules, sign up for sessions from their phone or computer, and receive automatic notifications before each activity. All in one place.
+
+Why is this important? Because organization is the key for students to make the most of these events. With this platform, we avoid losing information, we reduce disorganized attendance, and both students and administrators have full control of the event.
+
+Let me explain the details of our project in Spanish.
+
+---
+
+Nuestro proyecto comenzó identificando un problema real en nuestra institución, la UES San José del Rincón, parte de la Universidad Mexiquense del Bicentenario. Cada año se organiza la Jornada Académica y Cultural. Es un evento de varios días con conferencias, talleres, paneles, seminarios y mesas redondas. El problema es que toda la información sobre este evento está dispersa. Los horarios se comparten por WhatsApp, los registros se hacen en papel, no existe un registro digital de quién asiste a qué sesiones, y los ponentes y sus biografías no son fácilmente accesibles. Un estudiante no puede saber rápidamente qué actividades están disponibles, a qué horas, en qué lugares, o cuántos cupos siguen disponibles.
+
+El problema principal es la falta de centralización. No existe un único lugar para ver todo el programa del evento. No hay un sistema de registro en línea. No hay notificaciones automáticas para recordar a los estudiantes sus sesiones. Los administradores no tienen una herramienta para crear y gestionar sesiones rápidamente.
+
+¿Cuál es nuestra solución? Es una plataforma web completa que centraliza toda la gestión de la Jornada Académica y Cultural. Desde el momento en que un estudiante ingresa a la plataforma, puede ver toda la información que necesita.
+
+La primera funcionalidad es la página de inicio, donde cualquier persona puede ver información general sobre el evento, conocer los programas académicos de la institución, que son Ingeniería en Innovación Agrícola Sustentable, Ingeniería en Sistemas Computacionales y Contaduría, y registrarse como usuario en la plataforma.
+
+La segunda funcionalidad es el cronograma. Los estudiantes pueden ver todas las sesiones organizadas por día. Cada sesión muestra el título, el ponente, la hora, el lugar, el tipo de actividad, los cupos disponibles y una descripción completa. Además, pueden descargar el programa completo en formato PDF directamente desde la plataforma.
+
+La tercera funcionalidad es la gestión de sesiones. Las sesiones son las actividades individuales del evento: conferencias, talleres, paneles, seminarios y mesas redondas. Cada sesión cuenta con su ponente, con perfil profesional, afiliación institucional, biografía y foto. Los estudiantes pueden inscribirse en las sesiones que deseen y ver en cualquier momento en cuáles están registrados. También pueden cancelar su inscripción si ya no pueden asistir. Cuando un estudiante se inscribe, el sistema reduce automáticamente los cupos disponibles.
+
+La cuarta funcionalidad es la gestión de sedes o espacios. La plataforma muestra los tres lugares donde se realiza el evento, con sus imágenes, descripciones y direcciones, para que los asistentes sepan exactamente a dónde deben ir.
+
+La quinta funcionalidad es el sistema de notificaciones por correo electrónico. La plataforma envía automáticamente correos de bienvenida cuando un usuario se registra, correos de recuperación de contraseña cuando alguien olvida su contraseña, y recordatorios automáticos unos días y quince minutos antes de cada sesión, para que ningún estudiante se pierda su actividad.
+
+La sexta funcionalidad es el perfil de usuario. Cada estudiante puede ver y editar su nombre, su carrera, ver las sesiones en las que está registrado y, si lo desea, eliminar su cuenta completamente de la plataforma.
+
+La séptima funcionalidad es el panel de administración. Los administradores cuentan con un panel completo desde el cual pueden crear, editar y eliminar sesiones. Pueden ver todos los usuarios, crear nuevas cuentas de estudiante o administrador, eliminar usuarios. Pueden gestionar los espacios o sedes del evento. Pueden consultar estadísticas del evento en tiempo real, como el total de sesiones, ponentes, cupos ocupados y el porcentaje de ocupación por sede.
+
+En resumen, las ventajas de esta plataforma son: primera, centraliza toda la información del evento en un solo lugar. Segunda, permite el registro en línea sin necesidad de formatos impresos. Tercera, envía recordatorios automáticos para que nadie falte a una sesión. Cuarta, ofrece un panel administrativo completo para los organizadores. Quinta, todo está disponible veinticuatro horas al día, siete días a la semana, desde cualquier dispositivo con acceso a internet.
+
+---
+
+CONCLUSIÓN
+
+En conclusión, esta plataforma no es solo otra página web. Es una solución completa que cambia la forma en que se organizan los eventos académicos y culturales en nuestra institución. Al centralizar el programa, los registros, las notificaciones y la gestión de sedes en un solo sistema digital, mejoramos la experiencia tanto para estudiantes como para administradores.
+
+Permítanme hacerles una pregunta sencilla: ¿cuánto más eficiente sería nuestro evento si cada estudiante pudiera inscribirse desde su teléfono, recibir recordatorios automáticos y tener todo el programa en la palma de su mano? Eso es exactamente lo que ofrece esta plataforma.
+
+Creemos que este sistema es el futuro de la organización de eventos académicos. Y hoy, ese futuro está aquí, en nuestras manos. Gracias por escuchar nuestra presentación.
+
+---
+
+RECOMENDACIONES BREVES
+
+- practicar en voz alta al menos 10 veces antes de la presentación
+- mantener contacto visual con el público, no solo mirar a los maestros
+- sonreír de forma natural y moverse con propósito en el espacio
+- hablar con confianza, sin dudas ni palabras de relleno como "eh" o "umm"
+- hacer una pausa de dos segundos después de ideas importantes para que el público pueda absorber el mensaje
+- usar buen volumen y entonación: levantar la voz para preguntas, bajarla para afirmaciones
+- vestirse formalmente: camisa/blusa, pantalón/falda, zapatos cerrados
+- llegar 15 minutos antes para familiarizarse con el espacio
 </file>
 
 <file path="app/api/admin/sesiones/[id]/route.ts">
@@ -13232,6 +12308,409 @@ export async function POST(request: Request) {
       { error: "Error al crear el usuario." },
       { status: 500 }
     )
+  }
+}
+</file>
+
+<file path="app/api/sesiones/[id]/inscribir/route.ts">
+import { NextResponse } from "next/server"
+import pool from "@/lib/db"
+import { v4 as uuid } from "uuid"
+
+export const runtime = "nodejs"
+
+// GET: Verificar si el usuario está inscrito
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: sesionId } = await params
+    const url = new URL(request.url)
+    const userId = url.searchParams.get("userId")
+
+    if (!userId || !sesionId) {
+      return NextResponse.json({ error: "Parámetros faltantes" }, { status: 400 })
+    }
+
+    const [result] = await pool.query<any>(
+      `SELECT COUNT(*) as inscrito FROM user_sesiones 
+       WHERE user_id = ? AND sesion_id = ?`,
+      [userId, sesionId]
+    )
+
+    const inscrito = (result as any[])[0]?.inscrito === 1
+
+    return NextResponse.json({
+      inscrito,
+    })
+  } catch (error) {
+    console.error("Error verificando inscripción:", error)
+    return NextResponse.json({ error: "Error al verificar inscripción" }, { status: 500 })
+  }
+}
+
+// POST: Inscribirse en sesión
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: sesionId } = await params
+    const body = await request.json().catch(() => ({}))
+    const userId = body.userId
+
+    console.log("📋 POST /inscribir:", { userId, sesionId })
+
+    if (!userId || !sesionId) {
+      console.log("❌ Parámetros faltantes:", { userId, sesionId })
+      return NextResponse.json({ error: "Parámetros faltantes" }, { status: 400 })
+    }
+
+    // Verificar si ya está inscrito
+    const [existing] = await pool.query(
+      `SELECT id FROM user_sesiones 
+       WHERE user_id = ? AND sesion_id = ?`,
+      [userId, sesionId]
+    )
+
+    console.log("🔍 Ya inscrito?:", (existing as any[]).length > 0)
+
+    if ((existing as any[]).length > 0) {
+      return NextResponse.json(
+        { error: "Ya estás inscrito en esta sesión" },
+        { status: 409 }
+      )
+    }
+
+    // Verificar que la sesión existe y tiene cupos
+    const [sesion] = await pool.query<any>(
+      `SELECT id, titulo, cupos_total, cupos_ocupados, dia, hora_inicio 
+       FROM sesiones WHERE id = ?`,
+      [sesionId]
+    )
+
+    console.log("📊 Sesión encontrada:", sesion.length > 0 ? "Sí" : "No")
+
+    if (sesion.length === 0) {
+      console.log("❌ Sesión no encontrada")
+      return NextResponse.json({ error: "Sesión no encontrada" }, { status: 404 })
+    }
+
+    const { cupos_total, cupos_ocupados } = sesion[0]
+    if (cupos_ocupados >= cupos_total) {
+      console.log("❌ Sin cupos disponibles")
+      return NextResponse.json(
+        { error: "No hay cupos disponibles en esta sesión" },
+        { status: 409 }
+      )
+    }
+
+    // Inscribir usuario
+    const inscripcionId = uuid()
+    console.log("📝 Insertando inscripción:", { inscripcionId, userId, sesionId })
+    
+    await pool.query(
+      `INSERT INTO user_sesiones (id, user_id, sesion_id) 
+       VALUES (?, ?, ?)`,
+      [inscripcionId, userId, sesionId]
+    )
+
+    console.log("✅ Inscripción insertada")
+
+    // Actualizar cupos
+    await pool.query(
+      `UPDATE sesiones SET cupos_ocupados = cupos_ocupados + 1 
+       WHERE id = ?`,
+      [sesionId]
+    )
+
+    console.log("✅ Cupos actualizados")
+
+    return NextResponse.json({
+      success: true,
+      message: "Inscripción exitosa",
+      inscripcionId,
+    })
+  } catch (error) {
+    console.error("❌ ERROR EN POST /inscribir:", error)
+    return NextResponse.json({ error: "Error al inscribirse", details: String(error) }, { status: 500 })
+  }
+}
+
+// DELETE: Desinscribirse
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: sesionId } = await params
+    const url = new URL(request.url)
+    const userId = url.searchParams.get("userId")
+
+    if (!userId || !sesionId) {
+      return NextResponse.json({ error: "Parámetros faltantes" }, { status: 400 })
+    }
+
+    // Eliminar inscripción
+    const result = await pool.query(
+      `DELETE FROM user_sesiones 
+       WHERE user_id = ? AND sesion_id = ?`,
+      [userId, sesionId]
+    )
+
+    // Reducir cupos
+    await pool.query(
+      `UPDATE sesiones SET cupos_ocupados = GREATEST(0, cupos_ocupados - 1) 
+       WHERE id = ?`,
+      [sesionId]
+    )
+
+    return NextResponse.json({
+      success: true,
+      message: "Desinscripción exitosa",
+    })
+  } catch (error) {
+    console.error("Error al desinscribirse:", error)
+    return NextResponse.json({ error: "Error al desinscribirse" }, { status: 500 })
+  }
+}
+</file>
+
+<file path="app/api/sesiones/pdf/route.ts">
+import { NextResponse } from "next/server";
+import { PDFDocument, rgb, PageSizes } from "pdf-lib";
+import pool from "@/lib/db";
+import fs from "fs/promises";
+import path from "path";
+
+const SECTION_BG = rgb(245 / 255, 245 / 255, 245 / 255);
+const DARK_GREEN = rgb(6 / 255, 79 / 255, 68 / 255);
+const LIGHT_GREEN = rgb(100 / 255, 252 / 255, 5 / 255);
+const BLACK = rgb(0.1, 0.1, 0.1);
+const GRAY = rgb(0.45, 0.45, 0.45);
+
+function formatDate(dateString: string) {
+  try {
+    const d = new Date(dateString);
+    return `${d.getDate()} ${d.toLocaleString("es-MX", { month: "long" })} ${d.getFullYear()}`;
+  } catch {
+    return dateString;
+  }
+}
+
+function formatTime(time: string) {
+  if (!time || !time.includes(":")) return time;
+  try {
+    const [h, m] = time.split(":").map(Number);
+    const ampm = h >= 12 ? "PM" : "AM";
+    const hour = h % 12 || 12;
+    return `${hour}:${m.toString().padStart(2, "0")} ${ampm}`;
+  } catch {
+    return time;
+  }
+}
+
+export async function GET() {
+  try {
+    const [rows] = (await pool.query(
+      `SELECT dia, hora_inicio, hora_fin, titulo, ponente, lugar, tipo 
+       FROM sesiones 
+       ORDER BY dia ASC, hora_inicio ASC`
+    )) as any[];
+
+    const pdfDoc = await PDFDocument.create();
+    let page = pdfDoc.addPage(PageSizes.A4);
+    const { width, height } = page.getSize();
+    const margin = 48;
+    const usableWidth = width - margin * 2;
+    let cursor = height - 52;
+
+    const bold = await pdfDoc.embedFont("Helvetica-Bold");
+    const regular = await pdfDoc.embedFont("Helvetica");
+
+    // === LOGOS ===
+    const logoUmbPath = path.join(process.cwd(), "public", "images", "Umb_logo.png");
+    const logoSanJosePath = path.join(process.cwd(), "public", "images", "sanjose.png");
+    const logoColibriPath = path.join(process.cwd(), "public", "images", "Colibri_umb.png");
+
+    let logoX = margin;
+    const logoSize = 50;
+    const logoSpacing = 10;
+
+    let loadedUmb: Uint8Array | null = null;
+    let loadedSanJose: Uint8Array | null = null;
+    let loadedColibri: Uint8Array | null = null;
+
+    try { loadedUmb = await fs.readFile(logoUmbPath); } catch { /* no logo */ }
+    try { loadedSanJose = await fs.readFile(logoSanJosePath); } catch { /* no logo */ }
+    try { loadedColibri = await fs.readFile(logoColibriPath); } catch { /* no logo */ }
+
+    const drawLogo = async (imgBytes: Uint8Array | null) => {
+      if (!imgBytes) return false;
+      try {
+        const img = await pdfDoc.embedPng(imgBytes);
+        const imgWidth = Math.min(logoSize, img.width);
+        const imgHeight = Math.min(logoSize, img.height);
+        const yPos = cursor - 48 + (48 - imgHeight) / 2;
+        page.drawImage(img, { x: logoX, y: yPos, width: imgWidth, height: imgHeight });
+        logoX += imgWidth + logoSpacing;
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    await drawLogo(loadedUmb);
+    await drawLogo(loadedSanJose);
+    await drawLogo(loadedColibri);
+
+    const titleX = logoX + 12;
+    page.drawText("12va Jornada Académica y Cultural", {
+      x: titleX,
+      y: cursor - 26,
+      size: 18,
+      color: BLACK,
+      font: bold,
+    });
+    page.drawText("Universidad Mexiquense del Bicentenario", {
+      x: titleX,
+      y: cursor - 42,
+      size: 9,
+      color: DARK_GREEN,
+      font: regular,
+    });
+    page.drawText("Programa de Actividades", {
+      x: titleX,
+      y: cursor - 54,
+      size: 8,
+      color: GRAY,
+      font: regular,
+    });
+
+    cursor -= 72;
+
+    // === AGRUPAR POR DÍA ===
+    const grouped: Record<string, any[]> = {};
+    for (const s of rows) {
+      const dayKey = formatDate(s.dia);
+      if (!grouped[dayKey]) grouped[dayKey] = [];
+      grouped[dayKey].push(s);
+    }
+
+    const dayKeys = Object.keys(grouped);
+    for (let idx = 0; idx < dayKeys.length; idx++) {
+      const day = dayKeys[idx];
+      const sessions = grouped[day];
+      const headerHeight = 32;
+
+      if (cursor - headerHeight < 60) {
+        page = pdfDoc.addPage(PageSizes.A4);
+        cursor = height - 52;
+      }
+
+      // Fondo verde oscuro para el día
+      page.drawRectangle({
+        x: margin,
+        y: cursor - headerHeight,
+        width: usableWidth,
+        height: headerHeight,
+        color: DARK_GREEN,
+      });
+      page.drawText(day, {
+        x: margin + 12,
+        y: cursor - 22,
+        size: 14,
+        color: LIGHT_GREEN,
+        font: bold,
+      });
+      cursor -= headerHeight + 8;
+
+      for (const ses of sessions) {
+        const rowHeight = 58;
+        if (cursor - rowHeight < 60) {
+          page = pdfDoc.addPage(PageSizes.A4);
+          cursor = height - 52;
+          // repetir encabezado del día en nueva página
+          page.drawRectangle({
+            x: margin,
+            y: cursor - headerHeight,
+            width: usableWidth,
+            height: headerHeight,
+            color: DARK_GREEN,
+          });
+          page.drawText(day, {
+            x: margin + 12,
+            y: cursor - 22,
+            size: 14,
+            color: LIGHT_GREEN,
+            font: bold,
+          });
+          cursor -= headerHeight + 8;
+        }
+
+        // Línea separadora horizontal
+        page.drawLine({
+          start: { x: margin, y: cursor - rowHeight },
+          end: { x: margin + usableWidth, y: cursor - rowHeight },
+          thickness: 0.5,
+          color: GRAY,
+        });
+
+        const timeWidth = 140;
+        const timeStr = `${formatTime(ses.hora_inicio)} - ${formatTime(ses.hora_fin)}`;
+        page.drawText(timeStr, {
+          x: margin + 6,
+          y: cursor - 18,
+          size: 10,
+          color: DARK_GREEN,
+          font: bold,
+        });
+        page.drawText(ses.tipo, {
+          x: margin + 6,
+          y: cursor - 30,
+          size: 9,
+          color: BLACK,
+          font: regular,
+        });
+
+        const contentX = margin + timeWidth + 18;
+        const maxTitleWidth = usableWidth - timeWidth - 30;
+
+        page.drawText(ses.titulo, {
+          x: contentX,
+          y: cursor - 18,
+          size: 11,
+          color: BLACK,
+          font: bold,
+          maxWidth: maxTitleWidth,
+        });
+        page.drawText(`${ses.ponente}  |  ${ses.lugar}`, {
+          x: contentX,
+          y: cursor - 32,
+          size: 9,
+          color: GRAY,
+          font: regular,
+          maxWidth: maxTitleWidth,
+        });
+
+        cursor -= rowHeight;
+      }
+
+      cursor -= 14; // espacio entre días
+    }
+
+    const pdfBytes = await pdfDoc.save();
+    return new NextResponse(pdfBytes, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "attachment; filename=programa-jornada.pdf",
+        "Cache-Control": "no-store",
+      },
+    });
+  } catch (error) {
+    console.error("Error generando PDF:", error);
+    return NextResponse.json({ error: "No se pudo generar el PDF." }, { status: 500 });
   }
 }
 </file>
@@ -13702,6 +13181,594 @@ export default function PerfilPage() {
 }
 </file>
 
+<file path="app/sesiones/page.tsx">
+"use client"
+
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import Navbar from "@/components/navbar"
+import Footer from "@/components/footer"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Card } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { Spinner } from "@/components/ui/spinner"
+import { Clock, MapPin, User, Trash2, RotateCw, X } from "lucide-react"
+import { formatTime12Hour, formatDate } from "@/lib/utils"
+import { toast } from "sonner"
+
+interface Sesion {
+  id: string
+  titulo: string
+  ponente: string
+  perfil_profesional: string
+  afiliacion: string
+  dia: string
+  hora_inicio: string
+  hora_fin: string
+  tipo: string
+  lugar: string
+  cupos_total: number
+  cupos_ocupados: number
+  descripcion: string | null
+  inscrito?: boolean
+}
+
+const tipoBadge: Record<string, { bg: string; text: string }> = {
+  Conferencia: { bg: "bg-blue-600", text: "text-white" },
+  Taller: { bg: "bg-purple-600", text: "text-white" },
+  Panel: { bg: "bg-green-600", text: "text-white" },
+  Seminario: { bg: "bg-orange-600", text: "text-white" },
+  "Mesa redonda": { bg: "bg-red-600", text: "text-white" },
+}
+
+export default function SesionesPage() {
+  const router = useRouter()
+  const [sesionesDisponibles, setSesionesDisponibles] = useState<Sesion[]>([])
+  const [sesionesInscritas, setSesionesInscritas] = useState<Sesion[]>([])
+  const [loading, setLoading] = useState(true)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<Sesion | null>(null)
+  const [procesando, setProcesando] = useState(false)
+  const [filtroTipo, setFiltroTipo] = useState<string>("")
+  const [viewingPonente, setViewingPonente] = useState<{ nombre: string; perfil: string | null; afiliacion: string | null; biografia: string | null; foto: string | null } | null>(null)
+
+  // Obtener usuario actual
+  useEffect(() => {
+    async function getUser() {
+      try {
+        const res = await fetch("/api/auth/me")
+        const data = await res.json()
+        if (data.user && data.user.id) {
+          console.log("✅ Usuario obtenido:", data.user.id)
+          setUserId(data.user.id)
+        } else {
+          console.log("❌ No hay usuario:", data)
+          router.push("/auth/login")
+        }
+      } catch (err) {
+        console.error("❌ Error obteniendo usuario:", err)
+        router.push("/auth/login")
+      }
+    }
+    getUser()
+  }, [router])
+
+  // Cargar sesiones cuando se obtiene el userId
+  useEffect(() => {
+    if (!userId) return
+
+    async function cargarSesiones() {
+      setLoading(true)
+      try {
+        // Sesiones disponibles
+        const resDisponibles = await fetch(
+          `/api/sesiones/disponibles?userId=${userId}${filtroTipo ? `&tipo=${filtroTipo}` : ""}`
+        )
+        const dataDisponibles = await resDisponibles.json()
+        setSesionesDisponibles(dataDisponibles.data || [])
+
+        // Sesiones inscritas
+        const resInscritas = await fetch(`/api/usuarios/mis-sesiones?userId=${userId}`)
+        const dataInscritas = await resInscritas.json()
+        setSesionesInscritas(dataInscritas.data || [])
+      } catch (error) {
+        console.error("Error cargando sesiones:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    cargarSesiones()
+  }, [userId, filtroTipo])
+
+  const handleInscribir = async (sesion: Sesion) => {
+    if (!userId) return
+    setProcesando(true)
+    try {
+      const res = await fetch(`/api/sesiones/${sesion.id}/inscribir`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      })
+
+      if (res.ok) {
+        // Recargar sesiones desde BD
+        const resDisponibles = await fetch(
+          `/api/sesiones/disponibles?userId=${userId}${filtroTipo ? `&tipo=${filtroTipo}` : ""}`
+        )
+        const dataDisponibles = await resDisponibles.json()
+        setSesionesDisponibles(dataDisponibles.data || [])
+
+        const resInscritas = await fetch(`/api/usuarios/mis-sesiones?userId=${userId}`)
+        const dataInscritas = await resInscritas.json()
+        setSesionesInscritas(dataInscritas.data || [])
+        
+        toast.success("¡Inscripción exitosa!")
+      } else {
+        const error = await res.json()
+        toast.error(`Error: ${error.error}`)
+      }
+    } catch (error) {
+      console.error("Error al inscribirse:", error)
+      toast.error("Error al inscribirse")
+    } finally {
+      setProcesando(false)
+    }
+  }
+
+  const handleDesinscribir = async (sesion: Sesion) => {
+    if (!userId) return
+    setProcesando(true)
+    try {
+      const res = await fetch(
+        `/api/sesiones/${sesion.id}/inscribir?userId=${userId}`,
+        { method: "DELETE" }
+      )
+
+      if (res.ok) {
+        // Recargar sesiones desde BD
+        const resDisponibles = await fetch(
+          `/api/sesiones/disponibles?userId=${userId}${filtroTipo ? `&tipo=${filtroTipo}` : ""}`
+        )
+        const dataDisponibles = await resDisponibles.json()
+        setSesionesDisponibles(dataDisponibles.data || [])
+
+        const resInscritas = await fetch(`/api/usuarios/mis-sesiones?userId=${userId}`)
+        const dataInscritas = await resInscritas.json()
+        setSesionesInscritas(dataInscritas.data || [])
+
+        setConfirmDelete(null)
+        toast.success("¡Desinscripción exitosa!")
+      } else {
+        toast.error("Error al desinscribirse")
+      }
+    } catch (error) {
+      console.error("Error al desinscribirse:", error)
+      toast.error("Error al desinscribirse")
+    } finally {
+      setProcesando(false)
+    }
+  }
+
+  const porcentajeCupos = (sesion: Sesion) =>
+    Math.round((sesion.cupos_ocupados / sesion.cupos_total) * 100)
+
+  const recargarSesiones = async () => {
+    if (!userId) return
+    setLoading(true)
+    try {
+      const resDisponibles = await fetch(
+        `/api/sesiones/disponibles?userId=${userId}${filtroTipo ? `&tipo=${filtroTipo}` : ""}`,
+        { cache: "no-store" }
+      )
+      const dataDisponibles = await resDisponibles.json()
+      setSesionesDisponibles(dataDisponibles.data || [])
+
+      const resInscritas = await fetch(
+        `/api/usuarios/mis-sesiones?userId=${userId}`,
+        { cache: "no-store" }
+      )
+      const dataInscritas = await resInscritas.json()
+      setSesionesInscritas(dataInscritas.data || [])
+    } catch (error) {
+      console.error("Error recargando sesiones:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-gray-50 dark:bg-[#0F172A] flex items-center justify-center">
+          <Spinner />
+        </div>
+        <Footer />
+      </>
+    )
+  }
+
+  return (
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gray-50 dark:bg-[#0F172A] py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="mb-12 flex justify-between items-start">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                Sesiones Académicas
+              </h1>
+              <p className="text-lg text-gray-600 dark:text-gray-400">
+                Explora y únete a las sesiones que te interesen
+              </p>
+            </div>
+            <Button
+              onClick={recargarSesiones}
+              disabled={loading}
+              variant="outline"
+              className="whitespace-nowrap"
+            >
+              <RotateCw size={18} className="mr-2" />
+              Recargar
+            </Button>
+          </div>
+
+          {/* Tabs */}
+          <Tabs defaultValue="disponibles" className="w-full">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="disponibles">
+                Disponibles ({sesionesDisponibles.length})
+              </TabsTrigger>
+              <TabsTrigger value="inscritas">
+                Mis Sesiones ({sesionesInscritas.length})
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Sesiones Disponibles */}
+            <TabsContent value="disponibles" className="mt-8">
+              {/* Filtro */}
+              <div className="mb-6 flex gap-2 flex-wrap">
+                <Button
+                  variant={filtroTipo === "" ? "default" : "outline"}
+                  onClick={() => setFiltroTipo("")}
+                >
+                  Todas
+                </Button>
+                {["Conferencia", "Taller", "Panel", "Seminario", "Mesa redonda"].map(
+                  tipo => (
+                    <Button
+                      key={tipo}
+                      variant={filtroTipo === tipo ? "default" : "outline"}
+                      onClick={() => setFiltroTipo(tipo)}
+                    >
+                      {tipo}
+                    </Button>
+                  )
+                )}
+              </div>
+
+              {/* Lista de sesiones */}
+              <div className="grid gap-6">
+                {sesionesDisponibles.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-gray-600 dark:text-gray-400">
+                      No hay sesiones disponibles con ese filtro
+                    </p>
+                  </div>
+                ) : (
+                  sesionesDisponibles.map(sesion => (
+                    <Card
+                      key={sesion.id}
+                      className="p-6 hover:shadow-lg transition dark:bg-[#1E293B] border-gray-200 dark:border-gray-700"
+                    >
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="flex-1">
+                          {/* Tipo y Cupos */}
+                          <div className="flex gap-2 items-center mb-3">
+                            <Badge
+                              className={`${tipoBadge[sesion.tipo]?.bg || "bg-gray-500"} ${tipoBadge[sesion.tipo]?.text || "text-white"}`}
+                            >
+                              {sesion.tipo}
+                            </Badge>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              {sesion.cupos_total - sesion.cupos_ocupados} cupos libres
+                            </span>
+                          </div>
+
+                          {/* Título */}
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                            {sesion.titulo}
+                          </h3>
+
+                          {/* Ponente */}
+                          <div className="mb-3">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              <User className="inline mr-1" size={16} />
+                              <button
+                                onClick={() => setViewingPonente({
+                                  nombre: sesion.ponente,
+                                  perfil: sesion.perfil_profesional,
+                                  afiliacion: sesion.afiliacion,
+                                  biografia: sesion.descripcion,
+                                  foto: sesion.perfil_profesional ? null : null,
+                                })}
+                                className="font-semibold text-[#0F6B44] dark:text-[#10B981] hover:underline"
+                                type="button"
+                              >
+                                {sesion.ponente}
+                              </button>
+                            </p>
+                            {sesion.perfil_profesional && (
+                              <p className="text-xs text-gray-500 dark:text-gray-500 ml-5">
+                                {sesion.perfil_profesional}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Detalles */}
+                          <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                              <Clock size={16} />
+                              {formatTime12Hour(sesion.hora_inicio)} - {formatTime12Hour(sesion.hora_fin)}
+                            </div>
+                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                              <MapPin size={16} />
+                              {sesion.lugar}
+                            </div>
+                          </div>
+
+                          {/* Descripción */}
+                          {sesion.descripcion && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                              {sesion.descripcion}
+                            </p>
+                          )}
+
+                          {/* Barra de cupos */}
+                          <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                            <div
+                              className="bg-green-500 h-full"
+                              style={{ width: `${porcentajeCupos(sesion)}%` }}
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {sesion.cupos_ocupados}/{sesion.cupos_total} inscritos
+                          </p>
+                        </div>
+
+                        {/* Botón */}
+                        <Button
+                          onClick={() => handleInscribir(sesion)}
+                          disabled={
+                            procesando ||
+                            sesion.cupos_ocupados >= sesion.cupos_total ||
+                            sesion.inscrito
+                          }
+                          className="whitespace-nowrap"
+                        >
+                          {sesion.inscrito ? "Inscrito" : "Inscribirse"}
+                        </Button>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Mis Sesiones Inscritas */}
+            <TabsContent value="inscritas" className="mt-8">
+              <div className="grid gap-6">
+                {sesionesInscritas.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                      Aún no estás inscrito en ninguna sesión
+                    </p>
+                    <Button onClick={() => document.querySelector('[value="disponibles"]')?.click?.()}>
+                      Explorar sesiones
+                    </Button>
+                  </div>
+                ) : (
+                  sesionesInscritas.map(sesion => (
+                    <Card
+                      key={sesion.id}
+                      className="p-6 hover:shadow-lg transition dark:bg-[#1E293B] border-l-4 border-l-green-500 dark:border-gray-700"
+                    >
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="flex-1">
+                          <div className="flex gap-2 items-center mb-3">
+                            <Badge className="bg-green-600 text-white">✓ Inscrito</Badge>
+                            <Badge
+                              className={`${tipoBadge[sesion.tipo]?.bg || "bg-gray-500"} ${tipoBadge[sesion.tipo]?.text || "text-white"}`}
+                            >
+                              {sesion.tipo}
+                            </Badge>
+                          </div>
+
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                            {sesion.titulo}
+                          </h3>
+
+                          <div className="mb-3">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              <User className="inline mr-1" size={16} />
+                              <button
+                                onClick={() => setViewingPonente({
+                                  nombre: sesion.ponente,
+                                  perfil: sesion.perfil_profesional,
+                                  afiliacion: sesion.afiliacion,
+                                  biografia: sesion.descripcion,
+                                  foto: null,
+                                })}
+                                className="font-semibold text-[#0F6B44] dark:text-[#10B981] hover:underline"
+                                type="button"
+                              >
+                                {sesion.ponente}
+                              </button>
+                            </p>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                              <Clock size={16} />
+                              {formatDate(sesion.dia)} - {formatTime12Hour(sesion.hora_inicio)}
+                            </div>
+                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                              <MapPin size={16} />
+                              {sesion.lugar}
+                            </div>
+                          </div>
+                        </div>
+
+                        <Button
+                          variant="destructive"
+                          onClick={() => setConfirmDelete(sesion)}
+                          disabled={procesando}
+                        >
+                          <Trash2 size={18} />
+                        </Button>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+
+      {/* Dialog de confirmación */}
+      {confirmDelete && (
+        <AlertDialog open={!!confirmDelete} onOpenChange={() => setConfirmDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogTitle>Desinscribirse</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de que quieres desinscribirte de{" "}
+              <strong>{confirmDelete.titulo}</strong>?
+            </AlertDialogDescription>
+            <div className="flex gap-2 justify-end">
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => handleDesinscribir(confirmDelete)}
+                className="bg-red-600 text-white"
+              >
+                Desinscribir
+              </AlertDialogAction>
+            </div>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      <Footer />
+
+      {viewingPonente && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+          onClick={() => setViewingPonente(null)}
+        >
+          <div
+            className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl w-[440px] max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-white dark:bg-[#1E293B] border-b border-gray-100 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
+              <h2 className="text-lg font-bold text-[#1A1B22] dark:text-white">
+                Perfil del Conferencista
+              </h2>
+              <button
+                onClick={() => setViewingPonente(null)}
+                className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 rounded-full bg-[#EAFBE2] dark:bg-[#10B981]/20 flex items-center justify-center shrink-0">
+                  <User size={28} className="text-[#0F6B44] dark:text-[#10B981]" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-[#1A1B22] dark:text-white leading-snug">
+                    {viewingPonente.nombre}
+                  </p>
+                  {viewingPonente.perfil && (
+                    <p className="text-xs text-[#0F6B44] dark:text-[#10B981] mt-1">
+                      {viewingPonente.perfil}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {viewingPonente.afiliacion && (
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                    Afiliación Institucional
+                  </p>
+                  <p className="text-xs text-[#1A1B22] dark:text-white mt-1">
+                    {viewingPonente.afiliacion}
+                  </p>
+                </div>
+              )}
+
+              {viewingPonente.biografia && (
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                    Biografía
+                  </p>
+                  <p className="text-xs text-gray-700 dark:text-gray-300 mt-1 leading-relaxed whitespace-pre-line">
+                    {viewingPonente.biografia}
+                  </p>
+                </div>
+              )}
+
+              {sesionesDisponibles.filter(
+                (s) =>
+                  s.ponente === viewingPonente.nombre &&
+                  (s.perfil_profesional || s.afiliacion)
+              ).length > 0 && (
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+                    Sesiones en esta jornada
+                  </p>
+                  <div className="space-y-2">
+                    {sesionesDisponibles
+                      .filter((s) => s.ponente === viewingPonente.nombre)
+                      .map((s) => (
+                        <div
+                          key={s.id}
+                          className="bg-gray-50 dark:bg-[#0F172A] rounded-lg px-3 py-2 text-xs text-gray-700 dark:text-gray-300"
+                        >
+                          <p className="font-semibold">{s.titulo}</p>
+                          <p className="text-[10px] text-gray-500 dark:text-gray-500 mt-0.5">
+                            {formatDate(s.dia)} · {formatTime12Hour(s.hora_inicio)} - {formatTime12Hour(s.hora_fin)} · {s.lugar}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-2">
+                <button
+                  onClick={() => setViewingPonente(null)}
+                  className="w-full bg-[#0F6B44] text-white text-xs font-semibold py-2 rounded-lg hover:bg-[#0A4A2F] transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+</file>
+
 <file path="components/footer.tsx">
 import Image from "next/image"
 import Link from "next/link"
@@ -13791,6 +13858,119 @@ export default function Footer() {
         </div>
       </div>
     </footer>
+  )
+}
+</file>
+
+<file path="components/hero.tsx">
+"use client"
+
+import Link from "next/link"
+import Image from "next/image"
+import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
+
+interface HeroProps {
+  usuario: any
+  loadingAuth: boolean
+}
+
+export default function Hero({ usuario, loadingAuth }: HeroProps) {
+  const { theme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const isDark = mounted && theme === "dark"
+  const showCta = !loadingAuth && !usuario
+
+  return (
+    <section
+      id="inicio"
+      className="pt-14 min-h-[520px] flex items-center relative overflow-hidden"
+      style={{
+        background: isDark
+          ? "linear-gradient(135deg, #1A2634 0%, #0F4C3C 100%)"
+          : "linear-gradient(135deg, #64FC05 0%, #006341 100%)",
+      }}
+    >
+      {/* Background texture: building louvre grid image */}
+      <div
+        className="absolute inset-0 z-0 animate-fade-in"
+        style={{
+          backgroundImage:
+            "url('images/UMB_SAN_JOSE.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: isDark ? 0.08 : 0.15,
+          mixBlendMode: "overlay",
+        }}
+        aria-hidden="true"
+      />
+      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10 py-14 w-full">
+        <div className="flex flex-col md:flex-row items-center gap-10">
+          {/* Left content */}
+          <div className="flex-1 flex flex-col">
+            {/* Badge */}
+            <div
+              className="self-start text-xs font-semibold px-3 py-1 rounded-full mb-6 animate-fade-in-up"
+              style={{
+                backgroundColor: isDark ? "#1F3A4C" : "#FDDC98",
+                color: isDark ? "#7DD3FC" : "#735B24"
+              }}
+            >
+              San José del Rincón, 2025
+            </div>
+
+            {/* Title */}
+            <h1 className="font-sans text-5xl sm:text-6xl font-bold text-white leading-tight text-balance mb-8 animate-fade-in-up delay-200">
+              12va Jornada<br />
+              Académica y<br />
+              Cultural
+            </h1>
+
+            {/* CTA + Date row */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 animate-fade-in-up delay-300">
+              {showCta && (
+                <Link
+                  href="#registro"
+                  className="inline-flex items-center justify-center px-6 py-3 rounded-md text-white text-sm font-semibold hover:opacity-90 transition-all hover:scale-105 hover:shadow-lg"
+                  style={{
+                    backgroundColor: isDark ? "#10B981" : "#3F4942"
+                  }}
+                >
+                  Registrarse Ahora
+                </Link>
+              )}
+              <div>
+                <p className="text-xs text-white/80 uppercase tracking-wider mb-0.5">
+                  Fecha del Evento
+                </p>
+                <p className="text-white font-semibold text-base">
+                  1-5 de Diciembre, 2025
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right image */}
+          <div className="flex-shrink-0 w-full md:w-[420px] animate-fade-in delay-400">
+            <div className="rounded-2xl overflow-hidden shadow-2xl aspect-[4/3] hover:scale-105 transition-transform duration-500">
+              <Image
+                src="images/Colibri_umb.png"
+                alt="Pasillo interior de la Universidad Mexiquense del Bicentenario"
+                width={840}
+                height={630}
+                className="w-full h-full object-cover"
+                priority
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   )
 }
 </file>
@@ -14301,18 +14481,22 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
     setSaving(true)
     setError(null)
     try {
-      await onSave({
-        titulo: form.titulo, 
-        ponente: form.ponente, 
-        dia: form.dia,
-        hora_inicio: form.hora_inicio, 
-        hora_fin: form.hora_fin,
-        tipo: form.tipo, 
-        lugar: form.lugar,
-        cupos_total: typeof form.cupos_total === "string" ? Number(form.cupos_total) : form.cupos_total, 
-        descripcion: form.descripcion,
-        foto_ponente: speakerPhotoBase64,
-      })
+    await onSave({
+      titulo: form.titulo, 
+      ponente: form.ponente, 
+      dia: form.dia,
+      hora_inicio: form.hora_inicio, 
+      hora_fin: form.hora_fin,
+      tipo: form.tipo, 
+      lugar: form.lugar,
+      cupos_total: typeof form.cupos_total === "string" ? Number(form.cupos_total) : form.cupos_total, 
+      descripcion: form.descripcion,
+      perfil_profesional: form.perfil_profesional,
+      afiliacion: form.afiliacion,
+      biografia: form.biografia,
+      foto_ponente: speakerPhotoBase64,
+      logo_institucion: institutionLogoUrl,
+    })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al guardar la sesión.")
     } finally {
@@ -16316,8 +16500,9 @@ export default function ResetPasswordPage() {
 import { useEffect, useState } from "react"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
-import { BookOpen } from "lucide-react"
+import { BookOpen, User as UserIcon, X } from "lucide-react"
 import { formatTime12Hour, formatDate } from "@/lib/utils"
+import { toast } from "sonner"
 
 type Sesion = {
   id: string
@@ -16332,6 +16517,10 @@ type Sesion = {
   cupos_ocupados: number
   descripcion: string | null
   created_at: string
+  perfil_profesional?: string | null
+  afiliacion?: string | null
+  biografia?: string | null
+  foto_ponente?: string | null
 }
 
 const tipoBadge: Record<string, { bg: string; text: string }> = {
@@ -16348,23 +16537,19 @@ const diasSemana: Record<string, string> = {
   "3": "Miércoles",
   "4": "Jueves",
   "5": "Viernes",
-  "Lunes": "Lunes",
-  "Martes": "Martes",
-  "Miércoles": "Miércoles",
-  "Jueves": "Jueves",
-  "Viernes": "Viernes",
+  Lunes: "Lunes",
+  Martes: "Martes",
+  Miércoles: "Miércoles",
+  Jueves: "Jueves",
+  Viernes: "Viernes",
 }
 
 function getNombreDia(dia: string): string {
-  // Si es un número (1-5), usar el mapeo directo
-  if (diasSemana[dia]) {
-    return diasSemana[dia]
-  }
-  
-  // Si es una fecha ISO, extraer el día de la semana
+  if (diasSemana[dia]) return diasSemana[dia]
+
   try {
     const date = new Date(dia)
-    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+    const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
     const dayName = days[date.getUTCDay()]
     const dayNum = date.getUTCDate()
     return `${dayName} ${dayNum}`
@@ -16380,16 +16565,14 @@ export default function CronogramaPage() {
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
   const [inscribiendo, setInscribiendo] = useState<string | null>(null)
+  const [viewingPonente, setViewingPonente] = useState<{ nombre: string; perfil: string | null; afiliacion: string | null; biografia: string | null; foto: string | null } | null>(null)
 
-  // Obtener usuario actual
   useEffect(() => {
     async function getUser() {
       try {
         const res = await fetch("/api/auth/me")
         const data = await res.json()
-        if (data.user && data.user.id) {
-          setUserId(data.user.id)
-        }
+        if (data.user && data.user.id) setUserId(data.user.id)
       } catch (err) {
         console.error("Error obteniendo usuario:", err)
       }
@@ -16401,7 +16584,6 @@ export default function CronogramaPage() {
     try {
       const response = await fetch("/api/sesiones/pdf")
       if (!response.ok) throw new Error("Error al descargar PDF")
-      
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement("a")
@@ -16432,65 +16614,56 @@ export default function CronogramaPage() {
     loadSesiones()
   }, [])
 
-  // Cargar sesiones inscritas del usuario desde BD
   useEffect(() => {
     if (!userId) return
-
     async function loadSesionesInscritas() {
       try {
         const res = await fetch(`/api/usuarios/mis-sesiones?userId=${userId}`)
         const data = await res.json()
-        const inscritasIds = new Set<string>(
-          (data.data || []).map((s: Sesion) => s.id)
-        )
+        const inscritasIds = new Set<string>((data.data || []).map((s: Sesion) => s.id))
         setSesionesInscritas(inscritasIds)
       } catch (error) {
         console.error("Error cargando sesiones inscritas:", error)
       }
     }
-
     loadSesionesInscritas()
   }, [userId])
 
-  async function toggleAgenda(sesionId: string, sesionTitulo: string) {
+  async function toggleAgenda(sesionId: string) {
     if (!userId) {
-      alert("Debes iniciar sesión para agendar sesiones")
+      toast.error("Debes iniciar sesión para agendar sesiones")
       return
     }
 
     setInscribiendo(sesionId)
     try {
       if (sesionesInscritas.has(sesionId)) {
-        // Desinscribir
-        const res = await fetch(`/api/sesiones/${sesionId}/inscribir?userId=${userId}`, {
-          method: "DELETE",
-        })
+        const res = await fetch(`/api/sesiones/${sesionId}/inscribir?userId=${userId}`, { method: "DELETE" })
         if (res.ok) {
-          setSesionesInscritas(prev => {
+          setSesionesInscritas((prev) => {
             const next = new Set(prev)
             next.delete(sesionId)
             return next
           })
         } else {
-          alert("Error al desinscribirse")
+          toast.error("Error al desinscribirse")
         }
       } else {
-        // Inscribir
         const res = await fetch(`/api/sesiones/${sesionId}/inscribir`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId }),
         })
         if (res.ok) {
-          setSesionesInscritas(prev => new Set([...prev, sesionId]))
+          setSesionesInscritas((prev) => new Set([...prev, sesionId]))
         } else {
           const error = await res.json()
-          alert(`Error: ${error.error}`)
+          toast.error(`Error: ${error.error}`)
         }
       }
     } catch (error) {
       console.error("Error:", error)
-      alert("Error al actualizar agenda")
+      toast.error("Error al actualizar agenda")
     } finally {
       setInscribiendo(null)
     }
@@ -16498,12 +16671,10 @@ export default function CronogramaPage() {
 
   const dias = Object.keys(sesiones).sort()
   const eventosFiltrados =
-    diaActivo === "todos"
-      ? Object.values(sesiones).flat()
-      : sesiones[diaActivo] || []
-
-  const col1 = eventosFiltrados.filter((_, i) => i % 2 === 0)
-  const col2 = eventosFiltrados.filter((_, i) => i % 2 === 1)
+    diaActivo === "todos" ? Object.values(sesiones).flat() : sesiones[diaActivo] || []
+  const sesionParaPonente = viewingPonente
+    ? eventosFiltrados.find(e => e.ponente === viewingPonente.nombre)
+    : null
 
   const totalSesiones = Object.values(sesiones).flat().length
 
@@ -16522,22 +16693,21 @@ export default function CronogramaPage() {
     <main className="min-h-screen bg-white dark:bg-slate-950">
       <Navbar />
       <div className="pt-14">
-        {/* Top two-column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-0">
-          {/* Left: hero panel */}
           <div
             className="lg:col-span-2 px-8 py-10 flex flex-col justify-between min-h-[240px]"
             style={{ background: "linear-gradient(135deg, #64FC05 0%, #6CEA1D 100%)" }}
           >
             <div>
-              <p className="text-xs font-semibold tracking-widest text-white/70 uppercase mb-2">
-                Bienvenido al evento
-              </p>
+              <p className="text-xs font-semibold tracking-widest text-white/70 uppercase mb-2">Bienvenido al evento</p>
               <h1 className="text-3xl md:text-4xl font-black text-white leading-tight mb-3">
-                12va Jornada<br />Académica y<br />Cultural
+                12va Jornada<br />
+                Académica y<br />
+                Cultural
               </h1>
               <p className="text-black/150 text-sm leading-relaxed max-w-sm">
-                Explora la frontera del conocimiento. Gestiona tu asistencia a las sesiones más innovadoras de la Universidad Mexiquense del Bicentenario.
+                Explora la frontera del conocimiento. Gestiona tu asistencia a las sesiones más innovadoras de la
+                Universidad Mexiquense del Bicentenario.
               </p>
             </div>
             <div className="mt-6">
@@ -16551,7 +16721,6 @@ export default function CronogramaPage() {
             </div>
           </div>
 
-          {/* Right: Mi Agenda */}
           <div className="bg-white dark:bg-slate-900 border-l border-gray-100 dark:border-gray-800 px-6 py-8 flex flex-col gap-6">
             <h2 className="text-sm font-bold text-[#1A1B22] dark:text-white">Mi Agenda Personal</h2>
 
@@ -16593,7 +16762,6 @@ export default function CronogramaPage() {
               </div>
             </div>
 
-            {/* Stats */}
             <div className="grid grid-cols-1 gap-3 mt-2">
               <div className="border border-gray-100 dark:border-gray-800 rounded-xl p-3 text-center">
                 <p className="text-2xl font-black text-[#735B24] dark:text-yellow-500">{totalSesiones}</p>
@@ -16603,22 +16771,16 @@ export default function CronogramaPage() {
           </div>
         </div>
 
-        {/* Sessions section */}
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-10">
-          {/* Title + filter */}
           <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
             <h2 className="text-xl font-bold text-[#1A1B22] dark:text-white">Agenda de Sesiones</h2>
             <div className="flex gap-2 overflow-x-auto pb-2">
               <button
                 onClick={() => setDiaActivo("todos")}
                 className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${
-                  diaActivo === "todos"
-                    ? "text-white"
-                    : "text-gray-600 dark:text-gray-400 bg-white dark:bg-slate-800"
+                  diaActivo === "todos" ? "text-white" : "text-gray-600 dark:text-gray-400 bg-white dark:bg-slate-800"
                 }`}
-                style={{
-                  backgroundColor: diaActivo === "todos" ? "#064E3B" : undefined,
-                }}
+                style={{ backgroundColor: diaActivo === "todos" ? "#064E3B" : undefined }}
               >
                 Todos
               </button>
@@ -16627,13 +16789,9 @@ export default function CronogramaPage() {
                   key={dia}
                   onClick={() => setDiaActivo(dia)}
                   className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${
-                    diaActivo === dia
-                      ? "text-white"
-                      : "text-gray-600 dark:text-gray-400 bg-white dark:bg-slate-800"
+                    diaActivo === dia ? "text-white" : "text-gray-600 dark:text-gray-400 bg-white dark:bg-slate-800"
                   }`}
-                  style={{
-                    backgroundColor: diaActivo === dia ? "#064E3B" : undefined,
-                  }}
+                  style={{ backgroundColor: diaActivo === dia ? "#064E3B" : undefined }}
                 >
                   {getNombreDia(dia)}
                 </button>
@@ -16641,71 +16799,13 @@ export default function CronogramaPage() {
             </div>
           </div>
 
-          {/* Eventos en dos columnas */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Columna 1 */}
-            <div className="flex flex-col gap-4">
-              {col1.map((evento) => (
-                <div
-                  key={`${evento.id}-col1`}
-                  className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-4 hover:shadow-md transition"
-                >
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{formatDate(evento.dia)}</p>
-                      <h3 className="text-sm font-bold text-[#1A1B22] dark:text-white leading-snug">
-                        {evento.titulo}
-                      </h3>
-                    </div>
-                    <div
-                      className="px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap"
-                      style={{
-                        backgroundColor: tipoBadge[evento.tipo]?.bg || "#1A1B22",
-                        color: tipoBadge[evento.tipo]?.text || "#fff",
-                      }}
-                    >
-                      {evento.tipo}
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5 mb-3">
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                      <span className="font-semibold"></span> {formatTime12Hour(evento.hora_inicio)} - {formatTime12Hour(evento.hora_fin)}
-                    </p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                      <span className="font-semibold"></span> {evento.ponente}
-                    </p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                      <span className="font-semibold"></span> {evento.lugar}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {evento.cupos_ocupados} / {evento.cupos_total} cupos
-                    </div>
-                    <button
-                      onClick={() => toggleAgenda(evento.id, evento.titulo)}
-                      disabled={inscribiendo === evento.id}
-                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition disabled:opacity-50 ${
-                        sesionesInscritas.has(evento.id)
-                          ? "text-white"
-                          : "text-[#065F46] border border-[#065F46] hover:bg-green-50 dark:hover:bg-green-950/30"
-                      }`}
-                      style={{
-                        backgroundColor: sesionesInscritas.has(evento.id) ? "#065F46" : undefined,
-                      }}
-                    >
-                      {inscribiendo === evento.id ? "..." : sesionesInscritas.has(evento.id) ? "Agendado" : "+ Agendar"}
-                    </button>
-                  </div>
-                </div>
-              ))}
+          {eventosFiltrados.length === 0 ? (
+            <div className="text-center py-10">
+              <p className="text-gray-500 dark:text-gray-400">No hay sesiones para este día</p>
             </div>
-
-            {/* Columna 2 */}
-            <div className="flex flex-col gap-4">
-              {col2.map((evento) => (
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {eventosFiltrados.map((evento) => (
                 <div
                   key={evento.id}
                   className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-4 hover:shadow-md transition"
@@ -16713,9 +16813,7 @@ export default function CronogramaPage() {
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{formatDate(evento.dia)}</p>
-                      <h3 className="text-sm font-bold text-[#1A1B22] dark:text-white leading-snug">
-                        {evento.titulo}
-                      </h3>
+                      <h3 className="text-sm font-bold text-[#1A1B22] dark:text-white leading-snug">{evento.titulo}</h3>
                     </div>
                     <div
                       className="px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap"
@@ -16730,14 +16828,22 @@ export default function CronogramaPage() {
 
                   <div className="space-y-1.5 mb-3">
                     <p className="text-xs text-gray-600 dark:text-gray-400">
-                      <span className="font-semibold"></span> {formatTime12Hour(evento.hora_inicio)} - {formatTime12Hour(evento.hora_fin)}
+                      {formatTime12Hour(evento.hora_inicio)} - {formatTime12Hour(evento.hora_fin)}
                     </p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                      <span className="font-semibold"></span> {evento.ponente}
-                    </p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                      <span className="font-semibold"></span> {evento.lugar}
-                    </p>
+                     <button
+                       onClick={() => setViewingPonente({
+                         nombre: evento.ponente,
+                         perfil: null,
+                         afiliacion: null,
+                         biografia: null,
+                         foto: null,
+                       })}
+                       className="text-[#0F6B44] dark:text-[#10B981] hover:underline font-semibold"
+                       type="button"
+                     >
+                       {evento.ponente}
+                     </button>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">{evento.lugar}</p>
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -16745,16 +16851,14 @@ export default function CronogramaPage() {
                       {evento.cupos_ocupados} / {evento.cupos_total} cupos
                     </div>
                     <button
-                      onClick={() => toggleAgenda(evento.id, evento.titulo)}
+                      onClick={() => toggleAgenda(evento.id)}
                       disabled={inscribiendo === evento.id}
                       className={`px-3 py-1 rounded-lg text-xs font-semibold transition disabled:opacity-50 ${
                         sesionesInscritas.has(evento.id)
                           ? "text-white"
                           : "text-[#065F46] border border-[#065F46] hover:bg-green-50 dark:hover:bg-green-950/30"
                       }`}
-                      style={{
-                        backgroundColor: sesionesInscritas.has(evento.id) ? "#065F46" : undefined,
-                      }}
+                      style={{ backgroundColor: sesionesInscritas.has(evento.id) ? "#065F46" : undefined }}
                     >
                       {inscribiendo === evento.id ? "..." : sesionesInscritas.has(evento.id) ? "Agendado" : "+ Agendar"}
                     </button>
@@ -16762,24 +16866,101 @@ export default function CronogramaPage() {
                 </div>
               ))}
             </div>
-          </div>
-
-          {eventosFiltrados.length === 0 ? (
-            <div className="text-center py-10 col-span-2">
-              <p className="text-gray-500 dark:text-gray-400">No hay sesiones para este día</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-4">
-                {col1.map((evento) => (
-                  <div
-                    key={`${evento.id}-col1`}
-                    className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-4 hover:shadow-md transition"
-                  >
+          )}
         </div>
       </div>
 
       <Footer />
+
+      {viewingPonente && sesionParaPonente && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+          onClick={() => setViewingPonente(null)}
+        >
+          <div
+            className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl w-[440px] max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-white dark:bg-[#1E293B] border-b border-gray-100 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
+              <h2 className="text-lg font-bold text-[#1A1B22] dark:text-white">
+                Perfil del Conferencista
+              </h2>
+              <button
+                onClick={() => setViewingPonente(null)}
+                className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 rounded-full bg-[#EAFBE2] dark:bg-[#10B981]/20 flex items-center justify-center shrink-0 overflow-hidden">
+                  {sesionParaPonente.foto_ponente ? (
+                    <img src={sesionParaPonente.foto_ponente} alt={viewingPonente.nombre} className="w-full h-full object-cover" />
+                  ) : (
+                    <UserIcon size={28} className="text-[#0F6B44] dark:text-[#10B981]" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-[#1A1B22] dark:text-white leading-snug">
+                    {viewingPonente.nombre}
+                  </p>
+                  {sesionParaPonente.perfil_profesional && (
+                    <p className="text-xs text-[#0F6B44] dark:text-[#10B981] mt-1">
+                      {sesionParaPonente.perfil_profesional}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {sesionParaPonente.afiliacion && (
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                    Afiliación Institucional
+                  </p>
+                  <p className="text-xs text-[#1A1B22] dark:text-white mt-1">
+                    {sesionParaPonente.afiliacion}
+                  </p>
+                </div>
+              )}
+
+              {sesionParaPonente.biografia && (
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                    Biografía
+                  </p>
+                  <p className="text-xs text-gray-700 dark:text-gray-300 mt-1 leading-relaxed whitespace-pre-line">
+                    {sesionParaPonente.biografia}
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+                  Sesión en esta jornada
+                </p>
+                <div className="bg-gray-50 dark:bg-[#0F172A] rounded-lg px-3 py-2 text-xs text-gray-700 dark:text-gray-300">
+                  <p className="font-semibold">{sesionParaPonente.titulo}</p>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-500 mt-0.5">
+                    {sesionParaPonente.dia} · {sesionParaPonente.hora_inicio} - {sesionParaPonente.hora_fin} · {sesionParaPonente.lugar}
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  onClick={() => setViewingPonente(null)}
+                  className="w-full bg-[#0F6B44] text-white text-xs font-semibold py-2 rounded-lg hover:bg-[#0A4A2F] transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
@@ -16926,6 +17107,7 @@ export default function AdminPage() {
 
   // Search
   const [searchQuery, setSearchQuery] = useState("")
+  const [viewingPonenteNombre, setViewingPonenteNombre] = useState<string | null>(null)
 
 
   useEffect(() => {

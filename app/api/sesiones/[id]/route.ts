@@ -34,7 +34,12 @@ export async function PUT(
            tipo = ?,
            lugar = ?,
            cupos_total = ?,
-           descripcion = ?
+           descripcion = ?,
+           foto_ponente = ?,
+           perfil_profesional = ?,
+           afiliacion = ?,
+           biografia = ?,
+           logo_institucion = ?
        WHERE id = ?`,
       [
         body.titulo ?? null,
@@ -46,6 +51,11 @@ export async function PUT(
         body.lugar ?? null,
         body.cupos_total ?? 50,
         body.descripcion ?? null,
+        body.foto_ponente ?? null,
+        (body.perfil_profesional ?? "").trim() || null,
+        (body.afiliacion ?? "").trim() || null,
+        (body.biografia ?? "").trim() || null,
+        body.logo_institucion ?? null,
         id
       ]
     );

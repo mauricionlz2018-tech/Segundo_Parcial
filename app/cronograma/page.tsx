@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
-import { BookOpen } from "lucide-react"
+import { BookOpen, User as UserIcon, X } from "lucide-react"
 import { formatTime12Hour, formatDate } from "@/lib/utils"
 import { toast } from "sonner"
 
@@ -20,6 +20,10 @@ type Sesion = {
   cupos_ocupados: number
   descripcion: string | null
   created_at: string
+  perfil_profesional?: string | null
+  afiliacion?: string | null
+  biografia?: string | null
+  foto_ponente?: string | null
 }
 
 const tipoBadge: Record<string, { bg: string; text: string }> = {
@@ -64,6 +68,7 @@ export default function CronogramaPage() {
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
   const [inscribiendo, setInscribiendo] = useState<string | null>(null)
+  const [viewingPonente, setViewingPonente] = useState<{ nombre: string; perfil: string | null; afiliacion: string | null; biografia: string | null; foto: string | null } | null>(null)
 
   useEffect(() => {
     async function getUser() {
@@ -170,6 +175,9 @@ export default function CronogramaPage() {
   const dias = Object.keys(sesiones).sort()
   const eventosFiltrados =
     diaActivo === "todos" ? Object.values(sesiones).flat() : sesiones[diaActivo] || []
+  const sesionParaPonente = viewingPonente
+    ? eventosFiltrados.find(e => e.ponente === viewingPonente.nombre)
+    : null
 
   const totalSesiones = Object.values(sesiones).flat().length
 
@@ -325,7 +333,19 @@ export default function CronogramaPage() {
                     <p className="text-xs text-gray-600 dark:text-gray-400">
                       {formatTime12Hour(evento.hora_inicio)} - {formatTime12Hour(evento.hora_fin)}
                     </p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">{evento.ponente}</p>
+                     <button
+                       onClick={() => setViewingPonente({
+                         nombre: evento.ponente,
+                         perfil: null,
+                         afiliacion: null,
+                         biografia: null,
+                         foto: null,
+                       })}
+                       className="text-[#0F6B44] dark:text-[#10B981] hover:underline font-semibold"
+                       type="button"
+                     >
+                       {evento.ponente}
+                     </button>
                     <p className="text-xs text-gray-600 dark:text-gray-400">{evento.lugar}</p>
                   </div>
 
@@ -354,6 +374,96 @@ export default function CronogramaPage() {
       </div>
 
       <Footer />
+
+      {viewingPonente && sesionParaPonente && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+          onClick={() => setViewingPonente(null)}
+        >
+          <div
+            className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl w-[440px] max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-white dark:bg-[#1E293B] border-b border-gray-100 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
+              <h2 className="text-lg font-bold text-[#1A1B22] dark:text-white">
+                Perfil del Conferencista
+              </h2>
+              <button
+                onClick={() => setViewingPonente(null)}
+                className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 rounded-full bg-[#EAFBE2] dark:bg-[#10B981]/20 flex items-center justify-center shrink-0 overflow-hidden">
+                  {sesionParaPonente.foto_ponente ? (
+                    <img src={sesionParaPonente.foto_ponente} alt={viewingPonente.nombre} className="w-full h-full object-cover" />
+                  ) : (
+                    <UserIcon size={28} className="text-[#0F6B44] dark:text-[#10B981]" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-[#1A1B22] dark:text-white leading-snug">
+                    {viewingPonente.nombre}
+                  </p>
+                  {sesionParaPonente.perfil_profesional && (
+                    <p className="text-xs text-[#0F6B44] dark:text-[#10B981] mt-1">
+                      {sesionParaPonente.perfil_profesional}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {sesionParaPonente.afiliacion && (
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                    Afiliación Institucional
+                  </p>
+                  <p className="text-xs text-[#1A1B22] dark:text-white mt-1">
+                    {sesionParaPonente.afiliacion}
+                  </p>
+                </div>
+              )}
+
+              {sesionParaPonente.biografia && (
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                    Biografía
+                  </p>
+                  <p className="text-xs text-gray-700 dark:text-gray-300 mt-1 leading-relaxed whitespace-pre-line">
+                    {sesionParaPonente.biografia}
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+                  Sesión en esta jornada
+                </p>
+                <div className="bg-gray-50 dark:bg-[#0F172A] rounded-lg px-3 py-2 text-xs text-gray-700 dark:text-gray-300">
+                  <p className="font-semibold">{sesionParaPonente.titulo}</p>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-500 mt-0.5">
+                    {sesionParaPonente.dia} · {sesionParaPonente.hora_inicio} - {sesionParaPonente.hora_fin} · {sesionParaPonente.lugar}
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  onClick={() => setViewingPonente(null)}
+                  className="w-full bg-[#0F6B44] text-white text-xs font-semibold py-2 rounded-lg hover:bg-[#0A4A2F] transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

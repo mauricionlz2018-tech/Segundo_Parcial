@@ -6,7 +6,7 @@ export async function GET() {
     const sesiones = await query<any[]>(
       `SELECT id, titulo, ponente, dia, hora_inicio, hora_fin,
               tipo, lugar, cupos_total, cupos_ocupados,
-              descripcion, perfil_profesional, afiliacion, biografia
+              descripcion, perfil_profesional, afiliacion, biografia, foto_ponente
        FROM sesiones
        ORDER BY dia ASC, hora_inicio ASC`
     )

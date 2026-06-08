@@ -171,18 +171,22 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
     setSaving(true)
     setError(null)
     try {
-      await onSave({
-        titulo: form.titulo, 
-        ponente: form.ponente, 
-        dia: form.dia,
-        hora_inicio: form.hora_inicio, 
-        hora_fin: form.hora_fin,
-        tipo: form.tipo, 
-        lugar: form.lugar,
-        cupos_total: typeof form.cupos_total === "string" ? Number(form.cupos_total) : form.cupos_total, 
-        descripcion: form.descripcion,
-        foto_ponente: speakerPhotoBase64,
-      })
+    await onSave({
+      titulo: form.titulo, 
+      ponente: form.ponente, 
+      dia: form.dia,
+      hora_inicio: form.hora_inicio, 
+      hora_fin: form.hora_fin,
+      tipo: form.tipo, 
+      lugar: form.lugar,
+      cupos_total: typeof form.cupos_total === "string" ? Number(form.cupos_total) : form.cupos_total, 
+      descripcion: form.descripcion,
+      perfil_profesional: form.perfil_profesional,
+      afiliacion: form.afiliacion,
+      biografia: form.biografia,
+      foto_ponente: speakerPhotoBase64,
+      logo_institucion: institutionLogoUrl,
+    })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al guardar la sesión.")
     } finally {
