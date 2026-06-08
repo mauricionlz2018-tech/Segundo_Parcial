@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { db } from "@/lib/db"
+import pool from "@/lib/db"
 import { sendUpcomingSessionAlert } from "@/lib/email"
 
 export const runtime = "nodejs"
@@ -14,14 +14,14 @@ export async function POST(request: Request) {
     const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
 
     // Obtener todas las sesiones que están próximas
-    const [sessions] = await db.execute(
+    const sessions = await pool.query<any>(
       `SELECT s.*, u.email, u.full_name
        FROM sesiones s
        JOIN usuarios u ON s.user_id = u.id
        WHERE s.fecha >= DATE(?) AND s.fecha <= DATE(?)
        AND s.notificacion_enviada = 0`,
       [today.toISOString().split("T")[0], nextWeek.toISOString().split("T")[0]]
-    ) as any
+    )
 
     console.log(`Se encontraron ${sessions.length} sesiones próximas`)
 
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
         )
 
         // Marcar como enviada
-        await db.execute(
+        await pool.execute(
           `UPDATE sesiones SET notificacion_enviada = 1 WHERE id = ?`,
           [session.id]
         )

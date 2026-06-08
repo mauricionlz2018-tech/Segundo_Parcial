@@ -8,6 +8,21 @@ const transporter = nodemailer.createTransport({
   },
 })
 
+export async function sendEmail(to: string, subject: string, html: string) {
+  try {
+    const result = await transporter.sendMail({
+      from: process.env.GMAIL_USER,
+      to,
+      subject,
+      html,
+    })
+    return result
+  } catch (error) {
+    console.error("Error enviando email:", error)
+    throw error
+  }
+}
+
 export async function sendPasswordResetEmail(email: string, resetToken: string, userName: string) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
   const resetPageUrl = `${appUrl}/auth/reset`
