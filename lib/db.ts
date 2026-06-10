@@ -14,8 +14,12 @@ const pool =
     port: Number(process.env.DB_PORT ?? 4000),
     connectionLimit: 10,
     waitForConnections: true,
+    queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0,
     ssl: {
       rejectUnauthorized: true,
+      minVersion: "TLSv1.2",
     },
   })
 
