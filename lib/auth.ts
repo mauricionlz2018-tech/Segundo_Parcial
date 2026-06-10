@@ -1,6 +1,6 @@
 import crypto from "crypto"
 import bcrypt from "bcryptjs"
-import { getSupabase } from "@/lib/db"
+import supabase from "@/lib/db"
 
 export const SESSION_COOKIE = "ues_session"
 const SESSION_TTL_DAYS = 30
@@ -34,7 +34,6 @@ export async function verifyPassword(password: string, hash: string) {
 }
 
 export async function findUserByEmailOrUsername(value: string): Promise<(DbUser & { password_hash: string }) | null> {
-  const supabase = getSupabase()
   // Buscar primero por email
   const { data: byEmail } = await supabase
     .from("users")
