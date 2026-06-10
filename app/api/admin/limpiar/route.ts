@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { getUserBySessionToken, SESSION_COOKIE } from "@/lib/auth"
-import pool from "@/lib/db"
+import supabase from "@/lib/db"
 
 export const runtime = "nodejs"
 
@@ -20,25 +20,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 })
   }
 
-  try {
-    const body = await request.json()
-    const { action } = body
+  const body = await request.json().catch(() => null)
+  const { action } = body
 
-    if (action === "limpiar-sesiones-usuarios") {
-      // Eliminar TODOS los registros de user_sesiones
-      await pool.execute("DELETE FROM user_sesiones")
-      return NextResponse.json({
-        success: true,
-        message: "Todos los registros de sesiones de usuarios han sido eliminados.",
-      })
+  if (action === "limpiar-sesiones-usuarios") {
+    const { error } = await supabase.from("user_sesiones").delete().neq("id", "00000000-0000-0000-0000-000000000000")
+
+    if (error) {
+      return NextResponse.json({ error: "Error al limpiar datos" }, { status: 500 })
     }
 
-    return NextResponse.json({ error: "Acción no válida." }, { status: 400 })
-  } catch (error) {
-    console.error("Error en limpiar:", error)
-    return NextResponse.json(
-      { error: "Error al limpiar datos" },
-      { status: 500 }
-    )
+    return NextResponse.json({
+      success: true,
+      message: "Todos los registros de sesiones de usuarios han sido eliminados.",
+    })
   }
+
+  return NextResponse.json({ error: "Accion no valida." }, { status: 400 })
 }

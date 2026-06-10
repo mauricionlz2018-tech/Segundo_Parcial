@@ -1,13 +1,12 @@
 import crypto from "crypto"
 import bcrypt from "bcryptjs"
-import pool, { query } from "@/lib/db"
-import type { ResultSetHeader, RowDataPacket } from "mysql2/promise"
+import supabase from "@/lib/db"
 
 export const SESSION_COOKIE = "ues_session"
 const SESSION_TTL_DAYS = 30
 const RESET_TTL_MINUTES = 60
 
-type UserRow = {
+export type DbUser = {
   id: string
   email: string
   username: string
@@ -15,10 +14,7 @@ type UserRow = {
   role: string
   carrera: string | null
   created_at: string
-  password_hash: string
 }
-
-export type DbUser = Omit<UserRow, "password_hash">
 
 function hashToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex")
@@ -32,36 +28,43 @@ export async function verifyPassword(password: string, hash: string) {
   return bcrypt.compare(password, hash)
 }
 
-export async function findUserByEmailOrUsername(value: string) {
-  const rows = await query<UserRow[]>(
-    "select id, email, username, full_name, role, carrera, created_at, password_hash from users where email = ? or username = ? limit 1",
-    [value, value]
-  )
-  return rows[0] ?? null
+export async function findUserByEmailOrUsername(value: string): Promise<(DbUser & { password_hash: string }) | null> {
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, email, username, full_name, role, carrera, created_at, password_hash")
+    .or(`email.eq.${value},username.eq.${value}`)
+    .limit(1)
+    .single()
+
+  if (error || !data) return null
+  return data as DbUser & { password_hash: string }
 }
 
-export async function findUserById(id: string) {
-  const rows = await query<UserRow[]>(
-    "select id, email, username, full_name, role, carrera, created_at, password_hash from users where id = ? limit 1",
-    [id]
-  )
-  return rows[0] ?? null
+export async function findUserById(id: string): Promise<(DbUser & { password_hash: string }) | null> {
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, email, username, full_name, role, carrera, created_at, password_hash")
+    .eq("id", id)
+    .single()
+
+  if (error || !data) return null
+  return data as DbUser & { password_hash: string }
 }
 
-export async function isUsernameTaken(username: string) {
-  const rows = await query<RowDataPacket[]>(
-    "select 1 from users where username = ? limit 1",
-    [username]
-  )
-  return rows.length > 0
+export async function isUsernameTaken(username: string): Promise<boolean> {
+  const { count } = await supabase
+    .from("users")
+    .select("id", { count: "exact", head: true })
+    .eq("username", username)
+  return (count ?? 0) > 0
 }
 
-export async function isEmailTaken(email: string) {
-  const rows = await query<RowDataPacket[]>(
-    "select 1 from users where email = ? limit 1",
-    [email]
-  )
-  return rows.length > 0
+export async function isEmailTaken(email: string): Promise<boolean> {
+  const { count } = await supabase
+    .from("users")
+    .select("id", { count: "exact", head: true })
+    .eq("email", email)
+  return (count ?? 0) > 0
 }
 
 export async function createUser(input: {
@@ -71,86 +74,85 @@ export async function createUser(input: {
   passwordHash: string
   role?: string
   carrera?: string
-}) {
-  const id = crypto.randomUUID()
-  await pool.execute<ResultSetHeader>(
-    "insert into users (id, email, username, full_name, role, carrera, password_hash) values (?, ?, ?, ?, ?, ?, ?)",
-    [
-      id,
-      input.email,
-      input.username,
-      input.fullName,
-      input.role ?? "alumno",
-      input.carrera ?? null,
-      input.passwordHash,
-    ]
-  )
+}): Promise<DbUser | null> {
+  const { data, error } = await supabase
+    .from("users")
+    .insert({
+      email: input.email,
+      username: input.username,
+      full_name: input.fullName,
+      role: input.role ?? "alumno",
+      carrera: input.carrera ?? null,
+      password_hash: input.passwordHash,
+    })
+    .select("id, email, username, full_name, role, carrera, created_at")
+    .single()
 
-  const user = await findUserById(id)
-  if (!user) return null
-  const { password_hash: _ignored, ...rest } = user
-  return rest
+  if (error || !data) return null
+  return data as DbUser
 }
 
-export async function createSession(userId: string) {
+export async function createSession(userId: string): Promise<{ token: string; expiresAt: Date }> {
   const token = crypto.randomBytes(32).toString("base64url")
   const tokenHash = hashToken(token)
   const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000)
-  const sessionId = crypto.randomUUID()
 
-  await pool.execute<ResultSetHeader>(
-    "insert into sessions (id, user_id, token_hash, expires_at) values (?, ?, ?, ?)",
-    [sessionId, userId, tokenHash, expiresAt]
-  )
+  await supabase.from("sessions").insert({
+    user_id: userId,
+    token_hash: tokenHash,
+    expires_at: expiresAt.toISOString(),
+  })
 
   return { token, expiresAt }
 }
 
-export async function getUserBySessionToken(token: string) {
+export async function getUserBySessionToken(token: string): Promise<DbUser | null> {
   const tokenHash = hashToken(token)
-  const rows = await query<UserRow[]>(
-    "select u.id, u.email, u.username, u.full_name, u.role, u.carrera, u.created_at, u.password_hash from sessions s join users u on u.id = s.user_id where s.token_hash = ? and s.expires_at > now() limit 1",
-    [tokenHash]
-  )
 
-  const user = rows[0]
-  if (!user) return null
-  const { password_hash: _ignored, ...rest } = user
-  return rest
+  const { data, error } = await supabase
+    .from("sessions")
+    .select("users(id, email, username, full_name, role, carrera, created_at)")
+    .eq("token_hash", tokenHash)
+    .gt("expires_at", new Date().toISOString())
+    .limit(1)
+    .single()
+
+  if (error || !data?.users) return null
+  return data.users as unknown as DbUser
 }
 
-export async function deleteSession(token: string) {
+export async function deleteSession(token: string): Promise<void> {
   const tokenHash = hashToken(token)
-  await pool.execute<ResultSetHeader>("delete from sessions where token_hash = ?", [tokenHash])
+  await supabase.from("sessions").delete().eq("token_hash", tokenHash)
 }
 
-export async function createPasswordReset(userId: string) {
+export async function createPasswordReset(userId: string): Promise<string> {
   const token = crypto.randomBytes(24).toString("base64url")
   const tokenHash = hashToken(token)
   const expiresAt = new Date(Date.now() + RESET_TTL_MINUTES * 60 * 1000)
-  const resetId = crypto.randomUUID()
 
-  await pool.execute<ResultSetHeader>(
-    "insert into password_resets (id, user_id, token_hash, expires_at) values (?, ?, ?, ?)",
-    [resetId, userId, tokenHash, expiresAt]
-  )
+  await supabase.from("password_resets").insert({
+    user_id: userId,
+    token_hash: tokenHash,
+    expires_at: expiresAt.toISOString(),
+  })
 
   return token
 }
 
-export async function resetPasswordWithToken(token: string, newPasswordHash: string) {
+export async function resetPasswordWithToken(token: string, newPasswordHash: string): Promise<boolean> {
   const tokenHash = hashToken(token)
-  const rows = await query<RowDataPacket[]>(
-    "select user_id from password_resets where token_hash = ? and expires_at > now() limit 1",
-    [tokenHash]
-  )
-  const row = rows[0]
-  if (!row?.user_id) return false
 
-  await pool.execute<ResultSetHeader>("update users set password_hash = ? where id = ?", [
-    newPasswordHash,
-    row.user_id,
-  ])
-  await pool.execute<ResultSetHeader>("delete from password_resets where user_id = ?", [row.user_id])
+  const { data, error } = await supabase
+    .from("password_resets")
+    .select("user_id")
+    .eq("token_hash", tokenHash)
+    .gt("expires_at", new Date().toISOString())
+    .single()
+
+  if (error || !data?.user_id) return false
+
+  await supabase.from("users").update({ password_hash: newPasswordHash }).eq("id", data.user_id)
+  await supabase.from("password_resets").delete().eq("user_id", data.user_id)
   return true
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { getUserBySessionToken, SESSION_COOKIE } from "@/lib/auth"
-import { query } from "@/lib/db"
+import supabase from "@/lib/db"
 
 export const runtime = "nodejs"
 
@@ -25,16 +25,19 @@ export async function GET(
 
   const { id } = await params
 
-  const rows = await query(
-    "select id, titulo, ponente, dia, hora_inicio, hora_fin, tipo, lugar, cupos_total, cupos_ocupados, descripcion, foto_ponente, perfil_profesional, afiliacion, biografia, created_at from sesiones where id = ?",
-    [id]
-  )
+  const { data, error } = await supabase
+    .from("sesiones")
+    .select(
+      "id, titulo, ponente, dia, hora_inicio, hora_fin, tipo, lugar, cupos_total, cupos_ocupados, descripcion, foto_ponente, perfil_profesional, afiliacion, biografia, created_at"
+    )
+    .eq("id", id)
+    .single()
 
-  if (!rows || rows.length === 0) {
-    return NextResponse.json({ error: "Sesión no encontrada." }, { status: 404 })
+  if (error || !data) {
+    return NextResponse.json({ error: "Sesion no encontrada." }, { status: 404 })
   }
 
-  return NextResponse.json({ data: rows[0] })
+  return NextResponse.json({ data })
 }
 
 export async function PUT(
@@ -49,55 +52,46 @@ export async function PUT(
   const { id } = await params
   const body = await request.json().catch(() => null)
 
-  // Validar que la sesión existe
-  const existing = await query(
-    "select id from sesiones where id = ?",
-    [id]
-  )
-
-  if (!existing || existing.length === 0) {
-    return NextResponse.json({ error: "Sesión no encontrada." }, { status: 404 })
-  }
-
   const titulo = String(body?.titulo ?? "").trim()
   const ponente = String(body?.ponente ?? "").trim()
-  const dia = String(body?.dia ?? "").trim()
-  const horaInicio = String(body?.hora_inicio ?? "").trim()
-  const horaFin = String(body?.hora_fin ?? "").trim()
-  const tipo = String(body?.tipo ?? "Conferencia").trim()
-  const lugar = String(body?.lugar ?? "").trim()
-  const cuposTotal = Number(body?.cupos_total ?? 0)
-  const descripcion = String(body?.descripcion ?? "").trim()
-  const fotoPonente = body?.foto_ponente ?? null
-  const perfilProfesional = String(body?.perfil_profesional ?? "").trim() || null
-  const afiliacion = String(body?.afiliacion ?? "").trim() || null
-  const biografia = String(body?.biografia ?? "").trim() || null
 
   if (!titulo || !ponente) {
     return NextResponse.json({ error: "Faltan datos requeridos." }, { status: 400 })
   }
 
-  await query(
-    "update sesiones set titulo = ?, ponente = ?, dia = ?, hora_inicio = ?, hora_fin = ?, tipo = ?, lugar = ?, cupos_total = ?, descripcion = ?, foto_ponente = ?, perfil_profesional = ?, afiliacion = ?, biografia = ? where id = ?",
-    [
+  const { count } = await supabase
+    .from("sesiones")
+    .select("id", { count: "exact", head: true })
+    .eq("id", id)
+
+  if (!count) {
+    return NextResponse.json({ error: "Sesion no encontrada." }, { status: 404 })
+  }
+
+  const { error } = await supabase
+    .from("sesiones")
+    .update({
       titulo,
       ponente,
-      dia,
-      horaInicio,
-      horaFin,
-      tipo,
-      lugar,
-      cuposTotal,
-      descripcion || null,
-      fotoPonente,
-      perfilProfesional,
-      afiliacion,
-      biografia,
-      id,
-    ]
-  )
+      dia: String(body?.dia ?? "").trim(),
+      hora_inicio: String(body?.hora_inicio ?? "").trim(),
+      hora_fin: String(body?.hora_fin ?? "").trim(),
+      tipo: String(body?.tipo ?? "Conferencia").trim(),
+      lugar: String(body?.lugar ?? "").trim(),
+      cupos_total: Number(body?.cupos_total ?? 0),
+      descripcion: String(body?.descripcion ?? "").trim() || null,
+      foto_ponente: body?.foto_ponente ?? null,
+      perfil_profesional: String(body?.perfil_profesional ?? "").trim() || null,
+      afiliacion: String(body?.afiliacion ?? "").trim() || null,
+      biografia: String(body?.biografia ?? "").trim() || null,
+    })
+    .eq("id", id)
 
-  return NextResponse.json({ ok: true, message: "Sesión actualizada exitosamente" })
+  if (error) {
+    return NextResponse.json({ error: "Error al actualizar sesion." }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true, message: "Sesion actualizada exitosamente" })
 }
 
 export async function DELETE(
@@ -111,17 +105,20 @@ export async function DELETE(
 
   const { id } = await params
 
-  // Validar que la sesión existe
-  const existing = await query(
-    "select id from sesiones where id = ?",
-    [id]
-  )
+  const { count } = await supabase
+    .from("sesiones")
+    .select("id", { count: "exact", head: true })
+    .eq("id", id)
 
-  if (!existing || existing.length === 0) {
-    return NextResponse.json({ error: "Sesión no encontrada." }, { status: 404 })
+  if (!count) {
+    return NextResponse.json({ error: "Sesion no encontrada." }, { status: 404 })
   }
 
-  await query("delete from sesiones where id = ?", [id])
+  const { error } = await supabase.from("sesiones").delete().eq("id", id)
 
-  return NextResponse.json({ ok: true, message: "Sesión eliminada exitosamente" })
+  if (error) {
+    return NextResponse.json({ error: "Error al eliminar sesion." }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true, message: "Sesion eliminada exitosamente" })
 }

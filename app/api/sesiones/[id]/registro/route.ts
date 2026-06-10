@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { getUserBySessionToken, SESSION_COOKIE } from "@/lib/auth"
-import pool from "@/lib/db"
-import type { ResultSetHeader } from "mysql2/promise"
+import supabase from "@/lib/db"
 
 export const runtime = "nodejs"
 
@@ -13,7 +12,7 @@ async function getAuthUser() {
   return await getUserBySessionToken(token)
 }
 
-// DELETE - desregistrarse de una sesión
+// DELETE - desregistrarse de una sesion
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -25,31 +24,34 @@ export async function DELETE(
 
   const { id: sesionId } = await params
 
-  try {
-    // Verificar que el usuario está registrado en esta sesión
-    const registroResult = await pool.query(
-      "SELECT id FROM user_sesiones WHERE user_id = ? AND sesion_id = ?",
-      [user.id, sesionId]
-    )
-    if (!registroResult[0] || registroResult[0].length === 0) {
-      return NextResponse.json({ error: "No estás registrado en esta sesión." }, { status: 404 })
-    }
+  const { count } = await supabase
+    .from("user_sesiones")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("sesion_id", sesionId)
 
-    // Eliminar registro
-    await pool.execute<ResultSetHeader>(
-      "DELETE FROM user_sesiones WHERE user_id = ? AND sesion_id = ?",
-      [user.id, sesionId]
-    )
-
-    // Decrementar cupos ocupados
-    await pool.execute(
-      "UPDATE sesiones SET cupos_ocupados = GREATEST(0, cupos_ocupados - 1) WHERE id = ?",
-      [sesionId]
-    )
-
-    return NextResponse.json({ ok: true })
-  } catch (error) {
-    console.error("Error desregistrando sesión:", error)
-    return NextResponse.json({ error: "Error al desregistrar sesión." }, { status: 500 })
+  if (!count || count === 0) {
+    return NextResponse.json({ error: "No estas registrado en esta sesion." }, { status: 404 })
   }
+
+  await supabase
+    .from("user_sesiones")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("sesion_id", sesionId)
+
+  const { data: sesion } = await supabase
+    .from("sesiones")
+    .select("cupos_ocupados")
+    .eq("id", sesionId)
+    .single()
+
+  if (sesion) {
+    await supabase
+      .from("sesiones")
+      .update({ cupos_ocupados: Math.max(0, sesion.cupos_ocupados - 1) })
+      .eq("id", sesionId)
+  }
+
+  return NextResponse.json({ ok: true })
 }

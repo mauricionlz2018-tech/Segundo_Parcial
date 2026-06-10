@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { getUserBySessionToken, SESSION_COOKIE, hashPassword } from "@/lib/auth"
-import { query } from "@/lib/db"
-import pool from "@/lib/db"
-import type { ResultSetHeader } from "mysql2/promise"
-import { randomUUID } from "crypto"
+import supabase from "@/lib/db"
 
 export const runtime = "nodejs"
 
@@ -23,11 +20,16 @@ export async function GET() {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 })
   }
 
-  const rows = await query(
-    "select id, email, username, full_name, carrera, role, created_at from users order by created_at desc"
-  )
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, email, username, full_name, carrera, role, created_at")
+    .order("created_at", { ascending: false })
 
-  return NextResponse.json({ data: rows })
+  if (error) {
+    return NextResponse.json({ error: "Error al obtener usuarios." }, { status: 500 })
+  }
+
+  return NextResponse.json({ data })
 }
 
 export async function DELETE(request: Request) {
@@ -44,20 +46,17 @@ export async function DELETE(request: Request) {
   }
 
   if (userId === admin.id) {
-    return NextResponse.json(
-      { error: "No puedes eliminar tu propia cuenta." },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: "No puedes eliminar tu propia cuenta." }, { status: 400 })
   }
 
-  await pool.execute<ResultSetHeader>("DELETE FROM sessions WHERE user_id = ?", [userId])
+  // sessions se elimina en cascada por FK
+  const { error } = await supabase.from("users").delete().eq("id", userId)
 
-  await pool.execute<ResultSetHeader>("DELETE FROM users WHERE id = ?", [userId])
+  if (error) {
+    return NextResponse.json({ error: "Error al eliminar usuario." }, { status: 500 })
+  }
 
-  return NextResponse.json({
-    ok: true,
-    message: "Usuario eliminado exitosamente.",
-  })
+  return NextResponse.json({ ok: true, message: "Usuario eliminado exitosamente." })
 }
 
 export async function POST(request: Request) {
@@ -71,76 +70,48 @@ export async function POST(request: Request) {
 
   if (!email || !username || !full_name || !password || !role) {
     return NextResponse.json(
-      { error: "Email, usuario, nombre, contraseña y rol son requeridos." },
+      { error: "Email, usuario, nombre, contrasena y rol son requeridos." },
       { status: 400 }
     )
   }
 
   if (password.length < 6) {
-    return NextResponse.json(
-      { error: "La contraseña debe tener al menos 6 caracteres." },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: "La contrasena debe tener al menos 6 caracteres." }, { status: 400 })
   }
 
   if (role !== "admin" && role !== "alumno") {
-    return NextResponse.json(
-      { error: "El rol debe ser 'admin' o 'alumno'." },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: "El rol debe ser 'admin' o 'alumno'." }, { status: 400 })
   }
 
-  const [existingEmail] = await pool.execute(
-    "SELECT id FROM users WHERE email = ? LIMIT 1",
-    [email]
-  )
-  if (Array.isArray(existingEmail) && existingEmail.length > 0) {
-    return NextResponse.json(
-      { error: "El email ya está registrado." },
-      { status: 400 }
-    )
+  const { count: emailCount } = await supabase
+    .from("users")
+    .select("id", { count: "exact", head: true })
+    .eq("email", email)
+
+  if ((emailCount ?? 0) > 0) {
+    return NextResponse.json({ error: "El email ya esta registrado." }, { status: 400 })
   }
 
-  const [existingUsername] = await pool.execute(
-    "SELECT id FROM users WHERE username = ? LIMIT 1",
-    [username]
-  )
-  if (Array.isArray(existingUsername) && existingUsername.length > 0) {
-    return NextResponse.json(
-      { error: "El usuario ya está registrado." },
-      { status: 400 }
-    )
+  const { count: usernameCount } = await supabase
+    .from("users")
+    .select("id", { count: "exact", head: true })
+    .eq("username", username)
+
+  if ((usernameCount ?? 0) > 0) {
+    return NextResponse.json({ error: "El usuario ya esta registrado." }, { status: 400 })
   }
 
-  try {
-    const passwordHash = await hashPassword(password)
-    const userId = randomUUID()
+  const passwordHash = await hashPassword(password)
 
-    const [result] = await pool.execute<ResultSetHeader>(
-      "INSERT INTO users (id, email, username, full_name, carrera, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
-      [userId, email, username, full_name, carrera || null, passwordHash, role]
-    )
+  const { data, error } = await supabase
+    .from("users")
+    .insert({ email, username, full_name, carrera: carrera || null, password_hash: passwordHash, role })
+    .select("id, email, username, full_name, carrera, role")
+    .single()
 
-    return NextResponse.json(
-      {
-        ok: true,
-        message: "Usuario creado exitosamente.",
-        user: {
-          id: userId,
-          email,
-          username,
-          full_name,
-          carrera,
-          role,
-        },
-      },
-      { status: 201 }
-    )
-  } catch (error) {
-    console.error("Error al crear usuario:", error)
-    return NextResponse.json(
-      { error: "Error al crear el usuario." },
-      { status: 500 }
-    )
+  if (error) {
+    return NextResponse.json({ error: "Error al crear el usuario." }, { status: 500 })
   }
+
+  return NextResponse.json({ ok: true, message: "Usuario creado exitosamente.", user: data }, { status: 201 })
 }

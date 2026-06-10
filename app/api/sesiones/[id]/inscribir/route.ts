@@ -1,126 +1,89 @@
 import { NextResponse } from "next/server"
-import pool from "@/lib/db"
-import { v4 as uuid } from "uuid"
+import supabase from "@/lib/db"
 
-export const runtime = "nodejs"
-
-// GET: Verificar si el usuario está inscrito
+// GET: Verificar si el usuario esta inscrito
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id: sesionId } = await params
-    const url = new URL(request.url)
-    const userId = url.searchParams.get("userId")
+  const { id: sesionId } = await params
+  const url = new URL(request.url)
+  const userId = url.searchParams.get("userId")
 
-    if (!userId || !sesionId) {
-      return NextResponse.json({ error: "Parámetros faltantes" }, { status: 400 })
-    }
-
-    const [result] = await pool.query<any>(
-      `SELECT COUNT(*) as inscrito FROM user_sesiones 
-       WHERE user_id = ? AND sesion_id = ?`,
-      [userId, sesionId]
-    )
-
-    const inscrito = (result as any[])[0]?.inscrito === 1
-
-    return NextResponse.json({
-      inscrito,
-    })
-  } catch (error) {
-    console.error("Error verificando inscripción:", error)
-    return NextResponse.json({ error: "Error al verificar inscripción" }, { status: 500 })
+  if (!userId || !sesionId) {
+    return NextResponse.json({ error: "Parametros faltantes" }, { status: 400 })
   }
+
+  const { count, error } = await supabase
+    .from("user_sesiones")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("sesion_id", sesionId)
+
+  if (error) {
+    return NextResponse.json({ error: "Error al verificar inscripcion" }, { status: 500 })
+  }
+
+  return NextResponse.json({ inscrito: (count ?? 0) > 0 })
 }
 
-// POST: Inscribirse en sesión
+// POST: Inscribirse en sesion
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id: sesionId } = await params
-    const body = await request.json().catch(() => ({}))
-    const userId = body.userId
+  const { id: sesionId } = await params
+  const body = await request.json().catch(() => ({}))
+  const userId = body.userId
 
-    console.log("📋 POST /inscribir:", { userId, sesionId })
-
-    if (!userId || !sesionId) {
-      console.log("❌ Parámetros faltantes:", { userId, sesionId })
-      return NextResponse.json({ error: "Parámetros faltantes" }, { status: 400 })
-    }
-
-    // Verificar si ya está inscrito
-    const [existing] = await pool.query(
-      `SELECT id FROM user_sesiones 
-       WHERE user_id = ? AND sesion_id = ?`,
-      [userId, sesionId]
-    )
-
-    console.log("🔍 Ya inscrito?:", (existing as any[]).length > 0)
-
-    if ((existing as any[]).length > 0) {
-      return NextResponse.json(
-        { error: "Ya estás inscrito en esta sesión" },
-        { status: 409 }
-      )
-    }
-
-    // Verificar que la sesión existe y tiene cupos
-    const [sesion] = await pool.query<any>(
-      `SELECT id, titulo, cupos_total, cupos_ocupados, dia, hora_inicio 
-       FROM sesiones WHERE id = ?`,
-      [sesionId]
-    )
-
-    console.log("📊 Sesión encontrada:", sesion.length > 0 ? "Sí" : "No")
-
-    if (sesion.length === 0) {
-      console.log("❌ Sesión no encontrada")
-      return NextResponse.json({ error: "Sesión no encontrada" }, { status: 404 })
-    }
-
-    const { cupos_total, cupos_ocupados } = sesion[0]
-    if (cupos_ocupados >= cupos_total) {
-      console.log("❌ Sin cupos disponibles")
-      return NextResponse.json(
-        { error: "No hay cupos disponibles en esta sesión" },
-        { status: 409 }
-      )
-    }
-
-    // Inscribir usuario
-    const inscripcionId = uuid()
-    console.log("📝 Insertando inscripción:", { inscripcionId, userId, sesionId })
-    
-    await pool.query(
-      `INSERT INTO user_sesiones (id, user_id, sesion_id) 
-       VALUES (?, ?, ?)`,
-      [inscripcionId, userId, sesionId]
-    )
-
-    console.log("✅ Inscripción insertada")
-
-    // Actualizar cupos
-    await pool.query(
-      `UPDATE sesiones SET cupos_ocupados = cupos_ocupados + 1 
-       WHERE id = ?`,
-      [sesionId]
-    )
-
-    console.log("✅ Cupos actualizados")
-
-    return NextResponse.json({
-      success: true,
-      message: "Inscripción exitosa",
-      inscripcionId,
-    })
-  } catch (error) {
-    console.error("❌ ERROR EN POST /inscribir:", error)
-    return NextResponse.json({ error: "Error al inscribirse", details: String(error) }, { status: 500 })
+  if (!userId || !sesionId) {
+    return NextResponse.json({ error: "Parametros faltantes" }, { status: 400 })
   }
+
+  // Verificar si ya esta inscrito
+  const { count: yaInscrito } = await supabase
+    .from("user_sesiones")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("sesion_id", sesionId)
+
+  if ((yaInscrito ?? 0) > 0) {
+    return NextResponse.json({ error: "Ya estas inscrito en esta sesion" }, { status: 409 })
+  }
+
+  // Verificar que la sesion existe y tiene cupos
+  const { data: sesion, error: sesionError } = await supabase
+    .from("sesiones")
+    .select("id, cupos_total, cupos_ocupados")
+    .eq("id", sesionId)
+    .single()
+
+  if (sesionError || !sesion) {
+    return NextResponse.json({ error: "Sesion no encontrada" }, { status: 404 })
+  }
+
+  if (sesion.cupos_ocupados >= sesion.cupos_total) {
+    return NextResponse.json({ error: "No hay cupos disponibles en esta sesion" }, { status: 409 })
+  }
+
+  // Inscribir usuario
+  const { data: inscripcion, error: insError } = await supabase
+    .from("user_sesiones")
+    .insert({ user_id: userId, sesion_id: sesionId })
+    .select("id")
+    .single()
+
+  if (insError) {
+    return NextResponse.json({ error: "Error al inscribirse", details: insError.message }, { status: 500 })
+  }
+
+  // Actualizar cupos
+  await supabase
+    .from("sesiones")
+    .update({ cupos_ocupados: sesion.cupos_ocupados + 1 })
+    .eq("id", sesionId)
+
+  return NextResponse.json({ success: true, message: "Inscripcion exitosa", inscripcionId: inscripcion.id })
 }
 
 // DELETE: Desinscribirse
@@ -128,35 +91,33 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id: sesionId } = await params
-    const url = new URL(request.url)
-    const userId = url.searchParams.get("userId")
+  const { id: sesionId } = await params
+  const url = new URL(request.url)
+  const userId = url.searchParams.get("userId")
 
-    if (!userId || !sesionId) {
-      return NextResponse.json({ error: "Parámetros faltantes" }, { status: 400 })
-    }
-
-    // Eliminar inscripción
-    const result = await pool.query(
-      `DELETE FROM user_sesiones 
-       WHERE user_id = ? AND sesion_id = ?`,
-      [userId, sesionId]
-    )
-
-    // Reducir cupos
-    await pool.query(
-      `UPDATE sesiones SET cupos_ocupados = GREATEST(0, cupos_ocupados - 1) 
-       WHERE id = ?`,
-      [sesionId]
-    )
-
-    return NextResponse.json({
-      success: true,
-      message: "Desinscripción exitosa",
-    })
-  } catch (error) {
-    console.error("Error al desinscribirse:", error)
-    return NextResponse.json({ error: "Error al desinscribirse" }, { status: 500 })
+  if (!userId || !sesionId) {
+    return NextResponse.json({ error: "Parametros faltantes" }, { status: 400 })
   }
+
+  await supabase
+    .from("user_sesiones")
+    .delete()
+    .eq("user_id", userId)
+    .eq("sesion_id", sesionId)
+
+  // Decrementar cupos
+  const { data: sesion } = await supabase
+    .from("sesiones")
+    .select("cupos_ocupados")
+    .eq("id", sesionId)
+    .single()
+
+  if (sesion) {
+    await supabase
+      .from("sesiones")
+      .update({ cupos_ocupados: Math.max(0, sesion.cupos_ocupados - 1) })
+      .eq("id", sesionId)
+  }
+
+  return NextResponse.json({ success: true, message: "Desinscripcion exitosa" })
 }

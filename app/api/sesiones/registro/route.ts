@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import crypto from "crypto"
 import { getUserBySessionToken, SESSION_COOKIE } from "@/lib/auth"
-import pool from "@/lib/db"
-import type { ResultSetHeader } from "mysql2/promise"
+import supabase from "@/lib/db"
 
 export const runtime = "nodejs"
 
@@ -21,19 +19,25 @@ export async function GET() {
     return NextResponse.json({ error: "No autenticado." }, { status: 401 })
   }
 
-  const result = await pool.query(
-    `SELECT s.*, us.registered_at 
-     FROM sesiones s
-     INNER JOIN user_sesiones us ON s.id = us.sesion_id
-     WHERE us.user_id = ?
-     ORDER BY s.dia, s.hora_inicio`,
-    [user.id]
-  )
+  const { data, error } = await supabase
+    .from("user_sesiones")
+    .select("registered_at, sesiones(*)")
+    .eq("user_id", user.id)
+    .order("sesiones(dia)", { ascending: true })
 
-  return NextResponse.json({ data: result[0] || [] })
+  if (error) {
+    return NextResponse.json({ error: "Error al obtener sesiones." }, { status: 500 })
+  }
+
+  const sesiones = (data ?? []).map((row: any) => ({
+    ...row.sesiones,
+    registered_at: row.registered_at,
+  }))
+
+  return NextResponse.json({ data: sesiones })
 }
 
-// POST - registrarse en una sesión
+// POST - registrarse en una sesion
 export async function POST(request: Request) {
   const user = await getAuthUser()
   if (!user) {
@@ -44,43 +48,39 @@ export async function POST(request: Request) {
   const sesionId = String(body?.sesionId ?? "").trim()
 
   if (!sesionId) {
-    return NextResponse.json({ error: "ID de sesión requerido." }, { status: 400 })
+    return NextResponse.json({ error: "ID de sesion requerido." }, { status: 400 })
   }
 
-  try {
-    // Verificar que la sesión existe
-    const [sesionResult] = await pool.query(
-      "SELECT id FROM sesiones WHERE id = ?",
-      [sesionId]
-    )
-    if (!sesionResult || sesionResult.length === 0) {
-      return NextResponse.json({ error: "Sesión no encontrada." }, { status: 404 })
-    }
+  const { count: sesionCount } = await supabase
+    .from("sesiones")
+    .select("id", { count: "exact", head: true })
+    .eq("id", sesionId)
 
-    const [registroResult] = await pool.query(
-      "SELECT id FROM user_sesiones WHERE user_id = ? AND sesion_id = ?",
-      [user.id, sesionId]
-    )
-    if (registroResult[0] && registroResult[0].length > 0) {
-      return NextResponse.json({ error: "Ya estás registrado en esta sesión." }, { status: 409 })
-    }
-
-    // Registrar usuario en sesión
-    const id = crypto.randomUUID()
-    await pool.execute<ResultSetHeader>(
-      "INSERT INTO user_sesiones (id, user_id, sesion_id) VALUES (?, ?, ?)",
-      [id, user.id, sesionId]
-    )
-
-    // Incrementar cupos ocupados
-    await pool.execute(
-      "UPDATE sesiones SET cupos_ocupados = cupos_ocupados + 1 WHERE id = ?",
-      [sesionId]
-    )
-
-    return NextResponse.json({ ok: true, id })
-  } catch (error) {
-    console.error("Error registrando sesión:", error)
-    return NextResponse.json({ error: "Error al registrar sesión." }, { status: 500 })
+  if (!sesionCount) {
+    return NextResponse.json({ error: "Sesion no encontrada." }, { status: 404 })
   }
+
+  const { count: yainscrito } = await supabase
+    .from("user_sesiones")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("sesion_id", sesionId)
+
+  if (yainscrito && yainscrito > 0) {
+    return NextResponse.json({ error: "Ya estas registrado en esta sesion." }, { status: 409 })
+  }
+
+  const { data: inscripcion, error: insError } = await supabase
+    .from("user_sesiones")
+    .insert({ user_id: user.id, sesion_id: sesionId })
+    .select("id")
+    .single()
+
+  if (insError) {
+    return NextResponse.json({ error: "Error al registrar sesion." }, { status: 500 })
+  }
+
+  await supabase.rpc("incrementar_cupos", { sesion_id: sesionId })
+
+  return NextResponse.json({ ok: true, id: inscripcion.id })
 }

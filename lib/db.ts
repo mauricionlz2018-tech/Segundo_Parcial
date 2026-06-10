@@ -1,35 +1,23 @@
-import mysql from "mysql2/promise"
+import { createClient } from "@supabase/supabase-js"
 
-type GlobalPool = typeof globalThis & { mysqlPool?: mysql.Pool }
+type GlobalSupabase = typeof globalThis & { supabaseAdmin?: ReturnType<typeof createClient> }
 
-const globalForMysql = globalThis as GlobalPool
+const globalForSupabase = globalThis as GlobalSupabase
 
-const pool =
-  globalForMysql.mysqlPool ??
-  mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    port: Number(process.env.DB_PORT ?? 4000),
-    connectionLimit: 10,
-    waitForConnections: true,
-    queueLimit: 0,
-    enableKeepAlive: true,
-    keepAliveInitialDelay: 0,
-    ssl: {
-      rejectUnauthorized: true,
-      minVersion: "TLSv1.2",
-    },
-  })
+/**
+ * Cliente de Supabase con la service_role key para operaciones del servidor
+ * (bypassa RLS, solo usar en API routes y server actions)
+ */
+export const supabase =
+  globalForSupabase.supabaseAdmin ??
+  createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  )
 
 if (process.env.NODE_ENV !== "production") {
-  globalForMysql.mysqlPool = pool
+  globalForSupabase.supabaseAdmin = supabase
 }
 
-export default pool
-
-export async function query<T = mysql.RowDataPacket[]>(sql: string, params: unknown[] = []) {
-  const [rows] = await pool.execute(sql, params)
-  return rows as T
-}
+export default supabase
