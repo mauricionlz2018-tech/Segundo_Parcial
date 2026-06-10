@@ -15,7 +15,7 @@ const playfair = Playfair_Display({
   variable: '--font-playfair',
 })
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://segundo-parcial.vercel.app'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://jornada-academica-cultural.vercel.app'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

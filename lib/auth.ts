@@ -32,7 +32,7 @@ export async function findUserByEmailOrUsername(value: string): Promise<(DbUser 
   const { data, error } = await supabase
     .from("users")
     .select("id, email, username, full_name, role, carrera, created_at, password_hash")
-    .or(`email.eq.${value},username.eq.${value}`)
+    .or(`email.eq."${value}",username.eq."${value}"`)
     .limit(1)
     .single()
 
