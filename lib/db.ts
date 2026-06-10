@@ -20,6 +20,16 @@ function createSupabaseAdmin() {
   })
 }
 
-export const supabase = createSupabaseAdmin()
+/**
+ * Proxy que crea un cliente fresco en cada acceso.
+ * Garantiza que process.env este disponible en runtime de Vercel serverless,
+ * no en build-time donde las variables pueden estar ausentes.
+ */
+export const supabase = new Proxy({} as ReturnType<typeof createSupabaseAdmin>, {
+  get(_target, prop: string) {
+    const client = createSupabaseAdmin()
+    return (client as Record<string, unknown>)[prop]
+  },
+})
 
 export default supabase
