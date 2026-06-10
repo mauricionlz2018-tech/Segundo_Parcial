@@ -29,15 +29,27 @@ export async function verifyPassword(password: string, hash: string) {
 }
 
 export async function findUserByEmailOrUsername(value: string): Promise<(DbUser & { password_hash: string }) | null> {
-  const { data, error } = await supabase
+  // Buscar primero por email
+  const { data: byEmail } = await supabase
     .from("users")
     .select("id, email, username, full_name, role, carrera, created_at, password_hash")
-    .or(`email.eq."${value}",username.eq."${value}"`)
+    .eq("email", value)
     .limit(1)
-    .single()
+    .maybeSingle()
 
-  if (error || !data) return null
-  return data as DbUser & { password_hash: string }
+  if (byEmail) return byEmail as DbUser & { password_hash: string }
+
+  // Si no se encontró por email, buscar por username
+  const { data: byUsername } = await supabase
+    .from("users")
+    .select("id, email, username, full_name, role, carrera, created_at, password_hash")
+    .eq("username", value)
+    .limit(1)
+    .maybeSingle()
+
+  if (byUsername) return byUsername as DbUser & { password_hash: string }
+
+  return null
 }
 
 export async function findUserById(id: string): Promise<(DbUser & { password_hash: string }) | null> {
@@ -97,11 +109,13 @@ export async function createSession(userId: string): Promise<{ token: string; ex
   const tokenHash = hashToken(token)
   const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000)
 
-  await supabase.from("sessions").insert({
+  const { error } = await supabase.from("sessions").insert({
     user_id: userId,
     token_hash: tokenHash,
     expires_at: expiresAt.toISOString(),
   })
+
+  if (error) throw new Error(`Error creando sesion: ${error.message}`)
 
   return { token, expiresAt }
 }
