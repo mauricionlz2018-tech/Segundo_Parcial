@@ -750,43 +750,43 @@ export default function AdminPage() {
                 RINCÓN
               </div>
             </div>
-            <nav className="mt-6 flex flex-col gap-2 text-sm">
-              <button
-                onClick={() => setActive("panel")}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg ${active === "panel" ? "bg-[#EAFBE2] dark:bg-[#10B981]/20 text-[#0F6B44] dark:text-[#10B981]" : "text-gray-500 dark:text-gray-400 hover:text-[#0F6B44] dark:hover:text-[#10B981]"}`}
-              >
-                <LayoutGrid size={14} />
-                Panel de Control
-              </button>
-              <button
-                onClick={() => setActive("sesiones")}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg ${active === "sesiones" ? "bg-[#EAFBE2] text-[#0F6B44]" : "text-gray-500 hover:text-[#0F6B44]"}`}
-              >
-                <CalendarDays size={14} />
-                Sesiones
-              </button>
-              <button
-                onClick={() => setActive("ponentes")}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg ${active === "ponentes" ? "bg-[#EAFBE2] dark:bg-[#10B981]/20 text-[#0F6B44] dark:text-[#10B981]" : "text-gray-500 dark:text-gray-400 hover:text-[#0F6B44] dark:hover:text-[#10B981]"}`}
-              >
-                <Users size={14} />
-                Ponentes
-              </button>
-              <button
-                onClick={() => setActive("usuarios")}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg ${active === "usuarios" ? "bg-[#EAFBE2] dark:bg-[#10B981]/20 text-[#0F6B44] dark:text-[#10B981]" : "text-gray-500 dark:text-gray-400 hover:text-[#0F6B44] dark:hover:text-[#10B981]"}`}
-              >
-                <Users size={14} />
-                Usuarios
-              </button>
-              <button
-                onClick={() => setActive("espacios")}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg ${active === "espacios" ? "bg-[#EAFBE2] dark:bg-[#10B981]/20 text-[#0F6B44] dark:text-[#10B981]" : "text-gray-500 dark:text-gray-400 hover:text-[#0F6B44] dark:hover:text-[#10B981]"}`}
-              >
-                <MapPin size={14} />
-                Espacios
-              </button>
-            </nav>
+              <nav className="mt-6 flex flex-col gap-2 text-sm">
+                <button
+                  onClick={() => setActive("panel")}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer ${active === "panel" ? "bg-[#EAFBE2] dark:bg-[#10B981]/20 text-[#0F6B44] dark:text-[#10B981]" : "text-gray-500 dark:text-gray-400 hover:text-[#0F6B44] dark:hover:text-[#10B981]"}`}
+                >
+                  <LayoutGrid size={14} />
+                  Panel de Control
+                </button>
+                <button
+                  onClick={() => setActive("sesiones")}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer ${active === "sesiones" ? "bg-[#EAFBE2] text-[#0F6B44]" : "text-gray-500 hover:text-[#0F6B44]"}`}
+                >
+                  <CalendarDays size={14} />
+                  Sesiones
+                </button>
+                <button
+                  onClick={() => setActive("ponentes")}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer ${active === "ponentes" ? "bg-[#EAFBE2] dark:bg-[#10B981]/20 text-[#0F6B44] dark:text-[#10B981]" : "text-gray-500 dark:text-gray-400 hover:text-[#0F6B44] dark:hover:text-[#10B981]"}`}
+                >
+                  <Users size={14} />
+                  Ponentes
+                </button>
+                <button
+                  onClick={() => setActive("usuarios")}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer ${active === "usuarios" ? "bg-[#EAFBE2] dark:bg-[#10B981]/20 text-[#0F6B44] dark:text-[#10B981]" : "text-gray-500 dark:text-gray-400 hover:text-[#0F6B44] dark:hover:text-[#10B981]"}`}
+                >
+                  <Users size={14} />
+                  Usuarios
+                </button>
+                <button
+                  onClick={() => setActive("espacios")}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer ${active === "espacios" ? "bg-[#EAFBE2] dark:bg-[#10B981]/20 text-[#0F6B44] dark:text-[#10B981]" : "text-gray-500 dark:text-gray-400 hover:text-[#0F6B44] dark:hover:text-[#10B981]"}`}
+                >
+                  <MapPin size={14} />
+                  Espacios
+                </button>
+              </nav>
           </div>
 
           <div className="px-6 pb-6">
@@ -2599,7 +2599,7 @@ export default function AdminPage() {
             <div className="bg-gradient-to-r from-[#0F6B44] to-[#10B981] px-5 py-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-white">Notificaciones</h3>
-                <button onClick={() => setShowNotifications(false)} className="text-white hover:bg-white/20 p-1 rounded">
+                <button onClick={() => setShowNotifications(false)} className="text-white hover:bg-white/20 p-1 rounded cursor-pointer">
                   <X size={14} />
                 </button>
               </div>

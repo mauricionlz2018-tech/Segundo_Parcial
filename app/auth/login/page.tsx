@@ -73,7 +73,7 @@ export default function LoginPage() {
       {/* Boton de regreso */}
       <button
         onClick={() => window.location.href = '/'}
-        className="absolute top-6 left-6 z-20 p-2 rounded-lg bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-700 transition-colors backdrop-blur-sm"
+        className="absolute top-6 left-6 z-20 p-2 rounded-lg bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-700 transition-colors backdrop-blur-sm cursor-pointer"
         aria-label="Regresar a la pagina principal"
       >
         <ArrowLeft size={20} className="text-[#1A1B22] dark:text-white" />
@@ -144,7 +144,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className={`absolute right-3 top-1/2 -translate-y-1/2 hover:text-gray-600 dark:hover:text-gray-300 transition-all ${
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 hover:text-gray-600 dark:hover:text-gray-300 transition-all cursor-pointer ${
                     showPassword
                       ? "text-gray-600 dark:text-gray-300"
                       : "text-gray-400 dark:text-gray-500"
@@ -170,7 +170,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={handleResetPassword}
-                className="text-xs text-[#065F46] dark:text-[#10B981] hover:underline font-medium"
+                className="text-xs text-[#065F46] dark:text-[#10B981] hover:underline font-medium cursor-pointer"
               >
                 ¿Olvidaste tu contraseña?
               </button>
@@ -187,7 +187,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-lg text-sm font-bold text-black dark:text-white transition-opacity disabled:opacity-60 mt-1 bg-[#64FC05] dark:bg-[#10B981] hover:opacity-90"
+              className="w-full py-3 rounded-lg text-sm font-bold text-black dark:text-white transition-opacity disabled:opacity-60 mt-1 bg-[#64FC05] dark:bg-[#10B981] hover:opacity-90 cursor-pointer"
             >
               {loading ? "Ingresando..." : "Ingresar al sistema"}
             </button>
@@ -205,7 +205,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => window.location.href = '/'}
-              className="w-full py-2 rounded-lg text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+              className="w-full py-2 rounded-lg text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               Volver a pagina principal
             </button>

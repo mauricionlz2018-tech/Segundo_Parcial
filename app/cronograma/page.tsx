@@ -216,7 +216,7 @@ export default function CronogramaPage() {
             <div className="mt-6">
               <button
                 onClick={downloadPDF}
-                className="px-5 py-2.5 rounded-lg text-sm font-bold text-white border border-white/40 hover:bg-white/10 transition"
+                className="px-5 py-2.5 rounded-lg text-sm font-bold text-white border border-white/40 hover:bg-white/10 transition cursor-pointer"
                 style={{ backgroundColor: "#006341" }}
               >
                 Descargar Programa PDF
@@ -280,7 +280,7 @@ export default function CronogramaPage() {
             <div className="flex gap-2 overflow-x-auto pb-2">
               <button
                 onClick={() => setDiaActivo("todos")}
-                className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
                   diaActivo === "todos" ? "text-white" : "text-gray-600 dark:text-gray-400 bg-white dark:bg-slate-800"
                 }`}
                 style={{ backgroundColor: diaActivo === "todos" ? "#064E3B" : undefined }}
@@ -291,7 +291,7 @@ export default function CronogramaPage() {
                 <button
                   key={dia}
                   onClick={() => setDiaActivo(dia)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
                     diaActivo === dia ? "text-white" : "text-gray-600 dark:text-gray-400 bg-white dark:bg-slate-800"
                   }`}
                   style={{ backgroundColor: diaActivo === dia ? "#064E3B" : undefined }}
@@ -341,7 +341,7 @@ export default function CronogramaPage() {
                          biografia: null,
                          foto: null,
                        })}
-                       className="text-[#0F6B44] dark:text-[#10B981] hover:underline font-semibold"
+                        className="text-[#0F6B44] dark:text-[#10B981] hover:underline font-semibold cursor-pointer"
                        type="button"
                      >
                        {evento.ponente}
@@ -356,7 +356,7 @@ export default function CronogramaPage() {
                     <button
                       onClick={() => toggleAgenda(evento.id)}
                       disabled={inscribiendo === evento.id}
-                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition disabled:opacity-50 ${
+                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition disabled:opacity-50 cursor-pointer ${
                         sesionesInscritas.has(evento.id)
                           ? "text-white"
                           : "text-[#065F46] border border-[#065F46] hover:bg-green-50 dark:hover:bg-green-950/30"
@@ -391,7 +391,7 @@ export default function CronogramaPage() {
               </h2>
               <button
                 onClick={() => setViewingPonente(null)}
-                className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer"
               >
                 <X size={20} />
               </button>

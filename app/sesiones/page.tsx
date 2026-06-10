@@ -312,7 +312,7 @@ export default function SesionesPage() {
                                   biografia: sesion.descripcion,
                                   foto: sesion.perfil_profesional ? null : null,
                                 })}
-                                className="font-semibold text-[#0F6B44] dark:text-[#10B981] hover:underline"
+                                className="font-semibold text-[#0F6B44] dark:text-[#10B981] hover:underline cursor-pointer"
                                 type="button"
                               >
                                 {sesion.ponente}
@@ -419,7 +419,7 @@ export default function SesionesPage() {
                                   biografia: sesion.descripcion,
                                   foto: null,
                                 })}
-                                className="font-semibold text-[#0F6B44] dark:text-[#10B981] hover:underline"
+                                className="font-semibold text-[#0F6B44] dark:text-[#10B981] hover:underline cursor-pointer"
                                 type="button"
                               >
                                 {sesion.ponente}

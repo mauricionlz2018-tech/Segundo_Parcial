@@ -186,7 +186,7 @@ export default function PerfilPage() {
         <div className="pt-20 flex items-center justify-center h-[400px]">
           <div className="text-center">
             <p className="text-gray-500">Error al cargar tu perfil</p>
-            <Link href="/" className="text-[#065F46] font-semibold hover:underline mt-2 inline-block">
+            <Link href="/" className="text-[#065F46] font-semibold hover:underline mt-2 inline-block cursor-pointer">
               Volver al inicio
             </Link>
           </div>
@@ -311,7 +311,7 @@ export default function PerfilPage() {
                   <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition disabled:opacity-50 cursor-pointer"
                     style={{ backgroundColor: "#065F46" }}
                   >
                     <Save size={16} />
@@ -325,20 +325,20 @@ export default function PerfilPage() {
                         carrera: usuario.carrera || "",
                       })
                     }}
-                    className="px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                    className="px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
                   >
                     Cancelar
                   </button>
                 </>
               ) : (
-                <button
-                  onClick={() => setEditMode(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition"
-                  style={{ backgroundColor: "#065F46" }}
-                >
-                  <User size={16} />
-                  Editar Perfil
-                </button>
+              <button
+                onClick={() => setEditMode(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition cursor-pointer"
+                style={{ backgroundColor: "#065F46" }}
+              >
+                <User size={16} />
+                Editar Perfil
+              </button>
               )}
             </div>
           </div>
@@ -437,7 +437,7 @@ export default function PerfilPage() {
                         setShowDeleteConfirm(false)
                         setDeleteConfirmEmail("")
                       }}
-                      className="px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                      className="px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
                     >
                       Cancelar
                     </button>
