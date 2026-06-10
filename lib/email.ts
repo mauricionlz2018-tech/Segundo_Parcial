@@ -1,16 +1,18 @@
 import nodemailer from "nodemailer"
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-})
+function getTransporter() {
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  })
+}
 
 export async function sendEmail(to: string, subject: string, html: string) {
   try {
-    const result = await transporter.sendMail({
+    const result = await getTransporter().sendMail({
       from: process.env.GMAIL_USER,
       to,
       subject,
@@ -151,10 +153,10 @@ export async function sendPasswordResetEmail(email: string, resetToken: string, 
     console.log(`   FROM: ${process.env.GMAIL_USER}`)
     console.log(`   TO: ${email}`)
     
-    const result = await transporter.sendMail({
+    const result = await getTransporter().sendMail({
       from: process.env.GMAIL_USER,
       to: email,
-      subject: " Recuperación de Contraseña - UES",
+      subject: "Recuperación de Contraseña - UES",
       html: htmlContent,
     })
 
@@ -325,7 +327,7 @@ Si no creaste esta cuenta, contáctanos inmediatamente.
     console.log(`   FROM: ${process.env.GMAIL_USER}`)
     console.log(`   TO: ${email}`)
     
-    const result = await transporter.sendMail({
+    const result = await getTransporter().sendMail({
       from: process.env.GMAIL_USER,
       to: email,
       subject: "Bienvenido a UES - Tus credenciales de acceso",
@@ -460,7 +462,7 @@ export async function sendUpcomingSessionAlert(
     console.log(`   TO: ${email}`)
     console.log(`   Sesión: ${sessionName} - ${formatDate(sessionDate)} ${sessionTime}`)
     
-    const result = await transporter.sendMail({
+    const result = await getTransporter().sendMail({
       from: process.env.GMAIL_USER,
       to: email,
       subject: `Recordatorio: Sesión próxima - ${sessionName}`,
