@@ -1,66 +1,58 @@
 import { NextResponse } from "next/server"
-import pool from "@/lib/db"
+import supabase from "@/lib/db"
 import { sendUpcomingSessionAlert } from "@/lib/email"
 
 export const runtime = "nodejs"
 
 // Este endpoint puede ser llamado por un cron job o manualmente
-export async function POST(request: Request) {
+export async function POST() {
   try {
-    console.log("Iniciando envío de alertas de sesiones próximas...")
-
-    // Obtener la fecha actual y dentro de 7 días
     const today = new Date()
     const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
 
-    // Obtener todas las sesiones que están próximas
-    const sessions = await pool.query<any>(
-      `SELECT s.*, u.email, u.full_name
-       FROM sesiones s
-       JOIN usuarios u ON s.user_id = u.id
-       WHERE s.fecha >= DATE(?) AND s.fecha <= DATE(?)
-       AND s.notificacion_enviada = 0`,
-      [today.toISOString().split("T")[0], nextWeek.toISOString().split("T")[0]]
+    const todayStr = today.toISOString().split("T")[0]
+    const nextWeekStr = nextWeek.toISOString().split("T")[0]
+
+    // Obtener inscripciones con datos de sesion y usuario para sesiones próximas
+    const { data: inscripciones, error } = await supabase
+      .from("user_sesiones")
+      .select("users(id, email, full_name), sesiones(id, titulo, dia, hora_inicio, lugar)")
+      .gte("sesiones.dia", todayStr)
+      .lte("sesiones.dia", nextWeekStr)
+
+    if (error) throw error
+
+    const sessions = (inscripciones ?? []).filter(
+      (i) => i.users && i.sesiones
     )
 
-    console.log(`Se encontraron ${sessions.length} sesiones próximas`)
-
     let sent = 0
-    for (const session of sessions) {
+    for (const item of sessions) {
+      const user = item.users as { email: string; full_name: string | null }
+      const sesion = item.sesiones as { id: string; titulo: string; dia: string; hora_inicio: string }
+
       try {
-        console.log(`Enviando alerta para: ${session.full_name} (${session.email})`)
         await sendUpcomingSessionAlert(
-          session.email,
-          session.full_name || session.username,
-          session.nombre_sesion || "Sesión",
-          new Date(session.fecha),
-          session.hora
+          user.email,
+          user.full_name ?? user.email,
+          sesion.titulo,
+          new Date(sesion.dia),
+          sesion.hora_inicio
         )
-
-        // Marcar como enviada
-        await pool.execute(
-          `UPDATE sesiones SET notificacion_enviada = 1 WHERE id = ?`,
-          [session.id]
-        )
-
         sent++
-      } catch (error) {
-        console.error(`Error enviando alerta para sesión ${session.id}:`, error)
+      } catch (err) {
+        console.error(`Error enviando alerta para sesion ${sesion.id}:`, err)
       }
     }
 
-    console.log(`Se enviaron ${sent} alertas exitosamente`)
-    return NextResponse.json({ 
-      success: true, 
-      message: `Se enviaron ${sent} alertas de sesiones próximas`,
+    return NextResponse.json({
+      success: true,
+      message: `Se enviaron ${sent} alertas de sesiones proximas`,
       sessionsFound: sessions.length,
-      sent
+      sent,
     })
   } catch (error) {
     console.error("Error en send-session-alerts:", error)
-    return NextResponse.json(
-      { error: "Error enviando alertas" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Error enviando alertas" }, { status: 500 })
   }
 }

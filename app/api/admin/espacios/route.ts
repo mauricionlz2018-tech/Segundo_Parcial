@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { getUserBySessionToken, SESSION_COOKIE } from "@/lib/auth"
-import { query } from "@/lib/db"
-import pool from "@/lib/db"
-import type { ResultSetHeader } from "mysql2/promise"
+import supabase from "@/lib/db"
 
 async function requireAdmin() {
   const cookieStore = await cookies()
@@ -20,19 +18,16 @@ export async function GET() {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 })
   }
 
-  try {
-    const espacios = await query(
-      "SELECT id, nombre, descripcion, capacidad_maxima, created_at FROM espacios ORDER BY created_at DESC"
-    )
+  const { data, error } = await supabase
+    .from("espacios")
+    .select("id, nombre, descripcion, capacidad_maxima, created_at")
+    .order("created_at", { ascending: false })
 
-    return NextResponse.json({ data: espacios || [] })
-  } catch (error) {
-    console.error("Error:", error)
-    return NextResponse.json(
-      { error: "Error al obtener espacios" },
-      { status: 500 }
-    )
+  if (error) {
+    return NextResponse.json({ error: "Error al obtener espacios" }, { status: 500 })
   }
+
+  return NextResponse.json({ data: data ?? [] })
 }
 
 export async function DELETE(request: Request) {
@@ -41,28 +36,18 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 })
   }
 
-  try {
-    const body = await request.json().catch(() => null)
-    const id = body?.id
+  const body = await request.json().catch(() => null)
+  const id = body?.id
 
-    if (!id) {
-      return NextResponse.json(
-        { error: "ID de espacio requerido." },
-        { status: 400 }
-      )
-    }
-
-    await pool.execute<ResultSetHeader>("DELETE FROM espacios WHERE id = ?", [id])
-
-    return NextResponse.json({
-      ok: true,
-      message: "Espacio eliminado exitosamente.",
-    })
-  } catch (error) {
-    console.error("Error:", error)
-    return NextResponse.json(
-      { error: "Error al eliminar espacio" },
-      { status: 500 }
-    )
+  if (!id) {
+    return NextResponse.json({ error: "ID de espacio requerido." }, { status: 400 })
   }
+
+  const { error } = await supabase.from("espacios").delete().eq("id", id)
+
+  if (error) {
+    return NextResponse.json({ error: "Error al eliminar espacio" }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true, message: "Espacio eliminado exitosamente." })
 }

@@ -1,6 +1,5 @@
-import mysql from "mysql2/promise"
+import { createClient } from "@supabase/supabase-js"
 import bcrypt from "bcryptjs"
-import crypto from "crypto"
 
 const email = "admin.ues"
 const password = "Admin2025!"
@@ -8,32 +7,36 @@ const username = "admin.ues"
 const fullName = "Administrador UES"
 const role = "admin"
 
-const pool = await mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: Number(process.env.DB_PORT ?? 3306),
-  connectionLimit: 3,
-})
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { auth: { persistSession: false } }
+)
 
-const [existing] = await pool.execute("select id from users where email = ? or username = ? limit 1", [
-  email,
-  username,
-])
+const { data: existing } = await supabase
+  .from("users")
+  .select("id")
+  .or(`email.eq.${email},username.eq.${username}`)
+  .limit(1)
+  .single()
 
-if (Array.isArray(existing) && existing.length > 0) {
+if (existing) {
   console.log("Admin user already exists.")
   process.exit(0)
 }
 
 const passwordHash = await bcrypt.hash(password, 10)
-const id = crypto.randomUUID()
 
-await pool.execute(
-  "insert into users (id, email, username, full_name, role, password_hash) values (?, ?, ?, ?, ?, ?)",
-  [id, email, username, fullName, role, passwordHash]
-)
+const { data, error } = await supabase
+  .from("users")
+  .insert({ email, username, full_name: fullName, role, password_hash: passwordHash })
+  .select("id")
+  .single()
 
-console.log("Admin user created:", username)
+if (error) {
+  console.error("Error al crear admin:", error.message)
+  process.exit(1)
+}
+
+console.log("Admin user created:", username, "id:", data.id)
 process.exit(0)

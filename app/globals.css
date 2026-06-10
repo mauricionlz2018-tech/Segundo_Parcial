@@ -125,6 +125,26 @@
   body {
     @apply bg-background text-foreground transition-colors duration-300;
   }
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  a[href],
+  label,
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="button"]:not(:disabled),
+  select:not(:disabled),
+  [tabindex]:not([tabindex="-1"]):not(:disabled),
+  summary {
+    cursor: pointer !important;
+  }
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed !important;
+  }
 }
 
 /* Animation keyframes */
