@@ -125,6 +125,22 @@
   body {
     @apply bg-background text-foreground transition-colors duration-300;
   }
+  button,
+  [role="button"],
+  a,
+  label[for],
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="submit"],
+  input[type="button"],
+  select {
+    cursor: pointer;
+  }
+  button:disabled,
+  input:disabled,
+  select:disabled {
+    cursor: not-allowed;
+  }
 }
 
 /* Animation keyframes */

@@ -20,6 +20,11 @@ function hashToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex")
 }
 
+function generateSessionCode(): string {
+  // Genera un codigo numerico de 6 digitos (100000 - 999999)
+  return String(Math.floor(100000 + crypto.randomInt(900000)))
+}
+
 export async function hashPassword(password: string) {
   return bcrypt.hash(password, 10)
 }
@@ -105,13 +110,12 @@ export async function createUser(input: {
 }
 
 export async function createSession(userId: string): Promise<{ token: string; expiresAt: Date }> {
-  const token = crypto.randomBytes(32).toString("base64url")
-  const tokenHash = hashToken(token)
+  const token = generateSessionCode()
   const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000)
 
   const { error } = await supabase.from("sessions").insert({
     user_id: userId,
-    token_hash: tokenHash,
+    token_hash: token,
     expires_at: expiresAt.toISOString(),
   })
 
@@ -121,12 +125,10 @@ export async function createSession(userId: string): Promise<{ token: string; ex
 }
 
 export async function getUserBySessionToken(token: string): Promise<DbUser | null> {
-  const tokenHash = hashToken(token)
-
   const { data, error } = await supabase
     .from("sessions")
     .select("users(id, email, username, full_name, role, carrera, created_at)")
-    .eq("token_hash", tokenHash)
+    .eq("token_hash", token)
     .gt("expires_at", new Date().toISOString())
     .limit(1)
     .single()
@@ -136,8 +138,7 @@ export async function getUserBySessionToken(token: string): Promise<DbUser | nul
 }
 
 export async function deleteSession(token: string): Promise<void> {
-  const tokenHash = hashToken(token)
-  await supabase.from("sessions").delete().eq("token_hash", tokenHash)
+  await supabase.from("sessions").delete().eq("token_hash", token)
 }
 
 export async function createPasswordReset(userId: string): Promise<string> {
