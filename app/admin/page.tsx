@@ -1014,7 +1014,7 @@ export default function AdminPage() {
                         <div className="text-sm font-semibold text-[#1A1B22] dark:text-white">
                           Sesiones Registradas
                         </div>
-                        <button onClick={() => setActive("sesiones")} className="text-xs text-[#0F6B44] dark:text-[#10B981] font-semibold">Ver todas</button>
+                        <button onClick={() => setActive("sesiones")} className="text-xs text-[#0F6B44] dark:text-[#10B981] font-semibold cursor-pointer">Ver todas</button>
                       </div>
                       <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
                         {sesiones.length === 0 ? (
@@ -1148,21 +1148,21 @@ export default function AdminPage() {
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   onClick={() => setViewingSesionId(row.id)}
-                                  className="text-gray-400 hover:text-blue-500"
+                                  className="text-gray-400 hover:text-blue-500 cursor-pointer"
                                   title="Ver detalles"
                                 >
                                   <Eye size={14} />
                                 </button>
                                 <button
                                   onClick={() => openEditForm(row)}
-                                  className="text-gray-400 hover:text-[#0F6B44]"
+                                  className="text-gray-400 hover:text-[#0F6B44] cursor-pointer"
                                   title="Editar"
                                 >
                                   <Pencil size={14} />
                                 </button>
                                 <button
                                   onClick={() => setDeleteId(row.id)}
-                                  className="text-gray-400 hover:text-red-500"
+                                  className="text-gray-400 hover:text-red-500 cursor-pointer"
                                   title="Eliminar"
                                 >
                                   <Trash2 size={14} />
@@ -1321,14 +1321,14 @@ export default function AdminPage() {
                                   })
                                   setShowEspacioForm(true)
                                 }}
-                                className="p-1 hover:bg-blue-100 rounded"
+                                 className="p-1 hover:bg-blue-100 rounded cursor-pointer"
                                 title="Editar"
                               >
                                 <Pencil size={14} className="text-blue-600" />
                               </button>
                               <button
                                 onClick={() => setEspacioDeleteId(esp.id)}
-                                className="p-1 hover:bg-red-100 rounded"
+                                 className="p-1 hover:bg-red-100 rounded cursor-pointer"
                                 title="Eliminar"
                               >
                                 <Trash2 size={14} className="text-red-600" />
@@ -1495,7 +1495,7 @@ export default function AdminPage() {
                       <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">CONFIRMAR</p>
                       <input type="password" className="w-full border border-gray-200 dark:border-gray-700 dark:bg-[#0F172A] dark:text-white rounded-md px-3 py-2 text-xs" placeholder="Confirmar" />
                     </div>
-                    <button className="bg-[#8C6A1B] text-white text-xs font-semibold px-4 py-2 rounded-md w-fit">Actualizar Seguridad</button>
+                    <button                     className="bg-[#8C6A1B] text-white text-xs font-semibold px-4 py-2 rounded-md w-fit cursor-pointer hover:bg-[#725f15]">Actualizar Seguridad</button>
                   </div>
                 </div>
               </div>
@@ -1565,7 +1565,7 @@ export default function AdminPage() {
                       setUserForm({ username: "", email: "", full_name: "", carrera: "", password: "", confirmPassword: "" })
                       setUserFormError(null)
                     }}
-                    className="bg-[#53F000] text-black text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-2"
+                    className="bg-[#53F000] text-black text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-2 cursor-pointer"
                   >
                     <Plus size={14} />
                     Nuevo Usuario
@@ -1654,7 +1654,7 @@ export default function AdminPage() {
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   onClick={() => setViewingUserId(user.id)}
-                                  className="text-gray-400 hover:text-blue-500"
+                                  className="text-gray-400 hover:text-blue-500 cursor-pointer"
                                   title="Ver detalles"
                                 >
                                   <Eye size={14} />
@@ -1674,7 +1674,7 @@ export default function AdminPage() {
                                     setEditUserFormError(null)
                                     setShowEditUserForm(true)
                                   }}
-                                  className="text-gray-400 hover:text-[#0F6B44]"
+                                  className="text-gray-400 hover:text-[#0F6B44] cursor-pointer"
                                   title="Editar"
                                 >
                                   <Pencil size={14} />
@@ -1682,7 +1682,7 @@ export default function AdminPage() {
                                 {user.id !== currentUser?.id && (
                                   <button
                                     onClick={() => setUsuarioDeleteId(user.id)}
-                                    className="text-gray-400 hover:text-red-500"
+                                    className="text-gray-400 hover:text-red-500 cursor-pointer"
                                     title="Eliminar usuario"
                                   >
                                     <Trash2 size={14} />
