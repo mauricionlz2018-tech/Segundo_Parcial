@@ -1,23 +1,25 @@
 import { createClient } from "@supabase/supabase-js"
 
-type GlobalSupabase = typeof globalThis & { supabaseAdmin?: ReturnType<typeof createClient> }
-
-const globalForSupabase = globalThis as GlobalSupabase
-
 /**
- * Cliente de Supabase con la service_role key para operaciones del servidor
- * (bypassa RLS, solo usar en API routes y server actions)
+ * Cliente de Supabase con service_role key para operaciones de servidor.
+ * Se crea en tiempo de ejecucion para garantizar que las variables de entorno
+ * esten disponibles en el contexto serverless de Vercel.
  */
-export const supabase =
-  globalForSupabase.supabaseAdmin ??
-  createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
-  )
+function createSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-if (process.env.NODE_ENV !== "production") {
-  globalForSupabase.supabaseAdmin = supabase
+  if (!url || !key) {
+    throw new Error(
+      `Faltan variables de entorno de Supabase: ${!url ? "NEXT_PUBLIC_SUPABASE_URL" : ""} ${!key ? "SUPABASE_SERVICE_ROLE_KEY" : ""}`.trim()
+    )
+  }
+
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
 }
+
+export const supabase = createSupabaseAdmin()
 
 export default supabase
