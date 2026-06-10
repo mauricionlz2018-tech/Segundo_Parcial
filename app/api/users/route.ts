@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { getUserBySessionToken, SESSION_COOKIE } from "@/lib/auth"
-import pool from "@/lib/db"
-import type { ResultSetHeader } from "mysql2/promise"
+import supabase from "@/lib/db"
 
 export async function GET() {
   const cookieStore = await cookies()
   const token = cookieStore.get(SESSION_COOKIE)?.value
-  
+
   if (!token) {
     return NextResponse.json({ error: "No autenticado." }, { status: 401 })
   }
@@ -41,10 +40,14 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "El nombre completo es requerido." }, { status: 400 })
   }
 
-  await pool.execute<ResultSetHeader>(
-    "UPDATE users SET full_name = ?, carrera = ? WHERE id = ?",
-    [fullName, carrera || null, user.id]
-  )
+  const { error } = await supabase
+    .from("users")
+    .update({ full_name: fullName, carrera: carrera ?? null })
+    .eq("id", user.id)
+
+  if (error) {
+    return NextResponse.json({ error: "Error al actualizar el perfil." }, { status: 500 })
+  }
 
   return NextResponse.json({ ok: true, message: "Perfil actualizado exitosamente." })
 }
@@ -66,26 +69,18 @@ export async function DELETE(request: Request) {
   const confirmEmail = body?.confirm_email
 
   if (confirmEmail !== user.email) {
-    return NextResponse.json(
-      { error: "Confirmación de email incorrecta." },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: "Confirmacion de email incorrecta." }, { status: 400 })
   }
 
-  // Eliminar sesiones del usuario
-  await pool.execute<ResultSetHeader>(
-    "DELETE FROM sessions WHERE user_id = ?",
-    [user.id]
-  )
+  // Eliminar sesiones del usuario (el CASCADE en la BD ya lo hace, pero lo hacemos explícito)
+  await supabase.from("sessions").delete().eq("user_id", user.id)
 
   // Eliminar el usuario
-  await pool.execute<ResultSetHeader>(
-    "DELETE FROM users WHERE id = ?",
-    [user.id]
-  )
+  const { error } = await supabase.from("users").delete().eq("id", user.id)
 
-  return NextResponse.json({
-    ok: true,
-    message: "Cuenta eliminada exitosamente.",
-  })
+  if (error) {
+    return NextResponse.json({ error: "Error al eliminar la cuenta." }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true, message: "Cuenta eliminada exitosamente." })
 }
