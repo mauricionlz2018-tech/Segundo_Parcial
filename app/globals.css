@@ -125,21 +125,25 @@
   body {
     @apply bg-background text-foreground transition-colors duration-300;
   }
-  button,
-  [role="button"],
-  a,
-  label[for],
-  input[type="checkbox"],
-  input[type="radio"],
-  input[type="submit"],
-  input[type="button"],
-  select {
-    cursor: pointer;
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  a[href],
+  label,
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="button"]:not(:disabled),
+  select:not(:disabled),
+  [tabindex]:not([tabindex="-1"]):not(:disabled),
+  summary {
+    cursor: pointer !important;
   }
   button:disabled,
   input:disabled,
-  select:disabled {
-    cursor: not-allowed;
+  select:disabled,
+  textarea:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed !important;
   }
 }
 
