@@ -110,7 +110,7 @@ export default function Navbar() {
                 </div>
                 <button
                   onClick={handleSignOut}
-                  className="flex items-center gap-1.5 text-sm text-black dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                  className="flex items-center gap-1.5 text-sm text-black dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer"
                 >
                   <LogOut size={14} />
                   Salir
@@ -209,24 +209,24 @@ export default function Navbar() {
       {/* Logout confirmation modal */}
       {showLogoutConfirm && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-[#1E293B] rounded-lg shadow-xl p-6 max-w-sm mx-4 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-3 mb-4">
+          <div className="bg-white dark:bg-[#1E293B] rounded-lg shadow-xl p-6 max-w-sm mx-4 border border-gray-200 dark:border-gray-700 text-center">
+            <div className="flex items-center justify-center gap-3 mb-4">
               <AlertCircle className="w-6 h-6 text-yellow-600 dark:text-yellow-500" />
               <h2 className="text-lg font-bold text-black dark:text-white">Cerrar Sesión</h2>
             </div>
             <p className="text-gray-700 dark:text-gray-300 mb-6">
               ¿Estás seguro de que deseas cerrar tu sesión?
             </p>
-            <div className="flex gap-3 justify-end">
+            <div className="flex flex-col gap-3">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-medium"
+                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-medium cursor-pointer w-full"
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmLogout}
-                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors font-medium flex items-center gap-2"
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors font-medium flex items-center justify-center gap-2 cursor-pointer w-full"
               >
                 <LogOut size={16} />
                 Cerrar Sesión

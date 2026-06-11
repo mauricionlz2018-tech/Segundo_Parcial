@@ -1528,20 +1528,20 @@ export default function AdminPage() {
               </div>
 
               <div className="mt-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900 rounded-2xl p-5">
-                <p className="text-xs font-semibold text-red-700 dark:text-red-400 mb-3">Zona de Peligro</p>
+                <p className="text-xs font-semibold text-red-700 dark:text-red-400 mb-3">Eliminar cuenta</p>
                 <p className="text-[11px] text-red-600 dark:text-red-500 mb-4">
                   Las acciones en esta sección son irreversibles. Por favor, procede con cuidado.
                 </p>
                 <div className="flex flex-col gap-3">
                   <button
                     onClick={() => handleLimpiarSesionesUsuarios()}
-                    className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-4 py-2 rounded-lg w-fit"
+                    className="bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold px-4 py-2 rounded-lg w-fit cursor-pointer"
                   >
                     Limpiar Sesiones de Usuarios
                   </button>
                   <button
                     onClick={() => setShowDeleteAccountConfirm(true)}
-                    className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-lg w-fit"
+                    className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-lg w-fit cursor-pointer"
                   >
                     Eliminar mi cuenta
                   </button>
@@ -1576,7 +1576,7 @@ export default function AdminPage() {
                       setAdminForm({ username: "", email: "", full_name: "", password: "", confirmPassword: "" })
                       setAdminFormError(null)
                     }}
-                    className="bg-[#0F6B44] text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-2"
+                    className="bg-[#0F6B44] text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-2 cursor-pointer"
                   >
                     <Plus size={14} />
                     Crear Administrador
@@ -1789,7 +1789,7 @@ export default function AdminPage() {
                       <button
                         onClick={handleCreateAdmin}
                         disabled={adminFormLoading}
-                        className="flex-1 bg-[#0F6B44] text-white text-xs font-semibold py-2 rounded-lg disabled:opacity-50 hover:bg-[#0d5a38]"
+                  className="flex-1 bg-[#0F6B44] text-white text-xs font-semibold py-2 rounded-lg disabled:opacity-50 hover:bg-[#0d5a38] cursor-pointer"
                       >
                         {adminFormLoading ? "Creando..." : "Crear Administrador"}
                       </button>
@@ -2149,21 +2149,21 @@ export default function AdminPage() {
       {deleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
           <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-xl w-[340px] px-5 py-4 text-xs">
-            <div className="flex items-center gap-2 text-red-600 mb-2">
+            <div className="flex items-center justify-center gap-2 text-red-600 mb-2">
               <Trash2 size={14} />
               <h3 className="text-sm font-bold text-gray-900 dark:text-white">Eliminar sesión?</h3>
             </div>
-            <p className="text-[11px] text-gray-600 dark:text-gray-400">Esta acción no se puede deshacer.</p>
-            <div className="flex items-center gap-2 mt-4">
+            <p className="text-[11px] text-gray-600 dark:text-gray-400 text-center">Esta acción no se puede deshacer.</p>
+            <div className="flex flex-col items-center gap-2 mt-4">
               <button
                 onClick={() => deleteId && handleDelete(deleteId)}
-                className="bg-[#C40000] text-white text-xs font-semibold px-4 py-2 rounded-md hover:bg-red-700"
+                className="bg-[#C40000] text-white text-xs font-semibold px-4 py-2 rounded-md hover:bg-red-700 cursor-pointer w-full"
               >
                 Eliminar
               </button>
               <button
                 onClick={() => setDeleteId(null)}
-                className="border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-400 text-xs font-semibold px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-400 text-xs font-semibold px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer w-full"
               >
                 Cancelar
               </button>
@@ -2176,21 +2176,21 @@ export default function AdminPage() {
       {usuarioDeleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
           <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-xl w-[340px] px-5 py-4 text-xs">
-            <div className="flex items-center gap-2 text-red-600 mb-2">
+            <div className="flex items-center justify-center gap-2 text-red-600 mb-2">
               <Trash2 size={14} />
               <h3 className="text-sm font-bold text-gray-900 dark:text-white">Eliminar usuario?</h3>
             </div>
-            <p className="text-[11px] text-gray-600 dark:text-gray-400">Esta acción no se puede deshacer. Se eliminará toda la información del usuario.</p>
-            <div className="flex items-center gap-2 mt-4">
+            <p className="text-[11px] text-gray-600 dark:text-gray-400 text-center">Esta acción no se puede deshacer. Se eliminará toda la información del usuario.</p>
+            <div className="flex flex-col items-center gap-2 mt-4">
               <button
                 onClick={() => usuarioDeleteId && handleDeleteUsuario(usuarioDeleteId)}
-                className="bg-[#C40000] text-white text-xs font-semibold px-4 py-2 rounded-md hover:bg-red-700"
+                className="bg-[#C40000] text-white text-xs font-semibold px-4 py-2 rounded-md hover:bg-red-700 cursor-pointer w-full"
               >
                 Eliminar
               </button>
               <button
                 onClick={() => setUsuarioDeleteId(null)}
-                className="border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-400 text-xs font-semibold px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-400 text-xs font-semibold px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer w-full"
               >
                 Cancelar
               </button>
@@ -2223,13 +2223,13 @@ export default function AdminPage() {
             <div className="flex items-center gap-3">
               <button
                 onClick={handleDeleteOwnAccount}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-md"
+                 className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-md cursor-pointer"
               >
                 Sí, eliminar mi cuenta
               </button>
               <button
                 onClick={() => setShowDeleteAccountConfirm(false)}
-                className="flex-1 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-400 text-xs font-semibold px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                 className="flex-1 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-400 text-xs font-semibold px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
               >
                 Cancelar
               </button>
@@ -2250,13 +2250,13 @@ export default function AdminPage() {
             <div className="flex flex-col gap-2 mt-4">
               <button
                 onClick={handleLogout}
-                className="bg-[#C40000] text-white text-xs font-semibold py-2 rounded-md hover:bg-red-700"
+                  className="bg-[#C40000] text-white text-xs font-semibold py-2 rounded-md hover:bg-red-700 cursor-pointer"
               >
                 CERRAR SESIÓN
               </button>
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-400 text-xs font-semibold py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-400 text-xs font-semibold py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
               >
                 CANCELAR
               </button>
@@ -2275,7 +2275,7 @@ export default function AdminPage() {
               </div>
               <button
                 onClick={() => setViewingSesionId(null)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer"
               >
                 <X size={20} />
               </button>
@@ -2378,7 +2378,7 @@ export default function AdminPage() {
                 </div>
                 <button
                   onClick={() => setViewingUserId(null)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer"
                 >
                   <X size={20} />
                 </button>
@@ -2478,7 +2478,7 @@ export default function AdminPage() {
                   setEditUserForm({ username: "", email: "", full_name: "", carrera: "", role: "alumno", password: "", confirmPassword: "" })
                   setEditUserFormError(null)
                 }}
-                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -2582,7 +2582,7 @@ export default function AdminPage() {
                     setEditUserForm({ username: "", email: "", full_name: "", carrera: "", role: "alumno", password: "", confirmPassword: "" })
                     setEditUserFormError(null)
                   }}
-                  className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+                  className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer"
                 >
                   Cancelar
                 </button>

@@ -199,7 +199,7 @@ export default function CronogramaPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-0">
           <div
             className="lg:col-span-2 px-8 py-10 flex flex-col justify-between min-h-[240px]"
-            style={{ background: "linear-gradient(135deg, #64FC05 0%, #6CEA1D 100%)" }}
+            style={{ background: "linear-gradient(135deg, #64FC05 0%, #006341 100%)" }}
           >
             <div>
               <p className="text-xs font-semibold tracking-widest text-white/70 uppercase mb-2">Bienvenido al evento</p>
@@ -259,7 +259,7 @@ export default function CronogramaPage() {
                   className="h-full rounded-full transition-all"
                   style={{
                     width: `${totalSesiones > 0 ? (sesionesInscritas.size / totalSesiones) * 100 : 0}%`,
-                    backgroundColor: "#64FC05",
+                    backgroundColor: "#0F6B44",
                   }}
                 />
               </div>
