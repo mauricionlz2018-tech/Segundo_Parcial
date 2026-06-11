@@ -25,8 +25,7 @@ export async function POST(request: Request) {
     const { action } = body
 
     if (action === "limpiar-sesiones-usuarios") {
-      // Eliminar TODOS los registros de user_sesiones
-      await pool.execute("DELETE FROM user_sesiones")
+      await pool.query("DELETE FROM user_sesiones")
       return NextResponse.json({
         success: true,
         message: "Todos los registros de sesiones de usuarios han sido eliminados.",

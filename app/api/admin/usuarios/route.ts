@@ -22,11 +22,11 @@ export async function GET() {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 })
   }
 
-  const rows = await query<any>(
-    "select id, email, username, full_name, carrera, role, created_at from users order by created_at desc"
+  const result = await query(
+    "SELECT id, email, username, full_name, carrera, role, created_at FROM users ORDER BY created_at DESC"
   )
 
-  return NextResponse.json({ data: rows })
+  return NextResponse.json({ data: result.rows })
 }
 
 export async function DELETE(request: Request) {
@@ -50,7 +50,6 @@ export async function DELETE(request: Request) {
   }
 
   await pool.query("DELETE FROM sessions WHERE user_id = $1", [userId])
-  await pool.query("DELETE FROM user_sesiones WHERE user_id = $1", [userId])
   await pool.query("DELETE FROM users WHERE id = $1", [userId])
 
   return NextResponse.json({
@@ -89,22 +88,22 @@ export async function POST(request: Request) {
     )
   }
 
-  const existingEmail = await query<any[]>(
+  const existingEmail = await pool.query(
     "SELECT id FROM users WHERE email = $1 LIMIT 1",
     [email]
   )
-  if (existingEmail.length > 0) {
+  if (existingEmail.rows.length > 0) {
     return NextResponse.json(
       { error: "El email ya está registrado." },
       { status: 400 }
     )
   }
 
-  const existingUsername = await query<any[]>(
+  const existingUsername = await pool.query(
     "SELECT id FROM users WHERE username = $1 LIMIT 1",
     [username]
   )
-  if (existingUsername.length > 0) {
+  if (existingUsername.rows.length > 0) {
     return NextResponse.json(
       { error: "El usuario ya está registrado." },
       { status: 400 }
@@ -116,7 +115,7 @@ export async function POST(request: Request) {
     const userId = randomUUID()
 
     await pool.query(
-      "INSERT INTO users (id, email, username, full_name, carrera, password_hash, role, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, now())",
+      "INSERT INTO users (id, email, username, full_name, carrera, password_hash, role, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
       [userId, email, username, full_name, carrera || null, passwordHash, role]
     )
 
@@ -124,14 +123,7 @@ export async function POST(request: Request) {
       {
         ok: true,
         message: "Usuario creado exitosamente.",
-        user: {
-          id: userId,
-          email,
-          username,
-          full_name,
-          carrera,
-          role,
-        },
+        user: { id: userId, email, username, full_name, carrera, role },
       },
       { status: 201 }
     )
