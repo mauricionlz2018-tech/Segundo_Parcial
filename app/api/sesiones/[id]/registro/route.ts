@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { getUserBySessionToken, SESSION_COOKIE } from "@/lib/auth"
 import pool from "@/lib/db"
-import type { ResultSetHeader } from "mysql2/promise"
 
 export const runtime = "nodejs"
 
@@ -28,22 +27,22 @@ export async function DELETE(
   try {
     // Verificar que el usuario está registrado en esta sesión
     const registroResult = await pool.query(
-      "SELECT id FROM user_sesiones WHERE user_id = ? AND sesion_id = ?",
+      "SELECT id FROM user_sesiones WHERE user_id = $1 AND sesion_id = $2",
       [user.id, sesionId]
     )
-    if (!registroResult[0] || registroResult[0].length === 0) {
+    if (!registroResult || registroResult.rowCount === 0) {
       return NextResponse.json({ error: "No estás registrado en esta sesión." }, { status: 404 })
     }
 
     // Eliminar registro
-    await pool.execute<ResultSetHeader>(
-      "DELETE FROM user_sesiones WHERE user_id = ? AND sesion_id = ?",
+    await pool.query(
+      "DELETE FROM user_sesiones WHERE user_id = $1 AND sesion_id = $2",
       [user.id, sesionId]
     )
 
     // Decrementar cupos ocupados
-    await pool.execute(
-      "UPDATE sesiones SET cupos_ocupados = GREATEST(0, cupos_ocupados - 1) WHERE id = ?",
+    await pool.query(
+      "UPDATE sesiones SET cupos_ocupados = GREATEST(0, cupos_ocupados - 1) WHERE id = $1",
       [sesionId]
     )
 

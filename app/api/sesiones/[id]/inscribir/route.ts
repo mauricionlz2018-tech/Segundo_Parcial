@@ -18,13 +18,13 @@ export async function GET(
       return NextResponse.json({ error: "Parámetros faltantes" }, { status: 400 })
     }
 
-    const [result] = await pool.query<any>(
+    const result = await pool.query(
       `SELECT COUNT(*) as inscrito FROM user_sesiones 
-       WHERE user_id = ? AND sesion_id = ?`,
+       WHERE user_id = $1 AND sesion_id = $2`,
       [userId, sesionId]
     )
 
-    const inscrito = (result as any[])[0]?.inscrito === 1
+    const inscrito = result.rowCount > 0 && Number(result.rows[0]?.inscrito) === 1
 
     return NextResponse.json({
       inscrito,
@@ -53,15 +53,15 @@ export async function POST(
     }
 
     // Verificar si ya está inscrito
-    const [existing] = await pool.query(
+    const existing = await pool.query(
       `SELECT id FROM user_sesiones 
-       WHERE user_id = ? AND sesion_id = ?`,
+       WHERE user_id = $1 AND sesion_id = $2`,
       [userId, sesionId]
     )
 
-    console.log("🔍 Ya inscrito?:", (existing as any[]).length > 0)
+    console.log("🔍 Ya inscrito?:", existing.rowCount > 0)
 
-    if ((existing as any[]).length > 0) {
+    if (existing.rowCount > 0) {
       return NextResponse.json(
         { error: "Ya estás inscrito en esta sesión" },
         { status: 409 }
@@ -69,21 +69,21 @@ export async function POST(
     }
 
     // Verificar que la sesión existe y tiene cupos
-    const [sesion] = await pool.query<any>(
+    const sesionResult = await pool.query(
       `SELECT id, titulo, cupos_total, cupos_ocupados, dia, hora_inicio 
-       FROM sesiones WHERE id = ?`,
+       FROM sesiones WHERE id = $1`,
       [sesionId]
     )
 
-    console.log("📊 Sesión encontrada:", sesion.length > 0 ? "Sí" : "No")
+    console.log("📊 Sesión encontrada:", sesionResult.rowCount > 0 ? "Sí" : "No")
 
-    if (sesion.length === 0) {
+    if (sesionResult.rowCount === 0) {
       console.log("❌ Sesión no encontrada")
       return NextResponse.json({ error: "Sesión no encontrada" }, { status: 404 })
     }
 
-    const { cupos_total, cupos_ocupados } = sesion[0]
-    if (cupos_ocupados >= cupos_total) {
+    const sesion = sesionResult.rows[0] as { cupos_total: number; cupos_ocupados: number }
+    if (sesion.cupos_ocupados >= sesion.cupos_total) {
       console.log("❌ Sin cupos disponibles")
       return NextResponse.json(
         { error: "No hay cupos disponibles en esta sesión" },
@@ -97,7 +97,7 @@ export async function POST(
     
     await pool.query(
       `INSERT INTO user_sesiones (id, user_id, sesion_id) 
-       VALUES (?, ?, ?)`,
+       VALUES ($1, $2, $3)`,
       [inscripcionId, userId, sesionId]
     )
 
@@ -106,7 +106,7 @@ export async function POST(
     // Actualizar cupos
     await pool.query(
       `UPDATE sesiones SET cupos_ocupados = cupos_ocupados + 1 
-       WHERE id = ?`,
+       WHERE id = $1`,
       [sesionId]
     )
 
@@ -138,16 +138,16 @@ export async function DELETE(
     }
 
     // Eliminar inscripción
-    const result = await pool.query(
+    await pool.query(
       `DELETE FROM user_sesiones 
-       WHERE user_id = ? AND sesion_id = ?`,
+       WHERE user_id = $1 AND sesion_id = $2`,
       [userId, sesionId]
     )
 
     // Reducir cupos
     await pool.query(
       `UPDATE sesiones SET cupos_ocupados = GREATEST(0, cupos_ocupados - 1) 
-       WHERE id = ?`,
+       WHERE id = $1`,
       [sesionId]
     )
 

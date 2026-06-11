@@ -22,7 +22,7 @@ export async function GET(request: Request) {
       query += `, (CASE 
         WHEN EXISTS(
           SELECT 1 FROM user_sesiones us 
-          WHERE us.sesion_id = s.id AND us.user_id = ?
+          WHERE us.sesion_id = s.id AND us.user_id = $1
         ) THEN 1 
         ELSE 0 
       END) as inscrito`
@@ -33,29 +33,33 @@ export async function GET(request: Request) {
     query += ` FROM sesiones s WHERE 1=1`
     
     const params: any[] = []
+    let paramCount = 1
     
     // Agregar userId al inicio de params si existe
     if (userId) {
       params.push(userId)
+      paramCount++
     }
 
     if (tipo) {
-      query += ` AND s.tipo = ?`
+      query += ` AND s.tipo = $${paramCount}`
       params.push(tipo)
+      paramCount++
     }
 
     if (dia) {
-      query += ` AND s.dia = ?`
+      query += ` AND s.dia = $${paramCount}`
       params.push(dia)
+      paramCount++
     }
 
     query += ` ORDER BY s.dia ASC, s.hora_inicio ASC`
 
-    const [sesiones] = await pool.query(query, params)
+    const result = await pool.query(query, params)
 
     return NextResponse.json({
-      data: sesiones,
-      total: sesiones.length,
+      data: result.rows,
+      total: result.rowCount,
     })
   } catch (error) {
     console.error("Error al obtener sesiones disponibles:", error)
