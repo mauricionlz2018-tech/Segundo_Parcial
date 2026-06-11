@@ -900,7 +900,7 @@ export default function AdminPage() {
               <div className="px-6 pb-6">
                 <button
                   onClick={openCreateForm}
-                  className="w-full bg-[#53F000] dark:bg-[#10B981] text-black dark:text-white text-xs font-semibold py-2 rounded-md mb-4 flex items-center justify-center gap-1"
+              className="w-full bg-[#53F000] dark:bg-[#10B981] text-black dark:text-white text-xs font-semibold py-2 rounded-md mb-4 flex items-center justify-center gap-1 cursor-pointer"
                 >
                   <Plus size={12} />
                   Nueva Sesión
@@ -910,14 +910,14 @@ export default function AdminPage() {
                     setActive("configuracion")
                     setMobileMenuOpen(false)
                   }}
-                  className={`flex items-center gap-2 text-xs mb-2 ${active === "configuracion" ? "text-[#0F6B44] dark:text-[#10B981]" : "text-gray-500 dark:text-gray-400"}`}
+              className={`flex items-center gap-2 text-xs mb-2 cursor-pointer ${active === "configuracion" ? "text-[#0F6B44] dark:text-[#10B981]" : "text-gray-500 dark:text-gray-400"}`}
                 >
                   <Settings size={12} />
                   Ajustes
                 </button>
                 <button
                   onClick={() => setShowLogoutConfirm(true)}
-                  className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400"
+              className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400 cursor-pointer"
                 >
                   <LogOut size={12} />
                   Cerrar Sesión
