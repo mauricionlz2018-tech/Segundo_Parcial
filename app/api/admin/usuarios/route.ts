@@ -3,7 +3,6 @@ import { cookies } from "next/headers"
 import { getUserBySessionToken, SESSION_COOKIE, hashPassword } from "@/lib/auth"
 import { query } from "@/lib/db"
 import pool from "@/lib/db"
-import type { ResultSetHeader } from "mysql2/promise"
 import { randomUUID } from "crypto"
 
 export const runtime = "nodejs"
@@ -23,7 +22,7 @@ export async function GET() {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 })
   }
 
-  const rows = await query(
+  const rows = await query<any>(
     "select id, email, username, full_name, carrera, role, created_at from users order by created_at desc"
   )
 
@@ -50,9 +49,9 @@ export async function DELETE(request: Request) {
     )
   }
 
-  await pool.execute<ResultSetHeader>("DELETE FROM sessions WHERE user_id = ?", [userId])
-
-  await pool.execute<ResultSetHeader>("DELETE FROM users WHERE id = ?", [userId])
+  await pool.query("DELETE FROM sessions WHERE user_id = $1", [userId])
+  await pool.query("DELETE FROM user_sesiones WHERE user_id = $1", [userId])
+  await pool.query("DELETE FROM users WHERE id = $1", [userId])
 
   return NextResponse.json({
     ok: true,
@@ -90,22 +89,22 @@ export async function POST(request: Request) {
     )
   }
 
-  const [existingEmail] = await pool.execute(
-    "SELECT id FROM users WHERE email = ? LIMIT 1",
+  const existingEmail = await query<any[]>(
+    "SELECT id FROM users WHERE email = $1 LIMIT 1",
     [email]
   )
-  if (Array.isArray(existingEmail) && existingEmail.length > 0) {
+  if (existingEmail.length > 0) {
     return NextResponse.json(
       { error: "El email ya está registrado." },
       { status: 400 }
     )
   }
 
-  const [existingUsername] = await pool.execute(
-    "SELECT id FROM users WHERE username = ? LIMIT 1",
+  const existingUsername = await query<any[]>(
+    "SELECT id FROM users WHERE username = $1 LIMIT 1",
     [username]
   )
-  if (Array.isArray(existingUsername) && existingUsername.length > 0) {
+  if (existingUsername.length > 0) {
     return NextResponse.json(
       { error: "El usuario ya está registrado." },
       { status: 400 }
@@ -116,8 +115,8 @@ export async function POST(request: Request) {
     const passwordHash = await hashPassword(password)
     const userId = randomUUID()
 
-    const [result] = await pool.execute<ResultSetHeader>(
-      "INSERT INTO users (id, email, username, full_name, carrera, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
+    await pool.query(
+      "INSERT INTO users (id, email, username, full_name, carrera, password_hash, role, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, now())",
       [userId, email, username, full_name, carrera || null, passwordHash, role]
     )
 

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { getUserBySessionToken, SESSION_COOKIE, hashPassword } from "@/lib/auth"
+import { query } from "@/lib/db"
 import pool from "@/lib/db"
-import type { ResultSetHeader } from "mysql2/promise"
 
 export const runtime = "nodejs"
 
@@ -36,27 +36,30 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     )
   }
 
-  const [existing] = await pool.execute("SELECT id FROM users WHERE id = ? LIMIT 1", [userId])
-  if (!Array.isArray(existing) || (existing as any).length === 0) {
+  const existing = await query<any[]>(
+    "SELECT id FROM users WHERE id = $1 LIMIT 1",
+    [userId]
+  )
+  if (!existing || existing.length === 0) {
     return NextResponse.json({ error: "Usuario no encontrado." }, { status: 404 })
   }
 
   if (email) {
-    const [emailTaken] = await pool.execute(
-      "SELECT id FROM users WHERE email = ? AND id <> ? LIMIT 1",
+    const emailTaken = await query<any[]>(
+      "SELECT id FROM users WHERE email = $1 AND id <> $2 LIMIT 1",
       [email, userId]
     )
-    if (Array.isArray(emailTaken) && emailTaken.length > 0) {
+    if (emailTaken.length > 0) {
       return NextResponse.json({ error: "El email ya está registrado." }, { status: 400 })
     }
   }
 
   if (username) {
-    const [usernameTaken] = await pool.execute(
-      "SELECT id FROM users WHERE username = ? AND id <> ? LIMIT 1",
+    const usernameTaken = await query<any[]>(
+      "SELECT id FROM users WHERE username = $1 AND id <> $2 LIMIT 1",
       [username, userId]
     )
-    if (Array.isArray(usernameTaken) && usernameTaken.length > 0) {
+    if (usernameTaken.length > 0) {
       return NextResponse.json({ error: "El usuario ya está registrado." }, { status: 400 })
     }
   }
@@ -65,16 +68,17 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const updateFields: string[] = []
     const values: any[] = []
 
-    updateFields.push("email = ?")
+    updateFields.push("email = $1")
     values.push(email)
-    updateFields.push("username = ?")
+    updateFields.push("username = $2")
     values.push(username)
-    updateFields.push("full_name = ?")
+    updateFields.push("full_name = $3")
     values.push(full_name)
-    updateFields.push("carrera = ?")
+    updateFields.push("carrera = $4")
     values.push(carrera || null)
-    updateFields.push("role = ?")
+    updateFields.push("role = $5")
     values.push(role)
+    let paramCount = 5
 
     if (password && String(password).trim().length > 0) {
       const pwd = String(password).trim()
@@ -84,14 +88,16 @@ export async function PUT(request: Request, { params }: { params: { id: string }
           { status: 400 }
         )
       }
-      updateFields.push("password_hash = ?")
+      paramCount++
+      updateFields.push(`password_hash = $${paramCount}`)
       values.push(await hashPassword(pwd))
     }
 
+    paramCount++
     values.push(userId)
 
-    await pool.execute(
-      `UPDATE users SET ${updateFields.join(", ")} WHERE id = ?`,
+    await pool.query(
+      `UPDATE users SET ${updateFields.join(", ")} WHERE id = $${paramCount}`,
       values
     )
 
