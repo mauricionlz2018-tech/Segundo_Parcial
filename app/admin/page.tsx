@@ -792,21 +792,21 @@ export default function AdminPage() {
           <div className="px-6 pb-6">
             <button
               onClick={openCreateForm}
-              className="w-full bg-[#53F000] dark:bg-[#10B981] text-black dark:text-white text-xs font-semibold py-2 rounded-md mb-4 flex items-center justify-center gap-1"
+              className="w-full bg-[#53F000] dark:bg-[#10B981] text-black dark:text-white text-xs font-semibold py-2 rounded-md mb-4 flex items-center justify-center gap-1 cursor-pointer"
             >
               <Plus size={12} />
               Nueva Sesión
             </button>
             <button
               onClick={() => setActive("configuracion")}
-              className={`flex items-center gap-2 text-xs mb-2 ${active === "configuracion" ? "text-[#0F6B44] dark:text-[#10B981]" : "text-gray-500 dark:text-gray-400"}`}
+              className={`flex items-center gap-2 text-xs mb-2 cursor-pointer ${active === "configuracion" ? "text-[#0F6B44] dark:text-[#10B981]" : "text-gray-500 dark:text-gray-400"}`}
             >
               <Settings size={12} />
               Ajustes
             </button>
             <button
               onClick={() => setShowLogoutConfirm(true)}
-              className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400"
+              className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400 cursor-pointer"
             >
               <LogOut size={12} />
               Cerrar Sesión
@@ -1062,7 +1062,7 @@ export default function AdminPage() {
                         <p className="text-xs font-semibold text-[#1A1B22] dark:text-white">Acceso rápido</p>
                         <button
                           onClick={openCreateForm}
-                          className="mt-3 w-full bg-[#53F000] text-black text-xs font-semibold py-2 rounded-md flex items-center justify-center gap-1"
+                          className="mt-3 w-full bg-[#53F000] text-black text-xs font-semibold py-2 rounded-md flex items-center justify-center gap-1 cursor-pointer"
                         >
                           <Plus size={12} /> Nueva Sesión
                         </button>
@@ -1081,7 +1081,7 @@ export default function AdminPage() {
                 <h1 className="text-xl font-bold text-[#1A1B22] dark:text-white">Administración de Sesiones</h1>
                 <button
                   onClick={openCreateForm}
-                  className="bg-[#53F000] text-black text-xs font-semibold px-3 py-2 rounded-md flex items-center gap-1"
+                          className="bg-[#53F000] text-black text-xs font-semibold px-3 py-2 rounded-md flex items-center gap-1 cursor-pointer"
                 >
                   <Plus size={12} /> Nueva Sesión
                 </button>
@@ -1220,7 +1220,7 @@ export default function AdminPage() {
                   </div>
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="w-8 h-8 rounded-lg bg-white dark:bg-[#1E293B] border border-gray-100 dark:border-gray-700 flex items-center justify-center"
+                    className="w-8 h-8 rounded-lg bg-white dark:bg-[#1E293B] border border-gray-100 dark:border-gray-700 flex items-center justify-center cursor-pointer"
                     title="Limpiar búsqueda"
                   >
                     <Filter size={14} className="text-gray-400 dark:text-gray-500" />
@@ -1274,7 +1274,7 @@ export default function AdminPage() {
                     setEditingEspacioId(null)
                     setEspacioForm({ nombre: "", descripcion: "", capacidad_maxima: 50 })
                   }}
-                  className="bg-[#53F000] text-black text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-2"
+                  className="bg-[#53F000] text-black text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-2 cursor-pointer"
                 >
                   <Plus size={14} />
                   Agregar Espacio
@@ -1386,7 +1386,7 @@ export default function AdminPage() {
                         <div className="flex gap-2 pt-2">
                           <button
                             onClick={handleSaveEspacio}
-                            className="flex-1 bg-[#0F6B44] text-white text-xs font-semibold py-2 rounded-lg"
+                            className="flex-1 bg-[#0F6B44] text-white text-xs font-semibold py-2 rounded-lg cursor-pointer"
                           >
                             {editingEspacioId ? "Actualizar" : "Crear"}
                           </button>
@@ -1400,7 +1400,7 @@ export default function AdminPage() {
                                 capacidad_maxima: 50,
                               })
                             }}
-                            className="flex-1 bg-gray-100 text-gray-700 text-xs font-semibold py-2 rounded-lg"
+                            className="flex-1 bg-gray-100 text-gray-700 text-xs font-semibold py-2 rounded-lg cursor-pointer"
                           >
                             Cancelar
                           </button>
@@ -1427,13 +1427,13 @@ export default function AdminPage() {
                     <div className="flex gap-3">
                       <button
                         onClick={() => setEspacioDeleteId(null)}
-                        className="flex-1 bg-gray-100 text-gray-700 text-xs font-semibold py-2 rounded-lg"
+                            className="flex-1 bg-gray-100 text-gray-700 text-xs font-semibold py-2 rounded-lg cursor-pointer"
                       >
                         Cancelar
                       </button>
                       <button
                         onClick={() => handleDeleteEspacio(espacioDeleteId)}
-                        className="flex-1 bg-red-600 text-white text-xs font-semibold py-2 rounded-lg"
+                        className="flex-1 bg-red-600 text-white text-xs font-semibold py-2 rounded-lg cursor-pointer"
                       >
                         Eliminar
                       </button>
@@ -2103,11 +2103,11 @@ export default function AdminPage() {
                 <button
                   onClick={() => setShowSaveConfirm(true)}
                   disabled={formSaving || !editForm.titulo || !editForm.ponente}
-                  className="bg-[#53F000] text-black text-xs font-semibold px-4 py-2 rounded-md disabled:opacity-50 hover:bg-[#40d700]"
+                  className="bg-[#53F000] text-black text-xs font-semibold px-4 py-2 rounded-md disabled:opacity-50 hover:bg-[#40d700] cursor-pointer"
                 >
                   Guardar Cambios
                 </button>
-                <button onClick={() => setShowEditForm(false)} className="text-xs font-semibold text-gray-700 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-400">Cancelar</button>
+                <button onClick={() => setShowEditForm(false)} className="text-xs font-semibold text-gray-700 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-400 cursor-pointer">Cancelar</button>
               </div>
             </div>
           </div>
@@ -2445,13 +2445,13 @@ export default function AdminPage() {
                       setEditUserFormError(null)
                       setShowEditUserForm(true)
                     }}
-                    className="flex-1 bg-[#0F6B44] text-white text-xs font-semibold py-2 rounded-lg hover:bg-[#0d5a38]"
+                    className="flex-1 bg-[#0F6B44] text-white text-xs font-semibold py-2 rounded-lg hover:bg-[#0d5a38] cursor-pointer"
                   >
                     Editar
                   </button>
                   <button
                     onClick={() => setViewingUserId(null)}
-                    className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+                    className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer"
                   >
                     Cerrar
                   </button>

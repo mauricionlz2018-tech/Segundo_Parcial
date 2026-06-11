@@ -207,14 +207,14 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowCancelConfirm(true)}
-            className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-4 py-2 rounded-md border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#1E293B] transition-colors"
+            className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-4 py-2 rounded-md border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#1E293B] transition-colors cursor-pointer"
           >
             Cancelar
           </button>
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="text-xs font-semibold text-black dark:text-white bg-[#53F000] dark:bg-[#10B981] px-4 py-2 rounded-md hover:opacity-90 dark:hover:opacity-90 disabled:opacity-50 transition-opacity"
+            className="text-xs font-semibold text-black dark:text-white bg-[#53F000] dark:bg-[#10B981] px-4 py-2 rounded-md hover:opacity-90 dark:hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer"
           >
             {saving ? "Guardando..." : "Guardar Registro"}
           </button>
@@ -438,13 +438,13 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
             <div className="flex flex-col gap-2">
               <button
                 onClick={onClose}
-                className="w-full bg-[#C40000] text-white text-xs font-semibold py-2 rounded-md hover:bg-red-700 transition-colors"
+                className="w-full bg-[#C40000] text-white text-xs font-semibold py-2 rounded-md hover:bg-red-700 transition-colors cursor-pointer"
               >
                 Cancelar registro
               </button>
               <button
                 onClick={() => setShowCancelConfirm(false)}
-                className="w-full border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-400 text-xs font-semibold py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="w-full border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-400 text-xs font-semibold py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
               >
                 Continuar editando
               </button>
