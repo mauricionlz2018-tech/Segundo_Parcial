@@ -159,3 +159,14 @@ export async function sendUpcomingSessionAlert(
   console.log(`[sendUpcomingSessionAlert] Enviado: ${result.messageId}`)
   return true
 }
+
+export async function sendEmail(to: string, subject: string, html: string) {
+  const result = await transporter.sendMail({
+    from: `"UES San José del Rincón" <${process.env.GMAIL_USER}>`,
+    to,
+    subject,
+    html,
+  })
+  console.log(`[sendEmail] Enviado: ${result.messageId}`)
+  return result
+}
