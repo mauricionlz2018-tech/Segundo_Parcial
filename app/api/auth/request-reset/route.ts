@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server"
 import { findUserByEmailOrUsername } from "@/lib/auth"
 import { sendPasswordResetEmail } from "@/lib/email"
-import pool from "@/lib/db"
+import { query } from "@/lib/db"
 
 export const runtime = "nodejs"
 
-// Genera un código de 6 dígitos
 function generateCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString()
 }
@@ -20,35 +19,30 @@ export async function POST(request: Request) {
 
   const user = await findUserByEmailOrUsername(identifier)
   if (!user) {
-    // No revelar si la cuenta existe (seguridad)
     return NextResponse.json({ ok: true })
   }
 
   try {
     const code = generateCode()
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // expira en 15 minutos
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000)
 
-    // Guardar el código en la base de datos
-    // IMPORTANTE: asegúrate de tener una tabla password_resets con columnas:
-    // user_id, code, expires_at, used
-    await pool.query(
-      `DELETE FROM password_resets WHERE user_id = ?`,
+    // ✅ PostgreSQL usa $1, $2... en lugar de ?
+    await query(
+      `DELETE FROM password_resets WHERE user_id = $1`,
       [user.id]
     )
-    await pool.query(
-      `INSERT INTO password_resets (user_id, code, expires_at, used) VALUES (?, ?, ?, 0)`,
+    await query(
+      `INSERT INTO password_resets (user_id, code, expires_at, used) VALUES ($1, $2, $3, false)`,
       [user.id, code, expiresAt]
     )
 
-    console.log("📧 Enviando código de recuperación a:", user.email)
+    console.log("📧 Enviando código a:", user.email)
 
     try {
-      // Ajusta sendPasswordResetEmail para recibir el código en lugar del token
       await sendPasswordResetEmail(user.email, code, user.full_name || user.username)
       console.log("✅ Código enviado a:", user.email)
     } catch (emailError) {
       console.error("❌ Error enviando email:", emailError)
-      // Si el email falla retornamos error claro (en dev puedes ver el código en logs)
       return NextResponse.json(
         { error: "No se pudo enviar el correo. Intenta de nuevo." },
         { status: 500 }
