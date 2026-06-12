@@ -138,10 +138,9 @@ export async function createPasswordReset(userId: string) {
 }
 
 export async function resetPasswordWithToken(token: string, newPasswordHash: string) {
-  const tokenHash = hashToken(token)
   const rows = await query<{ user_id: string }[]>(
-    "SELECT user_id FROM password_resets WHERE token_hash = $1 AND expires_at > NOW() LIMIT 1",
-    [tokenHash]
+    "SELECT user_id FROM password_resets WHERE code = $1 AND used = false AND expires_at > NOW() LIMIT 1",
+    [token]
   )
   const row = rows[0]
   if (!row?.user_id) return false
