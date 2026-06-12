@@ -1,29 +1,14 @@
 import { NextResponse } from "next/server"
 import { query } from "@/lib/db"
 import pool from "@/lib/db"
-import { v4 as uuidv4 } from "uuid"
-import type { ResultSetHeader } from "mysql2/promise"
 
-export async function GET() {
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const espacios = await query(
-      "SELECT id, nombre, descripcion, capacidad_maxima, created_at FROM espacios ORDER BY created_at DESC"
-    )
-
-    return NextResponse.json({ data: espacios || [] })
-  } catch (error) {
-    console.error("Error al obtener espacios:", error)
-    return NextResponse.json(
-      { error: "Error al obtener espacios" },
-      { status: 500 }
-    )
-  }
-}
-
-export async function POST(request: Request) {
-  try {
+    const { id } = await params
     const body = await request.json()
-    const id = uuidv4()
 
     const nombre = String(body?.nombre ?? "").trim()
     const descripcion = String(body?.descripcion ?? "").trim()
@@ -43,24 +28,68 @@ export async function POST(request: Request) {
       )
     }
 
-    await pool.execute<ResultSetHeader>(
-      `INSERT INTO espacios (id, nombre, descripcion, capacidad_maxima) 
-       VALUES (?, ?, ?, ?)`,
-      [id, nombre, descripcion || null, capacidad_maxima]
+    // Verificar que existe
+    const existing = await query<{ id: string }[]>(
+      "SELECT id FROM espacios WHERE id = $1",
+      [id]
     )
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Espacio creado exitosamente",
-        id: id,
-      },
-      { status: 201 }
+    if (!existing || existing.length === 0) {
+      return NextResponse.json(
+        { error: "Espacio no encontrado" },
+        { status: 404 }
+      )
+    }
+
+    await pool.query(
+      `UPDATE espacios 
+       SET nombre = $1, descripcion = $2, capacidad_maxima = $3
+       WHERE id = $4`,
+      [nombre, descripcion || null, capacidad_maxima, id]
     )
+
+    return NextResponse.json({
+      success: true,
+      message: "Espacio actualizado exitosamente",
+    })
   } catch (error) {
-    console.error("Error al crear espacio:", error)
+    console.error("Error al actualizar espacio:", error)
     return NextResponse.json(
-      { success: false, error: "Error al crear el espacio" },
+      { success: false, error: "Error al actualizar el espacio" },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+
+    const existing = await query<{ id: string }[]>(
+      "SELECT id FROM espacios WHERE id = $1",
+      [id]
+    )
+
+    if (!existing || existing.length === 0) {
+      return NextResponse.json(
+        { error: "Espacio no encontrado" },
+        { status: 404 }
+      )
+    }
+
+    await pool.query("DELETE FROM espacios WHERE id = $1", [id])
+
+    return NextResponse.json({
+      success: true,
+      message: "Espacio eliminado exitosamente",
+    })
+  } catch (error) {
+    console.error("Error al eliminar espacio:", error)
+    return NextResponse.json(
+      { success: false, error: "Error al eliminar el espacio" },
       { status: 500 }
     )
   }

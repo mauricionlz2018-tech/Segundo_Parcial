@@ -21,7 +21,7 @@ export async function GET() {
   }
 
   const result = await pool.query(
-    `SELECT s.*, us.registered_at
+    `SELECT s.*, us.registered_at 
      FROM sesiones s
      INNER JOIN user_sesiones us ON s.id = us.sesion_id
      WHERE us.user_id = $1
@@ -29,7 +29,7 @@ export async function GET() {
     [user.id]
   )
 
-  return NextResponse.json({ data: result.rows })
+  return NextResponse.json({ data: result.rows || [] })
 }
 
 // POST - registrarse en una sesión
@@ -52,15 +52,16 @@ export async function POST(request: Request) {
       "SELECT id FROM sesiones WHERE id = $1",
       [sesionId]
     )
-    if (!sesionResult.rowCount) {
+    if (!sesionResult.rows || sesionResult.rows.length === 0) {
       return NextResponse.json({ error: "Sesión no encontrada." }, { status: 404 })
     }
 
+    // Verificar si ya está registrado
     const registroResult = await pool.query(
       "SELECT id FROM user_sesiones WHERE user_id = $1 AND sesion_id = $2",
       [user.id, sesionId]
     )
-    if (registroResult.rows.length > 0) {
+    if (registroResult.rows && registroResult.rows.length > 0) {
       return NextResponse.json({ error: "Ya estás registrado en esta sesión." }, { status: 409 })
     }
 

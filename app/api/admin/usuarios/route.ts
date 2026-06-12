@@ -22,11 +22,11 @@ export async function GET() {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 })
   }
 
-  const result = await query(
+  const rows = await query(
     "SELECT id, email, username, full_name, carrera, role, created_at FROM users ORDER BY created_at DESC"
   )
 
-  return NextResponse.json({ data: result.rows })
+  return NextResponse.json({ data: rows })
 }
 
 export async function DELETE(request: Request) {
@@ -88,6 +88,7 @@ export async function POST(request: Request) {
     )
   }
 
+  // Verificar si el email ya existe
   const existingEmail = await pool.query(
     "SELECT id FROM users WHERE email = $1 LIMIT 1",
     [email]
@@ -99,6 +100,7 @@ export async function POST(request: Request) {
     )
   }
 
+  // Verificar si el username ya existe
   const existingUsername = await pool.query(
     "SELECT id FROM users WHERE username = $1 LIMIT 1",
     [username]

@@ -3,7 +3,6 @@ import { cookies } from "next/headers"
 import { getUserBySessionToken, SESSION_COOKIE } from "@/lib/auth"
 import { query } from "@/lib/db"
 import pool from "@/lib/db"
-import type { ResultSetHeader } from "mysql2/promise"
 
 async function requireAdmin() {
   const cookieStore = await cookies()
@@ -52,7 +51,7 @@ export async function DELETE(request: Request) {
       )
     }
 
-    await pool.execute<ResultSetHeader>("DELETE FROM espacios WHERE id = ?", [id])
+    await pool.query("DELETE FROM espacios WHERE id = $1", [id])
 
     return NextResponse.json({
       ok: true,

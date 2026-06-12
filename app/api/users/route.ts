@@ -2,12 +2,11 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { getUserBySessionToken, SESSION_COOKIE } from "@/lib/auth"
 import pool from "@/lib/db"
-import type { ResultSetHeader } from "mysql2/promise"
 
 export async function GET() {
   const cookieStore = await cookies()
   const token = cookieStore.get(SESSION_COOKIE)?.value
-  
+
   if (!token) {
     return NextResponse.json({ error: "No autenticado." }, { status: 401 })
   }
@@ -41,8 +40,8 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "El nombre completo es requerido." }, { status: 400 })
   }
 
-  await pool.execute<ResultSetHeader>(
-    "UPDATE users SET full_name = ?, carrera = ? WHERE id = ?",
+  await pool.query(
+    "UPDATE users SET full_name = $1, carrera = $2 WHERE id = $3",
     [fullName, carrera || null, user.id]
   )
 
@@ -73,16 +72,10 @@ export async function DELETE(request: Request) {
   }
 
   // Eliminar sesiones del usuario
-  await pool.execute<ResultSetHeader>(
-    "DELETE FROM sessions WHERE user_id = ?",
-    [user.id]
-  )
+  await pool.query("DELETE FROM sessions WHERE user_id = $1", [user.id])
 
   // Eliminar el usuario
-  await pool.execute<ResultSetHeader>(
-    "DELETE FROM users WHERE id = ?",
-    [user.id]
-  )
+  await pool.query("DELETE FROM users WHERE id = $1", [user.id])
 
   return NextResponse.json({
     ok: true,

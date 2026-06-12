@@ -3,7 +3,6 @@ import { cookies } from "next/headers"
 import crypto from "crypto"
 import { getUserBySessionToken, SESSION_COOKIE } from "@/lib/auth"
 import pool, { query } from "@/lib/db"
-import type { ResultSetHeader } from "mysql2/promise"
 
 export const runtime = "nodejs"
 
@@ -23,7 +22,7 @@ export async function GET() {
   }
 
   const rows = await query(
-    "select id, titulo, ponente, dia, hora_inicio, hora_fin, tipo, lugar, cupos_total, cupos_ocupados, descripcion, foto_ponente, perfil_profesional, afiliacion, biografia, created_at from sesiones order by dia, hora_inicio"
+    "SELECT id, titulo, ponente, dia, hora_inicio, hora_fin, tipo, lugar, cupos_total, cupos_ocupados, descripcion, foto_ponente, perfil_profesional, afiliacion, biografia, created_at FROM sesiones ORDER BY dia, hora_inicio"
   )
 
   return NextResponse.json({ data: rows })
@@ -55,8 +54,8 @@ export async function POST(request: Request) {
   }
 
   const id = crypto.randomUUID()
-  await pool.execute<ResultSetHeader>(
-    "insert into sesiones (id, titulo, ponente, dia, hora_inicio, hora_fin, tipo, lugar, cupos_total, cupos_ocupados, descripcion, foto_ponente, perfil_profesional, afiliacion, biografia) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+  await pool.query(
+    "INSERT INTO sesiones (id, titulo, ponente, dia, hora_inicio, hora_fin, tipo, lugar, cupos_total, cupos_ocupados, descripcion, foto_ponente, perfil_profesional, afiliacion, biografia) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)",
     [
       id,
       titulo,
