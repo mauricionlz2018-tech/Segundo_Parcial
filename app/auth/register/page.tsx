@@ -100,8 +100,85 @@ export default function RegisterPage() {
               <p className="text-xs text-gray-700 dark:text-gray-300">
                 Te hemos enviado tu <strong>usuario y contraseña</strong> al correo registrado. Revisa tu bandeja de entrada.
               </p>
+        </div>
+        </div>
+
+        {/* Modal de Términos y Condiciones */}
+        {showTermsModal && (
+          <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-xl font-bold text-[#1A1B22] dark:text-white">Términos y Condiciones</h2>
+                <button onClick={() => setShowTermsModal(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition">
+                  <X size={20} className="text-gray-600 dark:text-gray-400" />
+                </button>
+              </div>
+
+              <div className="overflow-y-auto flex-1 p-6 space-y-4 text-sm text-gray-700 dark:text-gray-300">
+                <section>
+                  <h3 className="font-bold text-[#065F46] dark:text-[#10B981] mb-2">1. Aceptación de Términos</h3>
+                  <p>Al registrarse en la plataforma de UES San José del Rincón, usted acepta estar sujeto a estos términos y condiciones. Si no está de acuerdo con alguno de estos términos, le solicitamos que no utilice la plataforma.</p>
+                </section>
+                <section>
+                  <h3 className="font-bold text-[#065F46] dark:text-[#10B981] mb-2">2. Uso de la Plataforma</h3>
+                  <p>La plataforma está diseñada exclusivamente para estudiantes de la UES y proporciona acceso a información sobre eventos, conferencias y sesiones académicas. El usuario se compromete a utilizar la plataforma únicamente para fines académicos y autorizados.</p>
+                </section>
+                <section>
+                  <h3 className="font-bold text-[#065F46] dark:text-[#10B981] mb-2">3. Protección de Datos</h3>
+                  <p>La información personal proporcionada al registrarse será utilizada únicamente para:</p>
+                  <ul className="list-disc ml-5 mt-2 space-y-1">
+                    <li>Gestionar su cuenta de usuario</li>
+                    <li>Enviar notificaciones sobre eventos académicos</li>
+                    <li>Mejorar la experiencia en la plataforma</li>
+                    <li>Cumplir con obligaciones legales y regulatorias</li>
+                  </ul>
+                </section>
+                <section>
+                  <h3 className="font-bold text-[#065F46] dark:text-[#10B981] mb-2">4. Responsabilidad del Usuario</h3>
+                  <p>El usuario es responsable de:</p>
+                  <ul className="list-disc ml-5 mt-2 space-y-1">
+                    <li>Mantener confidencial su contraseña</li>
+                    <li>No compartir sus credenciales con terceros</li>
+                    <li>Notificar a la UES en caso de acceso no autorizado</li>
+                    <li>No usar la plataforma para actividades ilícitas</li>
+                  </ul>
+                </section>
+                <section>
+                  <h3 className="font-bold text-[#065F46] dark:text-[#10B981] mb-2">5. Limitación de Responsabilidad</h3>
+                  <p>La UES no será responsable por:</p>
+                  <ul className="list-disc ml-5 mt-2 space-y-1">
+                    <li>Interrupciones en el servicio de la plataforma</li>
+                    <li>Pérdida de datos debido a acciones del usuario</li>
+                    <li>Daños indirectos derivados del uso de la plataforma</li>
+                  </ul>
+                </section>
+                <section>
+                  <h3 className="font-bold text-[#065F46] dark:text-[#10B981] mb-2">6. Modificación de Términos</h3>
+                  <p>La UES se reserva el derecho de modificar estos términos y condiciones en cualquier momento. Los cambios serán notificados a través de la plataforma.</p>
+                </section>
+                <section>
+                  <h3 className="font-bold text-[#065F46] dark:text-[#10B981] mb-2">7. Contacto</h3>
+                  <p>Si tiene preguntas sobre estos términos y condiciones, contáctenos a través del correo de soporte institucional.</p>
+                </section>
+                <div className="text-xs text-gray-600 dark:text-gray-400 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <p>Última actualización: {new Date().toLocaleDateString("es-ES")}</p>
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex gap-3">
+                <button onClick={() => setShowTermsModal(false)} className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                  Cerrar
+                </button>
+                <button onClick={() => { setAcceptTerms(true); setShowTermsModal(false); }} className="flex-1 px-4 py-2 rounded-lg bg-[#065F46] dark:bg-[#10B981] text-white font-medium hover:opacity-90 transition">
+                  Aceptar y Cerrar
+                </button>
+              </div>
             </div>
-            
+          </div>
+        )}
+      </>
+    )
+  }
             <button
               onClick={() => router.push("/auth/login")}
               className="w-full py-3 rounded-lg text-sm font-bold text-black dark:text-white bg-[#64FC05] dark:bg-[#10B981] hover:opacity-90 transition"
