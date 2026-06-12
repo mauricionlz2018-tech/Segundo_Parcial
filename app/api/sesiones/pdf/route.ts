@@ -2,15 +2,18 @@ import { NextResponse } from "next/server";
 import { PDFDocument, rgb, PageSizes, StandardFonts } from "pdf-lib";
 import { query } from "@/lib/db";
 
-const DARK_GREEN = rgb(6 / 255, 79 / 255, 68 / 255);
-const LIGHT_GREEN = rgb(100 / 255, 252 / 255, 5 / 255);
-const BLACK = rgb(0.1, 0.1, 0.1);
-const GRAY = rgb(0.45, 0.45, 0.45);
+const HEADER_GREEN = rgb(74 / 255, 124 / 255, 89 / 255);
+const ROW_GREEN = rgb(234 / 255, 251 / 255, 226 / 255);
+const DARK_TEXT = rgb(20 / 255, 20 / 255, 20 / 255);
+const MEDIUM_TEXT = rgb(60 / 255, 60 / 255, 60 / 255);
 
 function formatDate(dateString: string) {
   try {
-    const d = new Date(dateString);
-    return `${d.getDate()} ${d.toLocaleString("es-MX", { month: "long" })} ${d.getFullYear()}`;
+    const [y, m, d] = dateString.split("-");
+    const date = new Date(Number(y), Number(m) - 1, Number(d));
+    const dayNames = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    const dayName = dayNames[date.getDay()];
+    return `${dayName} ${Number(d)} de ${date.toLocaleString("es-MX", { month: "long" })} de ${y}`;
   } catch {
     return dateString;
   }
@@ -30,7 +33,6 @@ function formatTime(time: string) {
 
 export async function GET() {
   try {
-    // ✅ Usa la función query() de db.ts que maneja pg correctamente
     const rows = await query<any[]>(
       `SELECT dia, hora_inicio, hora_fin, titulo, ponente, lugar, tipo 
        FROM sesiones 
@@ -38,42 +40,89 @@ export async function GET() {
     );
 
     const pdfDoc = await PDFDocument.create();
-    let page = pdfDoc.addPage(PageSizes.A4);
+    const page = pdfDoc.addPage(PageSizes.A4);
     const { width, height } = page.getSize();
-    const margin = 48;
+    const margin = 44;
     const usableWidth = width - margin * 2;
-    let cursor = height - 52;
 
-    // ✅ StandardFonts en lugar de strings
     const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-    // Encabezado
-    page.drawText("12va Jornada Académica y Cultural", {
+    // Logo area - top horizontal bar
+    page.drawRectangle({
       x: margin,
-      y: cursor - 20,
-      size: 18,
-      color: BLACK,
+      y: height - 140,
+      width: usableWidth,
+      height: 84,
+      color: rgb(248 / 255, 249 / 255, 251 / 255),
+    });
+
+    // Title area
+    page.drawText("Jornada Académica y Cultural 2025", {
+      x: margin,
+      y: height - 28,
+      size: 20,
+      color: DARK_TEXT,
       font: bold,
     });
-    page.drawText("Universidad Mexiquense del Bicentenario", {
+
+    page.drawText("UNIDAD DE ESTUDIOS SUPERIORES SAN JOSÉ DEL RINCÓN", {
       x: margin,
-      y: cursor - 36,
-      size: 9,
-      color: DARK_GREEN,
-      font: regular,
+      y: height - 44,
+      size: 8,
+      color: MEDIUM_TEXT,
+      font: bold,
     });
+
     page.drawText("Programa de Actividades", {
       x: margin,
-      y: cursor - 48,
+      y: height - 56,
       size: 8,
-      color: GRAY,
+      color: MEDIUM_TEXT,
       font: regular,
     });
 
-    cursor -= 72;
+    const headerY = height - 108;
 
-    // Agrupar por día
+    // Main header bar - green background
+    page.drawRectangle({
+      x: margin,
+      y: headerY - 36,
+      width: usableWidth,
+      height: 36,
+      color: HEADER_GREEN,
+    });
+
+    // Header text - Horario
+    page.drawText("Horario", {
+      x: margin + 12,
+      y: headerY - 20,
+      size: 12,
+      color: rgb(1, 1, 1),
+      font: bold,
+    });
+
+    // Header text - Actividades
+    page.drawText("Actividades", {
+      x: margin + 180,
+      y: headerY - 20,
+      size: 12,
+      color: rgb(1, 1, 1),
+      font: bold,
+    });
+
+    // Header date label
+    page.drawText("Lunes 1 de diciembre de 2025", {
+      x: margin + 340,
+      y: headerY - 20,
+      size: 10,
+      color: rgb(245 / 255, 255 / 255, 230 / 255),
+      font: bold,
+    });
+
+    let cursor = headerY - 46;
+
+    // Group sessions by day
     const grouped: Record<string, any[]> = {};
     for (const s of rows) {
       const dayKey = formatDate(s.dia);
@@ -82,102 +131,137 @@ export async function GET() {
     }
 
     const dayKeys = Object.keys(grouped);
-    for (let idx = 0; idx < dayKeys.length; idx++) {
-      const day = dayKeys[idx];
+    for (const day of dayKeys) {
       const sessions = grouped[day];
-      const headerHeight = 32;
+      const headerHeight = 34;
 
-      if (cursor - headerHeight < 60) {
-        page = pdfDoc.addPage(PageSizes.A4);
+      if (cursor - 120 < 40) {
+        const newPage = pdfDoc.addPage(PageSizes.A4);
         cursor = height - 52;
       }
 
+      // Day header - green bar
       page.drawRectangle({
         x: margin,
         y: cursor - headerHeight,
         width: usableWidth,
         height: headerHeight,
-        color: DARK_GREEN,
+        color: HEADER_GREEN,
       });
+
+      // Day text
       page.drawText(day, {
         x: margin + 12,
         y: cursor - 22,
-        size: 14,
-        color: LIGHT_GREEN,
+        size: 12,
+        color: rgb(245 / 255, 255 / 255, 230 / 255),
         font: bold,
       });
+
       cursor -= headerHeight + 8;
 
       for (const ses of sessions) {
-        const rowHeight = 58;
+        const rowHeight = 68;
+
         if (cursor - rowHeight < 60) {
-          page = pdfDoc.addPage(PageSizes.A4);
+          const newPage = pdfDoc.addPage(PageSizes.A4);
           cursor = height - 52;
+
           page.drawRectangle({
             x: margin,
             y: cursor - headerHeight,
             width: usableWidth,
             height: headerHeight,
-            color: DARK_GREEN,
+            color: HEADER_GREEN,
           });
+
           page.drawText(day, {
             x: margin + 12,
             y: cursor - 22,
-            size: 14,
-            color: LIGHT_GREEN,
+            size: 12,
+            color: rgb(245 / 255, 255 / 255, 230 / 255),
             font: bold,
           });
+
           cursor -= headerHeight + 8;
         }
 
-        page.drawLine({
-          start: { x: margin, y: cursor - rowHeight },
-          end: { x: margin + usableWidth, y: cursor - rowHeight },
-          thickness: 0.5,
-          color: GRAY,
+        // Left column - horario con fondo verde
+        const horarioWidth = 170;
+        page.drawRectangle({
+          x: margin,
+          y: cursor - rowHeight,
+          width: horarioWidth,
+          height: rowHeight,
+          color: HEADER_GREEN,
         });
 
-        const timeWidth = 140;
         const timeStr = `${formatTime(ses.hora_inicio)} - ${formatTime(ses.hora_fin)}`;
         page.drawText(timeStr, {
-          x: margin + 6,
-          y: cursor - 18,
+          x: margin + 10,
+          y: cursor - 22,
           size: 10,
-          color: DARK_GREEN,
+          color: rgb(255, 255, 255),
           font: bold,
         });
+
+        // Right column - contenido con fondo verde claro
+        page.drawRectangle({
+          x: margin + horarioWidth,
+          y: cursor - rowHeight,
+          width: usableWidth - horarioWidth,
+          height: rowHeight,
+          color: ROW_GREEN,
+        });
+
+        const contentX = margin + horarioWidth + 14;
+        const maxTitleWidth = usableWidth - horarioWidth - 28;
+
+        // Tipo de sesión badge
+        const tipoY = cursor - 14;
         page.drawText(ses.tipo ?? "", {
-          x: margin + 6,
-          y: cursor - 30,
+          x: contentX,
+          y: tipoY,
           size: 9,
-          color: BLACK,
+          color: MEDIUM_TEXT,
           font: regular,
         });
 
-        const contentX = margin + timeWidth + 18;
-        const maxTitleWidth = usableWidth - timeWidth - 30;
-
+        // Título
+        const tituloY = cursor - 30;
         page.drawText(ses.titulo ?? "", {
           x: contentX,
-          y: cursor - 18,
+          y: tituloY,
           size: 11,
-          color: BLACK,
+          color: DARK_TEXT,
           font: bold,
           maxWidth: maxTitleWidth,
         });
-        page.drawText(`${ses.ponente ?? ""}  |  ${ses.lugar ?? ""}`, {
+
+        // Ponente
+        const ponenteY = cursor - 46;
+        page.drawText(ses.ponente ?? "—", {
           x: contentX,
-          y: cursor - 32,
+          y: ponenteY,
           size: 9,
-          color: GRAY,
+          color: MEDIUM_TEXT,
           font: regular,
-          maxWidth: maxTitleWidth,
+        });
+
+        // Lugar
+        const lugarY = cursor - 58;
+        page.drawText(`Lugar: ${ses.lugar ?? "—"}`, {
+          x: contentX,
+          y: lugarY,
+          size: 9,
+          color: MEDIUM_TEXT,
+          font: regular,
         });
 
         cursor -= rowHeight;
       }
 
-      cursor -= 14;
+      cursor -= 10;
     }
 
     const pdfBytes = await pdfDoc.save();

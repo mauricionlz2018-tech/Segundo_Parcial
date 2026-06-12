@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import {
-  LayoutGrid, CalendarDays, Users, MapPin, Settings, LogOut, Pencil, Trash2, X, Clock, Filter, Plus, AlertCircle, Search, Sun, Moon, Bell, User, Eye, Menu
+  LayoutGrid, CalendarDays, Users, MapPin, Settings, LogOut, Pencil, Trash2, X, Clock, Filter, Plus, AlertCircle, Search, Sun, Moon, Bell, User, Eye, Menu, Download
 } from "lucide-react"
 import type { Sesion, SesionFormData, Usuario } from "@/types"
 import NuevaSesion from '@/components/NuevaSesion'
@@ -31,30 +31,24 @@ const EMPTY_FORM: SesionFormData = {
   biografia: null,
 }
 
-function getNombreDia(dia: string): string {
-  const diasSemana: Record<string, string> = {
-    "1": "Lunes",
-    "2": "Martes",
-    "3": "Miércoles",
-    "4": "Jueves",
-    "5": "Viernes"
+  function formatearFechaCompleta(fecha: string | null | undefined): string {
+    if (!fecha) return "—"
+    try {
+      if (fecha.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [a, m, d] = fecha.split("-")
+        return `${parseInt(d)}/${parseInt(m)}/${a}`
+      }
+      const date = new Date(fecha)
+      if (isNaN(date.getTime())) return fecha
+      const d = String(date.getDate()).padStart(2, "0")
+      const m = String(date.getMonth() + 1).padStart(2, "0")
+      const a = date.getFullYear()
+      return `${d}/${m}/${a}`
+    } catch {
+      return fecha ?? "—"
+    }
   }
-  
-  // Si es un número (1-5), usar el mapeo directo
-  if (diasSemana[dia]) {
-    return diasSemana[dia]
-  }
-  
-  // Si es una fecha ISO, extraer el día de la semana
-  try {
-    const date = new Date(dia)
-    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
-    const dayName = days[date.getUTCDay()]
-    return dayName
-  } catch {
-    return dia
-  }
-}
+
 
 export default function AdminPage() {
   const router = useRouter()
@@ -1079,12 +1073,21 @@ export default function AdminPage() {
             <div className="px-8 pb-10 py-6">
               <div className="flex items-center justify-between mb-[5px]">
                 <h1 className="text-xl font-bold text-[#1A1B22] dark:text-white">Administración de Sesiones</h1>
-                <button
-                  onClick={openCreateForm}
-                          className="bg-[#53F000] text-black text-xs font-semibold px-3 py-2 rounded-md flex items-center gap-1 cursor-pointer"
-                >
-                  <Plus size={12} /> Nueva Sesión
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => window.open("/api/sesiones/pdf", "_blank")}
+                    className="flex items-center gap-1 bg-[#0F6B44] text-white text-xs font-semibold px-3 py-2 rounded-md cursor-pointer"
+                  >
+                    <Download size={12} />
+                    Descargar PDF
+                  </button>
+                  <button
+                    onClick={openCreateForm}
+                    className="bg-[#53F000] text-black text-xs font-semibold px-3 py-2 rounded-md flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus size={12} /> Nueva Sesión
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-[1fr_1fr_1fr_1.1fr] gap-4 mb-6">
@@ -1135,7 +1138,7 @@ export default function AdminPage() {
                         filteredSesiones.map((row) => (
                           <tr key={row.id} className="border-b border-gray-50 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#0F172A]">
                             <td className="px-5 py-3 font-semibold text-[#1A1B22] dark:text-white">{row.titulo}</td>
-                            <td className="px-5 py-3 dark:text-white">{getNombreDia(row.dia)}</td>
+                            <td className="px-5 py-3 dark:text-white">{formatearFechaCompleta(row.dia)}</td>
                             <td className="px-5 py-3">{formatTime12Hour(row.hora_inicio)}</td>
                             <td className="px-5 py-3">
                               <span className="bg-[#EEF2F7] text-[#475569] px-2 py-1 rounded-full text-[10px] whitespace-nowrap inline-block">
@@ -2307,7 +2310,7 @@ export default function AdminPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">Fecha</p>
-                      <p className="text-sm text-[#1A1B22] dark:text-white">{getNombreDia(sesion.dia)}</p>
+                       <p className="text-sm text-[#1A1B22] dark:text-white">{formatearFechaCompleta(sesion.dia)}</p>
                     </div>
                     <div>
                       <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">Tipo</p>
