@@ -1,18 +1,27 @@
-import { Resend } from "resend"
+import nodemailer from "nodemailer"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-const FROM_EMAIL = "onboarding@resend.dev"
 const APP_NAME = "UES San José del Rincón"
 
+// Brevo SMTP - funciona en Render sin bloqueos
+const transporter = nodemailer.createTransport({
+  host: "smtp-relay.brevo.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.BREVO_SMTP_USER, // tu correo con el que te registraste en Brevo
+    pass: process.env.BREVO_SMTP_KEY,  // la clave SMTP que generaste
+  },
+})
+
 export async function sendEmail(to: string, subject: string, html: string) {
-  const { data, error } = await resend.emails.send({
-    from: FROM_EMAIL,
+  const result = await transporter.sendMail({
+    from: `"${APP_NAME}" <${process.env.BREVO_SMTP_USER}>`,
     to,
     subject,
     html,
   })
-  if (error) throw new Error(error.message)
-  return data
+  console.log(`[sendEmail] Enviado: ${result.messageId}`)
+  return result
 }
 
 export async function sendPasswordResetEmail(
@@ -22,8 +31,8 @@ export async function sendPasswordResetEmail(
 ) {
   console.log(`[sendPasswordResetEmail] Enviando código a: ${email}`)
 
-  const { data, error } = await resend.emails.send({
-    from: FROM_EMAIL,
+  const result = await transporter.sendMail({
+    from: `"${APP_NAME}" <${process.env.BREVO_SMTP_USER}>`,
     to: email,
     subject: "Código de recuperación de contraseña - UES",
     html: `
@@ -56,12 +65,7 @@ export async function sendPasswordResetEmail(
     `,
   })
 
-  if (error) {
-    console.error("[sendPasswordResetEmail] Error:", error)
-    throw new Error(error.message)
-  }
-
-  console.log(`[sendPasswordResetEmail] Enviado: ${data?.id}`)
+  console.log(`[sendPasswordResetEmail] Enviado: ${result.messageId}`)
   return true
 }
 
@@ -72,8 +76,8 @@ export async function sendWelcomeEmail(
 ) {
   const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/auth/login`
 
-  const { data, error } = await resend.emails.send({
-    from: FROM_EMAIL,
+  const result = await transporter.sendMail({
+    from: `"${APP_NAME}" <${process.env.BREVO_SMTP_USER}>`,
     to: email,
     subject: "Bienvenido a UES - Tus credenciales de acceso",
     html: `
@@ -108,12 +112,7 @@ export async function sendWelcomeEmail(
     `,
   })
 
-  if (error) {
-    console.error("[sendWelcomeEmail] Error:", error)
-    return false
-  }
-
-  console.log(`[sendWelcomeEmail] Enviado: ${data?.id}`)
+  console.log(`[sendWelcomeEmail] Enviado: ${result.messageId}`)
   return true
 }
 
@@ -132,8 +131,8 @@ export async function sendUpcomingSessionAlert(
       day: "numeric",
     })
 
-  const { data, error } = await resend.emails.send({
-    from: FROM_EMAIL,
+  const result = await transporter.sendMail({
+    from: `"${APP_NAME}" <${process.env.BREVO_SMTP_USER}>`,
     to: email,
     subject: `Recordatorio: ${sessionName}`,
     html: `
@@ -161,10 +160,6 @@ export async function sendUpcomingSessionAlert(
     `,
   })
 
-  if (error) {
-    console.error("[sendUpcomingSessionAlert] Error:", error)
-    throw new Error(error.message)
-  }
-
+  console.log(`[sendUpcomingSessionAlert] Enviado: ${result.messageId}`)
   return true
 }
