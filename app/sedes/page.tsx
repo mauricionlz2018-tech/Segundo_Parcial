@@ -8,7 +8,7 @@ const sedes = [
     nombre: "Edificio Principal UMB",
     descripcion:
       "Sede central del evento. Aquí se realizarán las conferencias magistrales, la ceremonia de inauguración y clausura, y la feria de proyectos estudiantiles.",
-    direccion: "Carretera Toluca–San José del Rincón Km. 64, San José del Rincón, Estado de México.",
+    direccion: "Carretera Toluca - San José del Rincón Km. 64, San José del Rincón, Estado de México.",
     eventos: ["Inauguración", "Conferencias magistrales", "Clausura", "Feria de proyectos"],
     imagen:
       "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WhatsApp%20Image%202026-04-08%20at%204.09.00%20PM%20%281%29-pZSBLdQzx0kmKqyPPsoutuahmNs7ml.jpeg",
