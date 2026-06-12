@@ -1,17 +1,19 @@
-import nodemailer from "nodemailer"
+import { Resend } from "resend"
 
+const resend = new Resend(process.env.RESEND_API_KEY)
+const FROM_EMAIL = "onboarding@resend.dev"
 const APP_NAME = "UES San José del Rincón"
 
-// Configuración con puerto 465 (SSL) en lugar de 587 que Render bloquea
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // true para puerto 465
-  auth: {
-    user: process.env.GMAIL_USER,       // nolazcomaury2004@gmail.com
-    pass: process.env.GMAIL_APP_PASSWORD, // contraseña de aplicación de 16 caracteres
-  },
-})
+export async function sendEmail(to: string, subject: string, html: string) {
+  const { data, error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject,
+    html,
+  })
+  if (error) throw new Error(error.message)
+  return data
+}
 
 export async function sendPasswordResetEmail(
   email: string,
@@ -20,8 +22,8 @@ export async function sendPasswordResetEmail(
 ) {
   console.log(`[sendPasswordResetEmail] Enviando código a: ${email}`)
 
-  const result = await transporter.sendMail({
-    from: `"${APP_NAME}" <${process.env.GMAIL_USER}>`,
+  const { data, error } = await resend.emails.send({
+    from: FROM_EMAIL,
     to: email,
     subject: "Código de recuperación de contraseña - UES",
     html: `
@@ -35,16 +37,13 @@ export async function sendPasswordResetEmail(
           <div style="border: 1px solid #ddd; border-top: none; padding: 24px; border-radius: 0 0 8px 8px;">
             <p>Hola <strong>${userName}</strong>,</p>
             <p>Recibimos una solicitud para recuperar tu contraseña. Usa el siguiente código:</p>
-            
             <div style="background: #f8f9fa; border: 2px solid #667eea; border-radius: 8px; padding: 24px; text-align: center; margin: 24px 0;">
               <p style="margin: 0 0 8px; color: #666; font-size: 14px;">Tu código de verificación</p>
               <p style="font-size: 40px; font-weight: bold; letter-spacing: 12px; color: #667eea; margin: 0;">${code}</p>
             </div>
-
             <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 12px; border-radius: 4px; color: #856404;">
               ⏰ <strong>Este código expira en 15 minutos.</strong>
             </div>
-
             <p style="color: #666; font-size: 13px; margin-top: 20px;">
               Si no solicitaste esto, ignora este correo. Tu cuenta está segura.
             </p>
@@ -57,7 +56,12 @@ export async function sendPasswordResetEmail(
     `,
   })
 
-  console.log(`[sendPasswordResetEmail] Enviado: ${result.messageId}`)
+  if (error) {
+    console.error("[sendPasswordResetEmail] Error:", error)
+    throw new Error(error.message)
+  }
+
+  console.log(`[sendPasswordResetEmail] Enviado: ${data?.id}`)
   return true
 }
 
@@ -68,8 +72,8 @@ export async function sendWelcomeEmail(
 ) {
   const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/auth/login`
 
-  const result = await transporter.sendMail({
-    from: `"${APP_NAME}" <${process.env.GMAIL_USER}>`,
+  const { data, error } = await resend.emails.send({
+    from: FROM_EMAIL,
     to: email,
     subject: "Bienvenido a UES - Tus credenciales de acceso",
     html: `
@@ -83,22 +87,18 @@ export async function sendWelcomeEmail(
           <div style="border: 1px solid #ddd; border-top: none; padding: 24px; border-radius: 0 0 8px 8px;">
             <p>Hola <strong>${userName}</strong>,</p>
             <p>¡Tu cuenta ha sido creada exitosamente!</p>
-
             <div style="background: #ecfdf5; border: 2px solid #10B981; border-radius: 8px; padding: 16px; margin: 20px 0;">
               <p style="margin: 0 0 8px;"><strong>Usuario:</strong> ${username}</p>
               <p style="margin: 0;"><strong>Correo:</strong> ${email}</p>
             </div>
-
             <div style="background: #fef3c7; border: 1px solid #fcd34d; padding: 12px; border-radius: 4px; color: #92400e; margin-bottom: 20px;">
               ⚠️ <strong>Guarda tus datos en un lugar seguro.</strong>
             </div>
-
             <div style="text-align: center;">
               <a href="${loginUrl}" style="background: #10B981; color: white; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold;">
                 Iniciar Sesión
               </a>
             </div>
-
             <p style="color: #999; font-size: 12px; border-top: 1px solid #eee; padding-top: 12px; margin-top: 20px;">
               © ${new Date().getFullYear()} ${APP_NAME}
             </p>
@@ -108,7 +108,12 @@ export async function sendWelcomeEmail(
     `,
   })
 
-  console.log(`[sendWelcomeEmail] Enviado: ${result.messageId}`)
+  if (error) {
+    console.error("[sendWelcomeEmail] Error:", error)
+    return false
+  }
+
+  console.log(`[sendWelcomeEmail] Enviado: ${data?.id}`)
   return true
 }
 
@@ -127,8 +132,8 @@ export async function sendUpcomingSessionAlert(
       day: "numeric",
     })
 
-  const result = await transporter.sendMail({
-    from: `"${APP_NAME}" <${process.env.GMAIL_USER}>`,
+  const { data, error } = await resend.emails.send({
+    from: FROM_EMAIL,
     to: email,
     subject: `Recordatorio: ${sessionName}`,
     html: `
@@ -156,17 +161,10 @@ export async function sendUpcomingSessionAlert(
     `,
   })
 
-  console.log(`[sendUpcomingSessionAlert] Enviado: ${result.messageId}`)
-  return true
-}
+  if (error) {
+    console.error("[sendUpcomingSessionAlert] Error:", error)
+    throw new Error(error.message)
+  }
 
-export async function sendEmail(to: string, subject: string, html: string) {
-  const result = await transporter.sendMail({
-    from: `"UES San José del Rincón" <${process.env.GMAIL_USER}>`,
-    to,
-    subject,
-    html,
-  })
-  console.log(`[sendEmail] Enviado: ${result.messageId}`)
-  return result
+  return true
 }
