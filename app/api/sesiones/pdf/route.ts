@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { PDFDocument, rgb, PageSizes, StandardFonts } from "pdf-lib";
-import pool from "@/lib/db";
+import { query } from "@/lib/db";
 
-const SECTION_BG = rgb(245 / 255, 245 / 255, 245 / 255);
 const DARK_GREEN = rgb(6 / 255, 79 / 255, 68 / 255);
 const LIGHT_GREEN = rgb(100 / 255, 252 / 255, 5 / 255);
 const BLACK = rgb(0.1, 0.1, 0.1);
@@ -31,11 +30,12 @@ function formatTime(time: string) {
 
 export async function GET() {
   try {
-    const [rows] = (await pool.query(
+    // ✅ Usa la función query() de db.ts que maneja pg correctamente
+    const rows = await query<any[]>(
       `SELECT dia, hora_inicio, hora_fin, titulo, ponente, lugar, tipo 
        FROM sesiones 
        ORDER BY dia ASC, hora_inicio ASC`
-    )) as any[];
+    );
 
     const pdfDoc = await PDFDocument.create();
     let page = pdfDoc.addPage(PageSizes.A4);
@@ -44,12 +44,11 @@ export async function GET() {
     const usableWidth = width - margin * 2;
     let cursor = height - 52;
 
-    // ✅ CORREGIDO: usar StandardFonts en lugar de strings directos
+    // ✅ StandardFonts en lugar de strings
     const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-    // === ENCABEZADO SIN LOGOS (para Render — el filesystem no es confiable en prod) ===
-    // Si quieres logos, usa URLs remotas con fetch en lugar de fs.readFile
+    // Encabezado
     page.drawText("12va Jornada Académica y Cultural", {
       x: margin,
       y: cursor - 20,
@@ -74,7 +73,7 @@ export async function GET() {
 
     cursor -= 72;
 
-    // === AGRUPAR POR DÍA ===
+    // Agrupar por día
     const grouped: Record<string, any[]> = {};
     for (const s of rows) {
       const dayKey = formatDate(s.dia);
