@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Spinner } from "@/components/ui/spinner"
-import { Clock, MapPin, User, Trash2, RotateCw, X } from "lucide-react"
+import { Clock, MapPin, User, Trash2, RotateCw, X, Heart } from "lucide-react"
 import { formatTime12Hour, formatDate } from "@/lib/utils"
 import { toast } from "sonner"
 
@@ -29,6 +29,8 @@ interface Sesion {
   cupos_ocupados: number
   descripcion: string | null
   inscrito?: boolean
+  likes?: number
+  liked?: boolean
 }
 
 const tipoBadge: Record<string, { bg: string; text: string }> = {
@@ -49,6 +51,62 @@ export default function SesionesPage() {
   const [procesando, setProcesando] = useState(false)
   const [filtroTipo, setFiltroTipo] = useState<string>("")
   const [viewingPonente, setViewingPonente] = useState<{ nombre: string; perfil: string | null; afiliacion: string | null; biografia: string | null; foto: string | null } | null>(null)
+  const [sesionesLikes, setSesionesLikes] = useState<Record<string, boolean>>({})
+  const [likesTotales, setLikesTotales] = useState<Record<string, number>>({})
+  const [cargandoLikes, setCargandoLikes] = useState(false)
+
+  // Obtener likes desde BD
+  const cargarLikes = async (usuarioId: string) => {
+    setCargandoLikes(true)
+    try {
+      const sesionesIds = [...sesionesDisponibles.map(s => s.id), ...sesionesInscritas.map(s => s.id)]
+      const resultados = await Promise.all(
+        sesionesIds.map(id =>
+          fetch(`/api/sesiones/${id}/like`)
+            .then(res => res.json())
+            .catch(() => ({ total: 0, liked: false }))
+        )
+      )
+      const likes: Record<string, boolean> = {}
+      const totales: Record<string, number> = {}
+      resultados.forEach((r, idx) => {
+        likes[sesionesIds[idx]] = r.liked === true
+        totales[sesionesIds[idx]] = Number(r.total ?? 0)
+      })
+      setSesionesLikes(likes)
+      setLikesTotales(totales)
+    } catch {
+      console.error("Error cargando likes")
+    } finally {
+      setCargandoLikes(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!userId) return
+    cargarLikes(userId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId])
+
+  const toggleLike = async (sesion: Sesion) => {
+    if (!userId) return
+    setCargandoLikes(true)
+    const liked = sesionesLikes[sesion.id] === true
+    const method = liked ? "DELETE" : "POST"
+    try {
+      const res = await fetch(`/api/sesiones/${sesion.id}/like`, {
+        method,
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setSesionesLikes(prev => ({ ...prev, [sesion.id]: data.liked }))
+      setLikesTotales(prev => ({ ...prev, [sesion.id]: Number(data.total ?? 0) }))
+    } catch (err) {
+      console.error("Error like:", err)
+    } finally {
+      setCargandoLikes(false)
+    }
+  }
 
   // Obtener usuario actual
   useEffect(() => {
@@ -357,17 +415,38 @@ export default function SesionesPage() {
                         </div>
 
                         {/* Botón */}
-                        <Button
-                          onClick={() => handleInscribir(sesion)}
-                          disabled={
-                            procesando ||
-                            sesion.cupos_ocupados >= sesion.cupos_total ||
-                            sesion.inscrito
-                          }
-                          className="whitespace-nowrap"
-                        >
-                          {sesion.inscrito ? "Inscrito" : "Inscribirse"}
-                        </Button>
+                        <div className="flex flex-col items-end gap-2">
+                          <Button
+                            onClick={() => toggleLike(sesion)}
+                            disabled={cargandoLikes}
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9"
+                          >
+                            <Heart
+                              size={20}
+                              className={
+                                sesionesLikes[sesion.id]
+                                  ? "fill-red-500 text-red-500"
+                                  : "text-gray-400"
+                              }
+                            />
+                          </Button>
+                          <span className="text-xs text-gray-500">
+                            {likesTotales[sesion.id] ?? 0}
+                          </span>
+                          <Button
+                            onClick={() => handleInscribir(sesion)}
+                            disabled={
+                              procesando ||
+                              sesion.cupos_ocupados >= sesion.cupos_total ||
+                              sesion.inscrito
+                            }
+                            className="whitespace-nowrap"
+                          >
+                            {sesion.inscrito ? "Inscrito" : "Inscribirse"}
+                          </Button>
+                        </div>
                       </div>
                     </Card>
                   ))
