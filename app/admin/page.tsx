@@ -832,7 +832,7 @@ export default function AdminPage() {
                   </div>
                   <button
                     onClick={() => setMobileMenuOpen(false)}
-                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer"
                   >
                     <X size={18} />
                   </button>
@@ -926,7 +926,7 @@ export default function AdminPage() {
             <div className="flex items-center gap-3 flex-1">
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                className="lg:hidden p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
                 title="Menú"
               >
                 <Menu size={20} />
@@ -1719,7 +1719,7 @@ export default function AdminPage() {
                           setAdminForm({ username: "", email: "", full_name: "", password: "", confirmPassword: "" })
                           setAdminFormError(null)
                         }}
-                        className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                        className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer"
                       >
                         <X size={18} />
                       </button>
@@ -1802,7 +1802,7 @@ export default function AdminPage() {
                           setAdminForm({ username: "", email: "", full_name: "", password: "", confirmPassword: "" })
                           setAdminFormError(null)
                         }}
-                        className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+                        className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer"
                       >
                         Cancelar
                       </button>
@@ -1825,7 +1825,7 @@ export default function AdminPage() {
                           setUserForm({ username: "", email: "", full_name: "", carrera: "", password: "", confirmPassword: "" })
                           setUserFormError(null)
                         }}
-                        className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                        className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer"
                       >
                         <X size={18} />
                       </button>
@@ -1909,7 +1909,7 @@ export default function AdminPage() {
                       <button
                         onClick={handleCreateUser}
                         disabled={userFormLoading}
-                        className="flex-1 bg-[#53F000] text-black text-xs font-semibold py-2 rounded-lg disabled:opacity-50 hover:bg-[#40d700]"
+                        className="flex-1 bg-[#53F000] text-black text-xs font-semibold py-2 rounded-lg disabled:opacity-50 hover:bg-[#40d700] cursor-pointer"
                       >
                         {userFormLoading ? "Creando..." : "Crear Usuario"}
                       </button>
@@ -1919,7 +1919,7 @@ export default function AdminPage() {
                           setUserForm({ username: "", email: "", full_name: "", carrera: "", password: "", confirmPassword: "" })
                           setUserFormError(null)
                         }}
-                        className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+                        className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer"
                       >
                         Cancelar
                       </button>
@@ -1953,7 +1953,7 @@ export default function AdminPage() {
                 </h2>
                 <p className="text-xs text-gray-600 dark:text-gray-500">Modifique los datos de la sesión seleccionada.</p>
               </div>
-              <button onClick={() => setShowEditForm(false)} className="text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+              <button onClick={() => setShowEditForm(false)} className="text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer">
                 <X size={16} />
               </button>
             </div>
@@ -2131,7 +2131,7 @@ export default function AdminPage() {
               <button
                 onClick={handleUpdateSession}
                 disabled={formSaving}
-                className="bg-[#53F000] text-black text-xs font-semibold px-4 py-2 rounded-md disabled:opacity-50 hover:bg-[#40d700]"
+                className="bg-[#53F000] text-black text-xs font-semibold px-4 py-2 rounded-md disabled:opacity-50 hover:bg-[#40d700] cursor-pointer"
               >
                 {formSaving ? "Guardando..." : "Guardar Cambios"}
               </button>
@@ -2574,7 +2574,7 @@ export default function AdminPage() {
                 <button
                   onClick={handleUpdateUsuario}
                   disabled={editUserFormLoading}
-                  className="flex-1 bg-[#0F6B44] text-white text-xs font-semibold py-2 rounded-lg disabled:opacity-50 hover:bg-[#0d5a38]"
+                  className="flex-1 bg-[#0F6B44] text-white text-xs font-semibold py-2 rounded-lg disabled:opacity-50 hover:bg-[#0d5a38] cursor-pointer"
                 >
                   {editUserFormLoading ? "Guardando..." : "Guardar Cambios"}
                 </button>
@@ -2640,7 +2640,7 @@ export default function AdminPage() {
               </div>
             </div>
             <div className="border-t border-gray-100 dark:border-gray-700 px-4 py-3">
-              <button className="w-full text-xs font-semibold text-[#0F6B44] dark:text-[#10B981] py-2 text-center hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors">
+              <button className="w-full text-xs font-semibold text-[#0F6B44] dark:text-[#10B981] py-2 text-center hover:bg-gray-50 dark:hover:bg-gray-800 rounded transition-colors cursor-pointer">
                 Ver todas las notificaciones
               </button>
             </div>
@@ -2655,7 +2655,7 @@ export default function AdminPage() {
             <div className="bg-gradient-to-r from-[#0F6B44] to-[#10B981] px-5 py-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-white">Mi Perfil</h3>
-                <button onClick={() => setShowProfile(false)} className="text-white hover:bg-white/20 p-1 rounded">
+                <button onClick={() => setShowProfile(false)} className="text-white hover:bg-white/20 p-1 rounded cursor-pointer">
                   <X size={14} />
                 </button>
               </div>
@@ -2688,10 +2688,10 @@ export default function AdminPage() {
                 </div>
               </div>
               <div className="flex flex-col gap-2 mt-5 pt-5 border-t border-gray-100 dark:border-gray-700">
-                <button onClick={() => { setActive("configuracion"); setShowProfile(false); }} className="w-full text-xs font-semibold text-[#0F6B44] dark:text-[#10B981] py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left">
+                <button onClick={() => { setActive("configuracion"); setShowProfile(false); }} className="w-full text-xs font-semibold text-[#0F6B44] dark:text-[#10B981] py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left cursor-pointer">
                   Ajustes
                 </button>
-                <button onClick={() => { setShowLogoutConfirm(true); setShowProfile(false); }} className="w-full text-xs font-semibold text-red-600 dark:text-red-400 py-2 px-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left">
+                <button onClick={() => { setShowLogoutConfirm(true); setShowProfile(false); }} className="w-full text-xs font-semibold text-red-600 dark:text-red-400 py-2 px-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left cursor-pointer">
                   Cerrar Sesion
                 </button>
               </div>
