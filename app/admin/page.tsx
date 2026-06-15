@@ -135,6 +135,7 @@ export default function AdminPage() {
   const [formSaving, setFormSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [showSaveConfirm, setShowSaveConfirm] = useState(false)
+  const [formConflict, setFormConflict] = useState<string | null>(null)
 
   // Delete confirmation
   const [deleteId, setDeleteId] = useState<string | null>(null)
@@ -354,6 +355,50 @@ export default function AdminPage() {
     setEditingId(null)
     setFormError(null)
     setShowCreateForm(true)
+  }
+
+  async function checkConflict() {
+    if (!editForm.dia || !editForm.hora_inicio || !editForm.hora_fin || !editForm.lugar || !editingId) {
+      setFormConflict(null)
+      return false
+    }
+
+    try {
+      const params = new URLSearchParams({
+        dia: editForm.dia,
+        horaInicio: editForm.hora_inicio,
+        horaFin: editForm.hora_fin,
+        lugar: editForm.lugar,
+        excludeId: editingId,
+      })
+
+      const res = await fetch(`/api/admin/sesiones/conflict?${params.toString()}`)
+      const data = await res.json()
+      if (res.ok && data.conflict) {
+        setFormConflict(data.error || "Conflicto de horario detectado")
+        return true
+      }
+      setFormConflict(null)
+      return false
+    } catch {
+      setFormConflict(null)
+      return false
+    }
+  }
+
+  async function handleSaveClick() {
+    setFormError(null)
+    setFormConflict(null)
+    if (!editForm.dia || !editForm.hora_inicio || !editForm.hora_fin || !editForm.lugar) {
+      setShowSaveConfirm(true)
+      return
+    }
+    const hasConflict = await checkConflict()
+    if (hasConflict) {
+      toast.error(formConflict || "Conflicto de horario detectado")
+      return
+    }
+    setShowSaveConfirm(true)
   }
 
   function openEditForm(sesion: Sesion) {
@@ -2106,7 +2151,7 @@ export default function AdminPage() {
               </div>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setShowSaveConfirm(true)}
+                  onClick={handleSaveClick}
                   disabled={formSaving || !editForm.titulo || !editForm.ponente}
                   className="bg-[#53F000] text-black text-xs font-semibold px-4 py-2 rounded-md disabled:opacity-50 hover:bg-[#40d700] cursor-pointer"
                 >

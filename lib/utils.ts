@@ -34,20 +34,37 @@ export function formatTime12Hour(time: string): string {
  * @param showYear - Mostrar el año (default: false)
  * @returns Fecha formateada (ej: "16 May")
  */
-export function formatDate(date: string, showYear: boolean = false): string {
+export function formatDate(date: string | Date | null | undefined, showYear: boolean = false): string {
   if (!date) return ''
-  
+
   try {
-    const dateObj = new Date(date)
+    let year: number, month: number, day: number
+
+    if (typeof date === 'string') {
+      const clean = date.split('T')[0]
+      const parts = clean.split('-').map(Number)
+      if (parts.length !== 3 || parts.some(isNaN)) {
+        throw new Error('Invalid date string format')
+      }
+      ;[year, month, day] = parts
+    } else if (date instanceof Date && !isNaN(date.getTime())) {
+      year = date.getFullYear()
+      month = date.getMonth() + 1
+      day = date.getDate()
+    } else {
+      return String(date)
+    }
+
+    const dateObj = new Date(year, month - 1, day)
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    
-    const day = dateObj.getUTCDate()
-    const month = months[dateObj.getUTCMonth()]
-    const year = dateObj.getUTCFullYear()
-    
-    return showYear ? `${day} ${month} ${year}` : `${day} ${month}`
+
+    const dayNum = dateObj.getDate()
+    const monthName = months[dateObj.getMonth()]
+    const yearNum = dateObj.getFullYear()
+
+    return showYear ? `${dayNum} ${monthName} ${yearNum}` : `${dayNum} ${monthName}`
   } catch (error) {
     console.error('Error formatting date:', error)
-    return date
+    return typeof date === 'string' ? date.split('T')[0] : String(date)
   }
 }
