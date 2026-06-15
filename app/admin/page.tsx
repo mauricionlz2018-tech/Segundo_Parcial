@@ -34,16 +34,19 @@ const EMPTY_FORM: SesionFormData = {
   function formatearFechaCompleta(fecha: string | null | undefined): string {
     if (!fecha) return "—"
     try {
-      if (fecha.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        const [a, m, d] = fecha.split("-")
+      const fechaStr = typeof fecha === "string" ? fecha : fecha instanceof Date ? fecha.toISOString().split("T")[0] : String(fecha)
+      if (fechaStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [a, m, d] = fechaStr.split("-")
         return `${parseInt(d)}/${parseInt(m)}/${a}`
       }
-      const date = new Date(fecha)
-      if (isNaN(date.getTime())) return fecha
-      const d = String(date.getDate()).padStart(2, "0")
-      const m = String(date.getMonth() + 1).padStart(2, "0")
-      const a = date.getFullYear()
-      return `${d}/${m}/${a}`
+      const parts = fechaStr.split("/")
+      if (parts.length === 3) return `${parseInt(parts[0])}/${parseInt(parts[1])}/${parts[2]}`
+      const date = new Date(fechaStr)
+      if (isNaN(date.getTime())) return fechaStr
+      const d2 = String(date.getDate()).padStart(2, "0")
+      const m2 = String(date.getMonth() + 1).padStart(2, "0")
+      const a2 = date.getFullYear()
+      return `${d2}/${m2}/${a2}`
     } catch {
       return fecha ?? "—"
     }
@@ -358,17 +361,15 @@ export default function AdminPage() {
     
     console.log("Sesión cargada:", sesion) // Debug
     
-    // Asegurar que la fecha esté en formato YYYY-MM-DD para el input type="date"
-    let diaFormato = sesion.dia || ""
-    if (diaFormato) {
-      // Si viene de la BD es YYYY-MM-DD, usarlo tal cual
-      // Si viene en otro formato, intentar convertir
-      if (!diaFormato.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        // Si NO está en YYYY-MM-DD, intentar convertir
-        const partes = diaFormato.split('/')
-        if (partes.length === 3) {
-          diaFormato = `${partes[2]}-${partes[1]}-${partes[0]}`
-        }
+    // Preservar la fecha en formato YYYY-MM-DD evitando desfase de zona horaria
+    let diaFormato = "" 
+    if (sesion.dia) {
+      if (typeof sesion.dia === "string") {
+        diaFormato = sesion.dia
+      } else if (sesion.dia instanceof Date) {
+        diaFormato = `${sesion.dia.getFullYear()}-${String(sesion.dia.getMonth() + 1).padStart(2, "0")}-${String(sesion.dia.getDate()).padStart(2, "0")}`
+      } else {
+        diaFormato = String(sesion.dia)
       }
     }
     
@@ -1995,6 +1996,7 @@ export default function AdminPage() {
                     <option value="Taller">Taller</option>
                     <option value="Panel">Panel</option>
                     <option value="Otro">Otro</option>
+                    <option value="Inauguración">Inauguración</option>
                   </select>
                 </div>
                 <div>

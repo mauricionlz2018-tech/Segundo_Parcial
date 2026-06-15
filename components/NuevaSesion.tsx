@@ -46,8 +46,9 @@ function toMinutes(time: string): number {
 }
 
 export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionProps) {
-  const today = new Date().toISOString().split('T')[0]
-  const [form, setForm] = useState<FormState>({ ...EMPTY_FORM, dia: today })
+  const today = new Date()
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
+  const [form, setForm] = useState<FormState>({ ...EMPTY_FORM, dia: todayStr })
   const [speakerPhotoUrl, setSpeakerPhotoUrl] = useState<string | null>(null)
   const [speakerPhotoBase64, setSpeakerPhotoBase64] = useState<string | null>(null)
   const [institutionLogoUrl, setInstitutionLogoUrl] = useState<string | null>(null)
@@ -247,6 +248,7 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
                 >
                   <option>Conferencia</option>
                   <option>Taller</option>
+                  <option>Inauguración</option>
                 </select>
               </div>
               <div>
