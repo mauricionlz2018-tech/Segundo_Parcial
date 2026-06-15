@@ -38,6 +38,13 @@ const EMPTY_FORM: FormState = {
   ponente: "", perfil_profesional: "", afiliacion: "", biografia: "",
 }
 
+function toMinutes(time: string): number {
+  const parts = String(time).split(":")
+  const hh = Number(parts[0] ?? 0)
+  const mm = Number(parts[1] ?? 0)
+  return hh * 60 + mm
+}
+
 export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionProps) {
   const today = new Date().toISOString().split('T')[0]
   const [form, setForm] = useState<FormState>({ ...EMPTY_FORM, dia: today })
@@ -50,7 +57,6 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
   const [espaciosLoading, setEspaciosLoading] = useState(true)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
 
-  // Cargar espacios disponibles
   useEffect(() => {
     async function fetchEspacios() {
       try {
@@ -67,15 +73,17 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
     fetchEspacios()
   }, [])
 
-  // ✅ Detección de conflictos: rangos de hora que se solapan en mismo lugar y día
   const conflict = useMemo(() => {
     if (!form.lugar || !form.hora_inicio || !form.hora_fin || !form.dia) return null
-    const conflicting = sesiones.find(
-      (s) =>
-        s.lugar.toLowerCase() === form.lugar.toLowerCase() &&
-        s.dia === form.dia &&
-        !(form.hora_fin <= s.hora_inicio || form.hora_inicio >= s.hora_fin)
-    )
+    const start = toMinutes(form.hora_inicio)
+    const end = toMinutes(form.hora_fin)
+    if (start >= end) return null
+    const conflicting = sesiones.find((s) => {
+      if (s.lugar.toLowerCase() !== form.lugar.toLowerCase() || s.dia !== form.dia) return false
+      const existingStart = toMinutes(s.hora_inicio)
+      const existingEnd = toMinutes(s.hora_fin)
+      return start < existingEnd && end > existingStart
+    })
     if (conflicting) {
       return `Conflicto detectado: El ${form.lugar} ya está ocupado de ${conflicting.hora_inicio} a ${conflicting.hora_fin} hrs. Seleccione otro horario o escenario.`
     }
@@ -86,8 +94,6 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
     const file = e.target.files?.[0]
     if (!file) return
     setSpeakerPhotoUrl(URL.createObjectURL(file))
-    
-    // Convertir a base64
     const reader = new FileReader()
     reader.onload = (event) => {
       const base64String = event.target?.result as string
@@ -102,7 +108,6 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
     setInstitutionLogoUrl(URL.createObjectURL(file))
   }
 
-  // Helper genérico para actualizar el form
   function set(field: keyof FormState) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
       const val = e.target.value
@@ -110,10 +115,8 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
     }
   }
 
-  // Manejador especial para cupos_total
   function handleCuposChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value
-    // Permitir campo vacío o convertir a número
     const numVal = val === "" ? "" : Number(val)
     setForm((f) => ({ ...f, cupos_total: numVal }))
   }
@@ -124,31 +127,26 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
       return
     }
 
-    // Validar nombre del ponente (no solo números)
     if (!/[a-zA-ZáéíóúàèìòùäëïöüÁÉÍÓÚÀÈÌÒÙÄËÏÖÜ]/.test(form.ponente)) {
       setError("El nombre del conferencista debe contener letras válidas, no solo números.")
       return
     }
 
-    // Validar que hora_inicio no sea mayor a 16:30
     if (form.hora_inicio && form.hora_inicio > "16:30") {
       setError("La hora de inicio no puede ser mayor a 16:30 hrs.")
       return
     }
 
-    // Validar que hora_fin no sea mayor a 16:30
     if (form.hora_fin && form.hora_fin > "16:30") {
       setError("La hora de finalización no puede ser mayor a 16:30 hrs.")
       return
     }
 
-    // Validar que hora_inicio sea menor a hora_fin
     if (form.hora_inicio && form.hora_fin && form.hora_inicio >= form.hora_fin) {
       setError("La hora de inicio debe ser menor a la hora de finalización.")
       return
     }
 
-    // Validar que cupo máximo no esté vacío y sea válido
     if (form.cupos_total === "" || form.cupos_total === 0) {
       setError("El cupo máximo es obligatorio y debe ser al menos 1 persona.")
       return
@@ -171,22 +169,22 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
     setSaving(true)
     setError(null)
     try {
-    await onSave({
-      titulo: form.titulo, 
-      ponente: form.ponente, 
-      dia: form.dia,
-      hora_inicio: form.hora_inicio, 
-      hora_fin: form.hora_fin,
-      tipo: form.tipo, 
-      lugar: form.lugar,
-      cupos_total: typeof form.cupos_total === "string" ? Number(form.cupos_total) : form.cupos_total, 
-      descripcion: form.descripcion,
-      perfil_profesional: form.perfil_profesional,
-      afiliacion: form.afiliacion,
-      biografia: form.biografia,
-      foto_ponente: speakerPhotoBase64,
-      logo_institucion: institutionLogoUrl,
-    })
+      await onSave({
+        titulo: form.titulo, 
+        ponente: form.ponente, 
+        dia: form.dia,
+        hora_inicio: form.hora_inicio, 
+        hora_fin: form.hora_fin,
+        tipo: form.tipo, 
+        lugar: form.lugar,
+        cupos_total: typeof form.cupos_total === "string" ? Number(form.cupos_total) : form.cupos_total, 
+        descripcion: form.descripcion,
+        perfil_profesional: form.perfil_profesional,
+        afiliacion: form.afiliacion,
+        biografia: form.biografia,
+        foto_ponente: speakerPhotoBase64,
+        logo_institucion: institutionLogoUrl,
+      })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al guardar la sesión.")
     } finally {
@@ -196,7 +194,6 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
 
   return (
     <div className="fixed inset-0 z-40 bg-[#FBF8FF] dark:bg-[#0F172A] overflow-auto flex flex-col">
-      {/* ── Barra superior ── */}
       <div className="flex items-center justify-between px-8 py-4 bg-white dark:bg-[#1A1F2E] border-b border-gray-100 dark:border-gray-700 sticky top-0 z-10">
         <div>
           <h1 className="text-xl font-bold text-[#1A1B22] dark:text-white">Nueva sesión</h1>
@@ -221,9 +218,7 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
         </div>
       </div>
 
-      {/* ── Cuerpo ── */}
       <div className="flex gap-5 px-8 py-6 flex-1">
-        {/* Izquierda: Info de sesión */}
         <div className="flex-1 bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-6">
           <h2 className="text-sm font-semibold text-[#1A1B22] dark:text-white mb-5">Información de la sesión <span className="text-red-500">*Campos obligatorios</span></h2>
 
@@ -252,9 +247,6 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
                 >
                   <option>Conferencia</option>
                   <option>Taller</option>
-                  {/* <option>Panel</option> */}
-                  {/* <option>Seminario</option>
-                  <option>Mesa redonda</option> */}
                 </select>
               </div>
               <div>
@@ -350,7 +342,6 @@ export default function NuevaSesion({ onClose, onSave, sesiones }: NuevaSesionPr
           </div>
         </div>
 
-        {/* Derecha: Info del ponente */}
         <div className="w-[300px] shrink-0 bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-gray-700 p-6">
           <h2 className="text-sm font-semibold text-[#0F6B44] dark:text-[#10B981] mb-5 tracking-wide">
             Información del ponente
