@@ -203,7 +203,7 @@ export default function PerfilPage() {
           {/* Header */}
           <div className="flex items-center gap-3 mb-8">
             <Link href="/">
-              <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-lg transition">
+              <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-lg transition cursor-pointer">
                 <ArrowLeft size={20} className="text-gray-700 dark:text-gray-300" />
               </button>
             </Link>
@@ -389,7 +389,7 @@ export default function PerfilPage() {
                       <button
                         onClick={() => handleRemoverSesion(sesion.id)}
                         disabled={removingSesion === sesion.id}
-                        className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition disabled:opacity-50 text-red-600 dark:text-red-400"
+                        className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition disabled:opacity-50 text-red-600 dark:text-red-400 cursor-pointer"
                         title="Desregistrarse"
                       >
                         <X size={18} />
@@ -427,7 +427,7 @@ export default function PerfilPage() {
                     <button
                       onClick={handleDelete}
                       disabled={saving || deleteConfirmEmail !== usuario.email}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition"
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition cursor-pointer"
                     >
                       <LogOut size={16} />
                       {saving ? "Eliminando..." : "Sí, Eliminar Mi Cuenta"}
@@ -446,7 +446,7 @@ export default function PerfilPage() {
               ) : (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition cursor-pointer"
                 >
                   <Trash2 size={16} />
                   Eliminar Mi Cuenta
